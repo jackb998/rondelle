@@ -43,7 +43,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Rondelle"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
-[[ -f Resources/AppIcon.icns ]] && cp Resources/AppIcon.icns Resources/AppIconDark.icns "$APP/Contents/Resources/"
+[[ -f Resources/AppIcon.icns ]] && cp Resources/AppIcon.icns Resources/AppIconLight.icns "$APP/Contents/Resources/"
 cp Resources/PrivacyInfo.xcprivacy "$APP/Contents/Resources/"
 cp -R Resources/*.lproj "$APP/Contents/Resources/"   # translations (it, en, fr)
 cp -R "$INTENTS/out/Metadata.appintents" "$APP/Contents/Resources/"

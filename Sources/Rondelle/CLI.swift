@@ -593,7 +593,7 @@ enum CLI {
 
         case "--show-window":
             // --show-window KIND OUT.png FILE…: opens a real window (editor, merge, layout, feedback, metadata, redact,
-            // settings, settings-nosidebar) and draws it from inside the app, title bar included: no screen capture permission needed.
+            // settings, settings-nosidebar, about) and draws it from inside the app, title bar included: no screen capture permission needed.
             guard args.count >= 2 else { return usage() }
             let app = NSApplication.shared
             app.setActivationPolicy(.accessory)
@@ -606,6 +606,7 @@ enum CLI {
             case "metadata": MetadataWindow.open(files)
             case "redact": RedactWindow.open(files)
             case "settings", "settings-nosidebar": SettingsWindow.shared.show(pane: .behaviour)
+            case "about": AboutWindow.show()
             default: return usage()
             }
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 2))
@@ -620,6 +621,75 @@ enum CLI {
             try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: args[1]))
             print("\(Int(window.frame.width))×\(Int(window.frame.height))")
             return 0
+
+        case "--test-sidebar-motion":
+            // --test-sidebar-motion: hides and shows the Settings sidebar with its button, sampling every frame. PASS when
+            // the main thread never stops for more than 50 ms (it was 355–374 ms) and the detail column stays still on
+            // screen (≤ 3 points). RONDELLE_SIDEBAR_TRACE=1 prints every frame, RONDELLE_SIDEBAR_FRAMES=FOLDER also saves a few mid-way,
+            // RONDELLE_SIDEBAR_ROUNDS=N repeats it.
+            let app = NSApplication.shared
+            app.setActivationPolicy(.accessory)
+            SettingsWindow.shared.show(pane: .behaviour)
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.5))
+            guard let window = app.windows.first(where: { $0.isVisible && $0.styleMask.contains(.titled) }) else { return 1 }
+            func splitView(_ view: NSView) -> NSSplitView? {
+                if let split = view as? NSSplitView { return split }
+                return view.subviews.lazy.compactMap(splitView).first
+            }
+            /// Where the detail column starts on screen: it should not move while the sidebar goes.
+            func detailLeft() -> CGFloat? {
+                guard let split = window.contentView.flatMap(splitView), let detail = split.arrangedSubviews.last else { return nil }
+                return window.convertToScreen(detail.convert(detail.bounds, to: nil)).minX
+            }
+            var ok = true
+            let rounds = Int(ProcessInfo.processInfo.environment["RONDELLE_SIDEBAR_ROUNDS"] ?? "") ?? 1
+            for step in Array(repeating: ["nascondi", "mostra"], count: max(rounds, 1)).joined() {
+                let startLeft = detailLeft() ?? 0
+                var gaps: [Double] = [], drift: CGFloat = 0
+                var last = Date()
+                let start = Date()
+                NotificationCenter.default.post(name: Notification.Name("RondelleTestHideSidebar"), object: nil)
+                gaps.append(Date().timeIntervalSince(start))
+                while Date().timeIntervalSince(start) < 1.0 {
+                    RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0 / 120))
+                    let now = Date()
+                    gaps.append(now.timeIntervalSince(last))
+                    last = now
+                    if let left = detailLeft() {
+                        drift = max(drift, abs(left - startLeft))
+                        if ProcessInfo.processInfo.environment["RONDELLE_SIDEBAR_TRACE"] != nil {
+                            let bar = window.contentView.flatMap(splitView)?.arrangedSubviews.first?.frame ?? .zero
+                            if let folder = ProcessInfo.processInfo.environment["RONDELLE_SIDEBAR_FRAMES"], bar.width > 60, bar.width < 180,
+                               let view = window.contentView?.superview, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+                                view.cacheDisplay(in: view.bounds, to: rep)
+                                try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(folder)/\(step)-\(Int(bar.width)).png"))
+                            }
+                            print(String(format: "  %.0f ms  (+%.0f)  finestra x %.0f w %.0f  pannello x %.1f  barra x %.0f w %.0f", now.timeIntervalSince(start) * 1000, (gaps.last ?? 0) * 1000, window.frame.minX, window.frame.width, left, bar.minX, bar.width))
+                        }
+                    }
+                }
+                let worst = (gaps.max() ?? 0) * 1000
+                // Once there, the window resizes only within the limits of its new shape.
+                let limits = step == "nascondi" ? (480.0, 940.0) : (720.0, 1180.0)
+                let limited = window.contentMinSize.width == limits.0 && window.contentMaxSize.width == limits.1
+                // Hidden, the sidebar stays outside the window even when the window is made wider by hand.
+                var parked = true
+                if step == "nascondi" {
+                    let frame = window.frame
+                    window.setContentSize(NSSize(width: 860, height: window.contentLayoutRect.height))
+                    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.2))
+                    parked = abs((detailLeft() ?? 0) - window.frame.minX) <= 1
+                    window.setFrame(frame, display: true)
+                    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.2))
+                }
+                let pass = worst <= 50 && drift <= 3 && limited && parked
+                ok = ok && pass
+                if ProcessInfo.processInfo.environment["RONDELLE_SIDEBAR_TRACE"] != nil {
+                    print(gaps.prefix(8).map { Int($0 * 1000) }, gaps.enumerated().max { $0.1 < $1.1 }.map { $0.0 } ?? -1)
+                }
+                print("\(step): pausa più lunga \(Int(worst)) ms, spostamento del pannello \(Int(drift)) punti, finestra \(Int(window.frame.width)) (\(Int(window.contentMinSize.width))–\(Int(window.contentMaxSize.width)))\(parked ? "" : ", barra rientrata allargando") → \(pass ? "PASS" : "FAIL")")
+            }
+            return ok ? 0 : 1
 
         case "--show-editor":
             // --show-editor SECONDS PHOTO: opens the real editor window for a while (to look at it on screen).
@@ -650,21 +720,62 @@ enum CLI {
                 return 1
             }
 
+        case "--animation-frames":
+            // --animation-frames STYLE FOLDER: the completion animation with its clock stopped every 0.1 s, one PNG each
+            // (to look at it without recording the screen).
+            guard args.count == 2, let style = CompletionStyle(rawValue: args[0]), style != .none else { return usage() }
+            let app = NSApplication.shared
+            app.setActivationPolicy(.accessory)
+            let side: CGFloat = 180
+            let view = NSView(frame: NSRect(x: 0, y: 0, width: side, height: side))
+            view.wantsLayer = true
+            let window = NSWindow(contentRect: NSRect(x: -10_000, y: -10_000, width: side, height: side),
+                                  styleMask: .borderless, backing: .buffered, defer: false)
+            window.contentView = view
+            window.orderFrontRegardless()
+            let root = view.layer!
+            root.speed = 0
+            let duration = CompletionAnimation.draw(style, on: root, center: CGPoint(x: side / 2, y: side / 2), moving: true, start: 0)
+            for tenth in 0...Int(duration * 10) {
+                root.timeOffset = Double(tenth) / 10
+                CATransaction.flush()
+                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+                let scale = 2
+                guard let context = CGContext(data: nil, width: Int(side) * scale, height: Int(side) * scale, bitsPerComponent: 8,
+                                              bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return 1 }
+                context.scaleBy(x: CGFloat(scale), y: CGFloat(scale))
+                (root.presentation() ?? root).render(in: context)
+                guard let image = context.makeImage() else { return 1 }
+                let rep = NSBitmapImageRep(cgImage: image)
+                try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(args[1])/\(style.rawValue)-\(String(format: "%.1f", Double(tenth) / 10)).png"))
+            }
+            print("\(Int(duration * 10) + 1) fotogrammi")
+            return 0
+
         case "--test-dock-icon":
-            // --test-dock-icon [SECONDS]: follows the appearance as Settings does, in the Dock, forcing light and dark
-            // for SECONDS each: the brightness of the tile.
+            // --test-dock-icon [SECONDS]: follows the appearance as Settings does, forcing light and dark for SECONDS
+            // each. PASS when the icon (Settings, «Informazioni su») has a light tile with a light Mac and a dark one with
+            // a dark Mac, and the Dock gets the light one (dark: the bundle's own, which this test build doesn't have).
             NSApplication.shared.setActivationPolicy(.regular)
             DockIcon.follow()
             let hold = args.first.flatMap(Double.init) ?? 0.5
+            func tile(_ image: NSImage) -> CGFloat {
+                var rect = NSRect(x: 0, y: 0, width: 64, height: 64)
+                let cg = image.cgImage(forProposedRect: &rect, context: nil, hints: nil)
+                let color = cg.flatMap { NSBitmapImageRep(cgImage: $0).colorAt(x: $0.width / 2, y: $0.height / 6 + 2)?.usingColorSpace(.sRGB) }
+                return color?.brightnessComponent ?? -1
+            }
+            var ok = true
             for name in [NSAppearance.Name.aqua, .darkAqua, .aqua] {
                 NSApp.appearance = NSAppearance(named: name)
                 RunLoop.main.run(until: Date(timeIntervalSinceNow: hold))
-                var rect = NSRect(x: 0, y: 0, width: 64, height: 64)
-                let image = NSApp.applicationIconImage.cgImage(forProposedRect: &rect, context: nil, hints: nil)
-                let color = image.flatMap { NSBitmapImageRep(cgImage: $0).colorAt(x: $0.width / 2, y: $0.height / 6 + 2)?.usingColorSpace(.sRGB) }
-                print(String(format: "%@ %.2f", name.rawValue, color?.brightnessComponent ?? -1))
+                let icon = tile(DockIcon.shared.image), dock = tile(NSApp.applicationIconImage)
+                let pass = name == .aqua ? icon > 0.8 && dock > 0.8 : icon < 0.2
+                ok = ok && pass
+                print(String(format: "%@ icona %.2f, Dock %.2f → %@", name.rawValue, icon, dock, pass ? "PASS" : "FAIL"))
             }
-            return 0
+            return ok ? 0 : 1
 
         case "--test-redact":
             // --test-redact FILE PAGE:X,Y,W,H… | «testo»: the redaction, with areas in page coordinates (pages from 1) or all of a word.

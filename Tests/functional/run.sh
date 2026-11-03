@@ -64,7 +64,7 @@ RONDELLE_VALUE="0,5" r --run --tools "Peso…" sonoma.heic
 RONDELLE_VALUE="1" r --run --tools "Peso…" doc.pdf
 print "== video"; r --run GIF clip.mov; r --run --tools "2×" clip.mov; r --run --tools Unisci clip.mov "clip (2x).mp4"
 print "== fogli di calcolo"; r --run XLSX tabella.csv; r --run ODS tabella.xlsx; r --run CSV tabella.ods; r --run PDF tabella.xlsx
-print "== ruota"; r --test-wheel-hit; r --test-wheel-motion foto.heic; r --test-wheel-keys foto.heic; r --test-wheel-switch; r --test-tutorial
+print "== ruota"; r --test-wheel-hit; r --test-wheel-motion foto.heic; r --test-wheel-keys foto.heic; r --test-wheel-switch; r --test-tutorial; r --test-sidebar-motion; RONDELLE_RESOURCES=$ROOT/Resources r --test-dock-icon
 print "== metadati"; r --test-metadata foto.heic doc.pdf clip.mov voce.aiff lungo.png
 # RAW: read like any photo; what keeps the source format comes out as JPG (a RAW can't be written).
 rx() { local ext=$1; shift; local before=$ko; r "$@"; (( ko == before )) && [[ ${last:e} != $ext ]] && { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL $* :: ${last:t} non è .$ext" } }

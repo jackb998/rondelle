@@ -58,7 +58,7 @@ cp "$BIN" "$APP/Contents/MacOS/Rondelle"
 # Local symbols out: smaller, and fewer names of this Mac's folders in what is shared.
 strip -x "$APP/Contents/MacOS/Rondelle"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
-cp Resources/AppIcon.icns Resources/AppIconDark.icns Resources/PrivacyInfo.xcprivacy "$APP/Contents/Resources/"
+cp Resources/AppIcon.icns Resources/AppIconLight.icns Resources/PrivacyInfo.xcprivacy "$APP/Contents/Resources/"
 cp -R Resources/*.lproj "$APP/Contents/Resources/"
 cp -R "$INTENTS/out/Metadata.appintents" "$APP/Contents/Resources/"
 tools/add_update_check.sh "$APP" "$UC_BIN"

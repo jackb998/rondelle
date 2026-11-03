@@ -10,23 +10,60 @@ final class SettingsWindow {
     private var window: NSWindow?
     nonisolated static let sidebarWidth: CGFloat = 240
 
+    /// How long the sidebar takes to go or come back.
+    nonisolated static let sidebarAnimation: TimeInterval = 0.25
+    let sidebar = SettingsSidebar()
+    private var slide: Timer?
+
     /// Hiding the sidebar takes its width off the window: the panes are forms, wider they would only stretch.
-    /// The detail stays where it was on screen; the window's limits move with it.
-    func sidebarChanged(visible: Bool) {
-        guard let window else { return }
-        let delta = visible ? Self.sidebarWidth : -Self.sidebarWidth
-        if visible { window.contentMaxSize.width = Self.largest.width } else { window.contentMinSize.width = Self.smallest.width - Self.sidebarWidth }
-        var frame = window.frame
-        frame.size.width += delta
-        frame.origin.x -= delta
-        if let screen = window.screen?.visibleFrame { frame.origin.x = min(max(frame.origin.x, screen.minX), screen.maxX - frame.width) }
-        window.setFrame(frame, display: true, animate: true)
-        if visible { window.contentMinSize.width = Self.smallest.width } else { window.contentMaxSize.width = Self.largest.width - Self.sidebarWidth }
+    /// SwiftUI never relayouts for it: the column stays open and the whole view slides under the window's left edge,
+    /// which moves right (left, to show it again). Each frame is one window resize, the pane stays still on screen.
+    /// Hidden, the sidebar sits outside the window and is disabled, so Tab and VoiceOver don't go there.
+    func toggleSidebar() {
+        guard slide == nil, let window, let host = (window.contentViewController as? SettingsContainer)?.host.view,
+              let container = host.superview else { return }
+        let hide = sidebar.shown
+        let width = Self.sidebarWidth
+        let pane = window.frame.width - (hide ? width : 0)
+        let startX = window.frame.minX
+        var endX = hide ? startX + width : startX - width
+        if !hide, let screen = window.screen?.visibleFrame { endX = max(endX, screen.minX) }
+        // Both sizes allowed while it moves; the final limits once it has arrived.
+        window.contentMinSize.width = Self.smallest.width - width
+        window.contentMaxSize.width = Self.largest.width
+        host.autoresizingMask = []
+        if !hide { sidebar.outside = false }
+        withAnimation(.easeInOut(duration: Self.sidebarAnimation)) { sidebar.shown = !hide }
+        let start = CACurrentMediaTime()
+        let step = { [weak self] in
+            let t = min((CACurrentMediaTime() - start) / Self.sidebarAnimation, 1)
+            let eased = t < 0.5 ? 2 * t * t : 1 - pow(2 - 2 * t, 2) / 2
+            let visible = width * (hide ? 1 - eased : eased)   // how much of the sidebar is still in the window
+            var frame = window.frame
+            frame.size.width = pane + visible
+            frame.origin.x = startX + (endX - startX) * eased
+            window.setFrame(frame, display: false)
+            host.frame = NSRect(x: visible - width, y: 0, width: pane + width, height: container.bounds.height)
+            if t >= 1 { self?.endSlide(hide: hide, host: host) }
+        }
+        let timer = Timer(timeInterval: 1.0 / 120, repeats: true) { _ in MainActor.assumeIsolated { step() } }
+        RunLoop.main.add(timer, forMode: .common)
+        slide = timer
+    }
+
+    private func endSlide(hide: Bool, host: NSView) {
+        slide?.invalidate()
+        slide = nil
+        host.autoresizingMask = [.width, .height]   // keeps the sidebar's 240 points outside on the left when hidden
+        if hide { sidebar.outside = true }
+        let removed = hide ? Self.sidebarWidth : 0
+        window?.contentMinSize = NSSize(width: Self.smallest.width - removed, height: Self.smallest.height)
+        window?.contentMaxSize = NSSize(width: Self.largest.width - removed, height: Self.largest.height)
     }
 
     func show(pane: SettingsPane = .appearance) {
         if window == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(pane: pane)))
+            let window = NSWindow(contentViewController: SettingsContainer(SettingsView(pane: pane)))
             window.title = L("Impostazioni di Rondelle")
             // Sidebar up to the top, as in System Settings, under a transparent title bar; the detail column draws
             // its own bar behind the title (see SettingsView), so scrolled text never runs under «Impostazioni di
@@ -87,33 +124,90 @@ final class SettingsWindow {
     }
 }
 
-/// The icon in the Dock, which shows while Settings is open: on a dark tile when the Mac is in dark mode.
-/// It goes by the Mac's appearance, not by the theme chosen for the Settings window.
+/// Whether the sidebar is in the window. Read only by small views (the button, the sidebar's availability), so a
+/// change doesn't make SwiftUI go through all of Settings again.
 @MainActor
-enum DockIcon {
-    private static var observer: NSKeyValueObservation?
-    private static var darkIcon: NSImage? {
+final class SettingsSidebar: ObservableObject {
+    /// Where the sidebar button sits: it moves out of the way of the window's buttons as the sidebar goes.
+    @Published var shown = true
+    /// Hidden and parked outside the window: disabled and out of VoiceOver.
+    @Published var outside = false
+}
+
+/// Holds the SwiftUI view in a plain view, so the window can slide it under its left edge (`toggleSidebar`).
+/// The window's limits are its own: SwiftUI's view is not the window's content controller.
+private final class SettingsContainer: NSViewController {
+    let host: NSHostingController<SettingsView>
+
+    init(_ view: SettingsView) {
+        host = NSHostingController(rootView: view)
+        host.sizingOptions = []
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override func loadView() {
+        view = NSView(frame: NSRect(origin: .zero, size: SettingsWindow.smallest))
+        addChild(host)
+        host.view.frame = view.bounds
+        host.view.autoresizingMask = [.width, .height]
+        view.addSubview(host.view)
+    }
+}
+
+/// The app's icon as the Mac's appearance wants it: the bundle's (black tile) with a dark Mac, the inverted one
+/// (AppIconLight) with a light Mac. It goes in the Dock, which shows while Settings is open, and at the top of
+/// Settings and «Informazioni su Rondelle». It goes by the Mac's appearance, not by the theme chosen for Settings.
+@MainActor
+final class DockIcon: ObservableObject {
+    static let shared = DockIcon()
+    @Published private(set) var image: NSImage
+    private var observer: NSKeyValueObservation?
+    private var inDock = false
+
+    private init() {
+        image = Self.current()
+        observer = NSApp.observe(\.effectiveAppearance) { _, _ in
+            DispatchQueue.main.async { MainActor.assumeIsolated { DockIcon.shared.update() } }
+        }
+    }
+
+    private static func load(_ name: String) -> NSImage? {
         #if DEBUG
-        if let root = ProcessInfo.processInfo.environment["RONDELLE_RESOURCES"] {
-            return NSImage(contentsOfFile: "\(root)/AppIconDark.icns")
+        // The development build isn't an app bundle: its icons come from Resources.
+        if Bundle.main.bundleURL.pathExtension != "app", let root = ProcessInfo.processInfo.environment["RONDELLE_RESOURCES"] {
+            return NSImage(contentsOfFile: "\(root)/\(name).icns")
         }
         #endif
-        return Bundle.main.url(forResource: "AppIconDark", withExtension: "icns").flatMap(NSImage.init(contentsOf:))
+        return Bundle.main.url(forResource: name, withExtension: "icns").flatMap(NSImage.init(contentsOf:))
+    }
+
+    private static var dark: Bool { NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua }
+
+    private static func current() -> NSImage {
+        (dark ? load("AppIcon") : load("AppIconLight") ?? load("AppIcon")) ?? NSApp.applicationIconImage
     }
 
     static func follow() {
-        update()
+        shared.inDock = true
+        shared.update()
         // The Dock takes a moment to add the tile: what is set before that doesn't reach it.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { MainActor.assumeIsolated { update() } }
-        guard observer == nil else { return }
-        observer = NSApp.observe(\.effectiveAppearance) { _, _ in
-            DispatchQueue.main.async { MainActor.assumeIsolated { update() } }
-        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { MainActor.assumeIsolated { shared.update() } }
     }
 
-    private static func update() {
-        let dark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        NSApp.applicationIconImage = dark ? darkIcon : nil   // nil: the bundle's own icon
+    private func update() {
+        image = Self.current()
+        if inDock { NSApp.applicationIconImage = Self.dark ? nil : image }   // nil: the bundle's own icon
+    }
+}
+
+/// The app icon in a SwiftUI view, light or dark with the Mac.
+struct AppIconImage: View {
+    @ObservedObject private var icon = DockIcon.shared
+
+    var body: some View {
+        Image(nsImage: icon.image).resizable()
     }
 }
 
@@ -187,7 +281,6 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 struct SettingsView: View {
     @State private var pane: SettingsPane?
     @State private var search = ""
-    @State private var columns = NavigationSplitViewVisibility.all
 
     /// Height of a standard title bar on this macOS version.
     private static let titleBarHeight: CGFloat = {
@@ -203,7 +296,7 @@ struct SettingsView: View {
     private let groups: [[SettingsPane]] = [[.appearance, .behaviour, .wheel, .conversions, .formats], [.privacy, .about], [.support, .help]]
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columns) {
+        NavigationSplitView {
             List(selection: $pane) {
                 Section {
                     AppHeader { pane = .about }
@@ -229,6 +322,7 @@ struct SettingsView: View {
                     pane = first
                 }
             }
+            .modifier(ParkedSidebar())
             .withoutSidebarToggle()
             .navigationSplitViewColumnWidth(min: SettingsWindow.sidebarWidth, ideal: SettingsWindow.sidebarWidth, max: SettingsWindow.sidebarWidth)
         } detail: {
@@ -240,14 +334,7 @@ struct SettingsView: View {
                         ZStack(alignment: .leading) {
                             Rectangle().fill(.bar)
                             // Our own button, at the start of this bar (after the window's buttons once the sidebar is gone).
-                            Button {
-                                withAnimation { columns = columns == .detailOnly ? .all : .detailOnly }
-                            } label: {
-                                Image(systemName: "sidebar.left").font(.system(size: 14, weight: .medium))
-                            }
-                            .buttonStyle(.borderless)
-                            .help(columns == .detailOnly ? L("Mostra la barra laterale") : L("Nascondi la barra laterale"))
-                            .padding(.leading, columns == .detailOnly ? 82 : 14)
+                            SidebarButton()
                         }
                         .frame(height: Self.titleBarHeight)
                         Divider()
@@ -255,22 +342,35 @@ struct SettingsView: View {
                     .ignoresSafeArea(.container, edges: .top)
                 }
         }
-        .onChange(of: columns) { visible in SettingsWindow.shared.sidebarChanged(visible: visible != .detailOnly) }
-        .hidingSidebarForTests { columns = .detailOnly }
-        .frame(minWidth: SettingsWindow.smallest.width - (columns == .detailOnly ? SettingsWindow.sidebarWidth : 0),
-               maxWidth: SettingsWindow.largest.width - (columns == .detailOnly ? SettingsWindow.sidebarWidth : 0),
+        .hidingSidebarForTests { SettingsWindow.shared.toggleSidebar() }
+        .frame(minWidth: SettingsWindow.smallest.width - SettingsWindow.sidebarWidth, maxWidth: SettingsWindow.largest.width,
                minHeight: SettingsWindow.smallest.height, maxHeight: SettingsWindow.largest.height)
     }
 }
 
-/// The app icon. The development build isn't an app bundle (macOS would show a generic folder),
-/// so its renders take the icon from Resources/AppIcon.icns.
-@MainActor var appIcon: NSImage {
-    #if DEBUG
-    if Bundle.main.bundleURL.pathExtension != "app", let root = ProcessInfo.processInfo.environment["RONDELLE_RESOURCES"],
-       let icon = NSImage(contentsOfFile: "\(root)/AppIcon.icns") { return icon }
-    #endif
-    return NSApp.applicationIconImage
+/// The button that hides and shows the sidebar; it alone follows `SettingsSidebar.shown`.
+private struct SidebarButton: View {
+    @ObservedObject private var sidebar = SettingsWindow.shared.sidebar
+
+    var body: some View {
+        Button { SettingsWindow.shared.toggleSidebar() } label: {
+            Image(systemName: "sidebar.left").font(.system(size: 14, weight: .medium))
+        }
+        .buttonStyle(.borderless)
+        .help(sidebar.shown ? L("Nascondi la barra laterale") : L("Mostra la barra laterale"))
+        .padding(.leading, sidebar.shown ? 14 : 82)
+    }
+}
+
+/// The sidebar parked outside the window: not reachable with Tab or VoiceOver.
+private struct ParkedSidebar: ViewModifier {
+    @ObservedObject private var sidebar = SettingsWindow.shared.sidebar
+
+    func body(content: Content) -> some View {
+        content
+            .disabled(sidebar.outside)
+            .accessibilityHidden(sidebar.outside)
+    }
 }
 
 /// Top of the sidebar: the app, its version and whether it is paused; a click opens «Informazioni».
@@ -285,8 +385,7 @@ private struct AppHeader: View {
     var body: some View {
         Button(action: open) {
             HStack(spacing: 10) {
-                Image(nsImage: appIcon)
-                    .resizable()
+                AppIconImage()
                     .frame(width: 38, height: 38)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L("Rondelle")).font(.headline)
@@ -307,10 +406,10 @@ private struct AppHeader: View {
 }
 
 private extension View {
-    /// DEBUG: `--show-window settings-nosidebar` presses the sidebar button.
-    @ViewBuilder func hidingSidebarForTests(_ hide: @escaping () -> Void) -> some View {
+    /// DEBUG: `--show-window settings-nosidebar` and `--test-sidebar-motion` press the sidebar button.
+    @ViewBuilder func hidingSidebarForTests(_ toggle: @escaping () -> Void) -> some View {
         #if DEBUG
-        onReceive(NotificationCenter.default.publisher(for: Notification.Name("RondelleTestHideSidebar"))) { _ in hide() }
+        onReceive(NotificationCenter.default.publisher(for: Notification.Name("RondelleTestHideSidebar"))) { _ in toggle() }
         #else
         self
         #endif
@@ -1123,8 +1222,7 @@ private struct AboutPane: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Image(nsImage: appIcon)
-                .resizable()
+            AppIconImage()
                 .frame(width: 112, height: 112)
             Text(L("Rondelle")).font(.largeTitle.bold())
             Text(L("Versione %@", version)).foregroundStyle(.secondary)

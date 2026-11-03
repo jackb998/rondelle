@@ -84,6 +84,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let check = menu.addItem(withTitle: L("Cerca aggiornamenti…"), action: #selector(checkUpdates), keyEquivalent: "")
         check.target = self
         check.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
+        let about = menu.addItem(withTitle: L("Informazioni su Rondelle"), action: #selector(showAbout), keyEquivalent: "")
+        about.target = self
+        about.image = NSImage(systemSymbolName: "info.circle", accessibilityDescription: nil)
         menu.addItem(.separator())
         menu.addItem(withTitle: L("Esci da Rondelle"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
@@ -209,6 +212,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func togglePause() {
         Settings.paused.toggle()
         statusItem.button?.appearsDisabled = Settings.paused
+    }
+
+    @objc private func showAbout() {
+        AboutWindow.show()
     }
 
     @objc private func showHelp() {

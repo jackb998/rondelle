@@ -66,12 +66,14 @@ final class SizePreview {
 // MARK: Completion animation
 
 enum CompletionStyle: String, CaseIterable, Identifiable {
-    case none, ring
+    case none, ring, circle
     var id: String { rawValue }
-    var label: String { ["none": L("Nessuna"), "ring": L("Anello che si apre")][rawValue]! }
+    var label: String { ["none": L("Nessuna"), "ring": L("Anello che si apre"), "circle": L("Cerchio che si completa")][rawValue]! }
 }
 
-/// The app's symbol where the job was started: a closed ring opens and its dot leaves through the gap, then it fades away.
+/// The app's symbol where the job was started, then it fades away. «Anello che si apre»: a closed ring opens and its dot
+/// leaves through the gap. «Cerchio che si completa»: the ring draws itself like a progress bar reaching the end, the dot
+/// jumps into place and a green wave goes out.
 @MainActor
 enum CompletionAnimation {
     private static var panels: [NSPanel] = []
@@ -100,8 +102,8 @@ enum CompletionAnimation {
         let root = view.layer!
         let center = CGPoint(x: side / 2, y: side / 2)
         // "Reduce motion" in Accessibility: the open symbol and the check mark, nothing moves.
-        let duration = playRing(on: root, center: center,
-                                moving: !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+        let duration = draw(style, on: root, center: center,
+                            moving: !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, start: CACurrentMediaTime())
 
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
             NSAnimationContext.runAnimationGroup({ $0.duration = 0.3; panel.animator().alphaValue = 0 }) {
@@ -113,10 +115,19 @@ enum CompletionAnimation {
         }
     }
 
+    /// Adds the animation's layers to `root`, timed from `start` (the layers' clock); returns how long it lasts.
+    static func draw(_ style: CompletionStyle, on root: CALayer, center: CGPoint, moving: Bool, start: CFTimeInterval) -> CFTimeInterval {
+        switch style {
+        case .none: 0
+        case .ring: playRing(on: root, center: center, moving: moving, start: start)
+        case .circle: playCircle(on: root, center: center, moving: moving, start: start)
+        }
+    }
+
     // MARK: Ring
 
     /// Geometry of the symbol (brand/symbol), at 0.95 of its grid: ring from radius 19 to 38, a gap of 60° centred on 45°.
-    private static func playRing(on root: CALayer, center: CGPoint, moving: Bool) -> CFTimeInterval {
+    private static func playRing(on root: CALayer, center: CGPoint, moving: Bool, start: CFTimeInterval) -> CFTimeInterval {
         let disc = CAShapeLayer()
         disc.path = CGPath(ellipseIn: CGRect(x: center.x - 54, y: center.y - 54, width: 108, height: 108), transform: nil)
         disc.fillColor = black
@@ -141,13 +152,13 @@ enum CompletionAnimation {
         root.addSublayer(dot)
 
         guard moving else {
-            addCheck(to: root, center: center, delay: 0)
+            addCheck(to: root, center: center, delay: 0, start: start)
             return 1.0
         }
         let opening = CABasicAnimation(keyPath: "strokeEnd")
         opening.fromValue = 1
         opening.toValue = open
-        opening.beginTime = CACurrentMediaTime() + 0.1
+        opening.beginTime = start + 0.1
         opening.duration = 0.35
         opening.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         opening.fillMode = .backwards
@@ -161,7 +172,7 @@ enum CompletionAnimation {
         growing.toValue = 1
         let group = CAAnimationGroup()
         group.animations = [leaving, growing]
-        group.beginTime = CACurrentMediaTime() + 0.3
+        group.beginTime = start + 0.3
         group.duration = 0.4
         group.timingFunction = CAMediaTimingFunction(name: .easeOut)
         group.fillMode = .backwards
@@ -170,17 +181,106 @@ enum CompletionAnimation {
         let hidden = CABasicAnimation(keyPath: "opacity")
         hidden.fromValue = 0
         hidden.toValue = 0
+        hidden.beginTime = start
         hidden.duration = 0.3
         dot.add(hidden, forKey: "wait")
 
-        addCheck(to: root, center: center, delay: 0.7)
+        addCheck(to: root, center: center, delay: 0.7, start: start)
         return 1.4
+    }
+
+    // MARK: Circle
+
+    /// The same symbol; the ring is drawn from the top of the gap all the way round, as a progress bar that finishes.
+    /// Shapes change through their paths, not by scaling: so `--animation-frames` draws them as they move.
+    private static func playCircle(on root: CALayer, center: CGPoint, moving: Bool, start: CFTimeInterval) -> CFTimeInterval {
+        let circle = { (r: CGFloat, c: CGPoint) in CGPath(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2), transform: nil) }
+        let disc = CAShapeLayer()
+        disc.path = circle(54, center)
+        disc.fillColor = black
+        root.addSublayer(disc)
+
+        let wave = CAShapeLayer()
+        wave.path = circle(54, center)
+        wave.fillColor = nil
+        wave.strokeColor = green
+        wave.lineWidth = 3
+        wave.opacity = 0
+        root.insertSublayer(wave, below: disc)
+
+        let ring = CAShapeLayer()
+        let path = CGMutablePath()
+        path.addArc(center: center, radius: 28.5, startAngle: .pi * 75 / 180, endAngle: .pi * 375 / 180, clockwise: false)
+        ring.path = path
+        ring.fillColor = nil
+        ring.strokeColor = paper
+        ring.lineWidth = 19
+        root.addSublayer(ring)
+
+        let diagonal = cos(CGFloat.pi / 4)
+        let spot = CGPoint(x: center.x + 38 * diagonal, y: center.y + 38 * diagonal)
+        let dot = CAShapeLayer()
+        dot.path = circle(9.5, spot)
+        dot.fillColor = green
+        root.addSublayer(dot)
+
+        guard moving else {
+            addCheck(to: root, center: center, delay: 0, start: start)
+            return 1.0
+        }
+        let grow = CABasicAnimation(keyPath: "path")
+        grow.fromValue = circle(46, center)
+        grow.toValue = circle(54, center)
+        let fadeIn = CABasicAnimation(keyPath: "opacity")
+        fadeIn.fromValue = 0
+        fadeIn.toValue = 1
+        let appear = CAAnimationGroup()
+        appear.animations = [grow, fadeIn]
+        appear.beginTime = start
+        appear.duration = 0.2
+        appear.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        appear.fillMode = .backwards
+        disc.add(appear, forKey: "appear")
+
+        let drawing = CABasicAnimation(keyPath: "strokeEnd")
+        drawing.fromValue = 0
+        drawing.toValue = 1
+        drawing.beginTime = start + 0.1
+        drawing.duration = 0.5
+        drawing.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        drawing.fillMode = .backwards
+        ring.add(drawing, forKey: "draw")
+
+        // The dot jumps into place just as the ring reaches the gap.
+        let jump = CAKeyframeAnimation(keyPath: "path")
+        jump.values = [0.01, 13, 8.5, 9.5].map { circle($0, spot) }
+        jump.keyTimes = [0, 0.5, 0.8, 1]
+        jump.beginTime = start + 0.55
+        jump.duration = 0.35
+        jump.fillMode = .backwards
+        dot.add(jump, forKey: "jump")
+
+        let out = CABasicAnimation(keyPath: "path")
+        out.fromValue = circle(54, center)
+        out.toValue = circle(84, center)
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = 0.9
+        fade.toValue = 0
+        let waveGroup = CAAnimationGroup()
+        waveGroup.animations = [out, fade]
+        waveGroup.beginTime = start + 0.6
+        waveGroup.duration = 0.6
+        waveGroup.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        wave.add(waveGroup, forKey: "wave")
+
+        addCheck(to: root, center: center, delay: 0.8, start: start)
+        return 1.5
     }
 
     // MARK: Pieces
 
     /// A white check mark that draws itself on a green badge.
-    private static func addCheck(to root: CALayer, center: CGPoint, delay: CFTimeInterval) {
+    private static func addCheck(to root: CALayer, center: CGPoint, delay: CFTimeInterval, start: CFTimeInterval) {
         let badge = CAShapeLayer()
         let r: CGFloat = 15
         badge.bounds = CGRect(x: 0, y: 0, width: r * 2, height: r * 2)
@@ -213,7 +313,7 @@ enum CompletionAnimation {
         show.toValue = 1
         let group = CAAnimationGroup()
         group.animations = [appear, show]
-        group.beginTime = CACurrentMediaTime() + delay
+        group.beginTime = start + delay
         group.duration = 0.3
         group.fillMode = .forwards
         group.isRemovedOnCompletion = false
@@ -222,7 +322,7 @@ enum CompletionAnimation {
         let draw = CABasicAnimation(keyPath: "strokeEnd")
         draw.fromValue = 0
         draw.toValue = 1
-        draw.beginTime = CACurrentMediaTime() + delay + 0.2
+        draw.beginTime = start + delay + 0.2
         draw.duration = 0.3
         draw.fillMode = .forwards
         draw.isRemovedOnCompletion = false
