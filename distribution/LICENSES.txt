@@ -1,0 +1,16 @@
+Rondelle © 2026 jackb998. MIT licence, text in «LICENSE-Rondelle.txt». Source code on GitHub.
+
+Rondelle contains two open-source libraries, compiled into the app:
+
+1. libwebp 1.6.0 (WebP encoding) — BSD licence, text in «libwebp-COPYING.txt» and «libwebp-PATENTS.txt».
+   https://chromium.googlesource.com/webm/libwebp
+
+2. LAME 4.0, libmp3lame (MP3 encoding) — GNU Lesser General Public License 2, text in «LAME-COPYING.txt».
+   https://lame.sourceforge.io
+   - The source code of LAME, exactly as compiled into Rondelle, is in the «LAME-source» folder
+     (with «PROVENANCE.md»: origin, SHA-256 of the official package, hand-written files).
+   - LAME has not been modified.
+   - To relink Rondelle against a modified version of LAME, as the LGPL provides, the «LAME-relink» folder
+     contains the rest of the app as object files (Apple silicon and Intel) and the script «relink.sh»:
+     ./relink.sh <LAME source folder> <copy of Rondelle.app>
+     (needs Xcode or the Command Line Tools). The script is tested on every release against the source included here.
