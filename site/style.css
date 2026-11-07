@@ -5,10 +5,10 @@
 *{box-sizing:border-box;margin:0}
 body{background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,"SF Pro Text",Helvetica,sans-serif}
 a{color:inherit}
-nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:20px 48px;font-size:14px}
+nav{display:flex;align-items:center;gap:16px;padding:14px 48px;font-size:14px;position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid transparent}
 nav b{display:flex;gap:10px;align-items:center;font-size:17px}
-nav span{display:flex;flex-wrap:wrap;gap:6px 24px}
-nav span a{color:var(--mut);text-decoration:none}
+.menu{display:flex;gap:6px 24px;margin-left:auto}
+.menu a{color:var(--mut);text-decoration:none}
 .hero{text-align:center;padding:56px 24px 40px}
 .hero h1{font-size:64px;letter-spacing:-2px;margin:18px 0 6px}
 .hero p{font-size:20px;color:var(--mut);max-width:620px;margin:0 auto}
@@ -79,8 +79,7 @@ ul.rules{color:var(--mut);padding-left:20px;font-size:16px}ul.rules li{margin-bo
 .wheel .s{cursor:pointer;outline:none;transition:transform .15s;transform-origin:0 0}
 .wheel .s.on{transform:scale(1.07)}
 .wheel .s.on path{fill:var(--acc)}.wheel .s.on text{fill:#111214;font-weight:600}
-nav .lang a.cur{color:var(--fg);font-weight:600}
-nav .lang{display:flex;gap:10px}
+
 .tabs span{user-select:none}
 .play{max-width:940px;margin:0 auto 30px;padding:0 16px;display:grid;grid-template-columns:210px 1fr;gap:32px;align-items:center}
 .arena{min-width:0}
@@ -144,11 +143,33 @@ nav .lang{display:flex;gap:10px}
 html{-webkit-text-size-adjust:100%}
 @media (hover:none){.kbhint{display:none}}
 @media (max-width:760px){
- nav{gap:0 16px;padding:8px 12px}
- nav b{padding:6px 8px}
- nav span{gap:0}
- nav span a{padding:10px 8px}
- nav .lang{gap:0}
  .small a{display:inline-block;padding:10px 6px}
  .pick button,.modes button,.tabs span,.kinds label{min-height:40px}
 }
+
+/* top bar: burger, language list, sticky */
+.burger{display:none;width:44px;height:44px;margin-left:-10px;align-items:center;justify-content:center;background:none;border:0;border-radius:10px;color:var(--fg);cursor:pointer}
+.burger:focus-visible,.langsel select:focus-visible,.appbox summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.langsel select{font:inherit;font-size:14px;color:var(--fg);background-color:var(--card);border:1px solid var(--line);border-radius:10px;min-height:40px;padding:0 30px 0 12px;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%239a9ea8' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+/* the app section: a card apart from the page, closed or open */
+.appbox{max-width:1040px;margin:70px auto 0;background:var(--card);border:1px solid var(--line);border-radius:28px;padding:0 24px 34px}
+.appbox:not([open]){padding-bottom:0}
+.appbox summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:30px 24px 22px;border-radius:28px}
+.appbox summary::-webkit-details-marker{display:none}
+.appbox .apptag{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--acc);margin-bottom:6px}
+.appbox summary h2{margin:0;padding:0}
+.appbox .chev{width:11px;height:11px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:rotate(45deg);margin-top:14px;transition:transform .2s}
+.appbox[open] .chev{transform:rotate(-135deg);margin-top:20px}
+@media (max-width:760px){
+ nav{padding:6px 12px;gap:8px;flex-wrap:nowrap;border-bottom-color:var(--line)}
+ .burger{display:inline-flex}
+ .langsel{margin-left:auto}
+ .menu{display:none;position:absolute;left:0;right:0;top:100%;margin:0;flex-direction:column;gap:0;background:var(--bg);border-bottom:1px solid var(--line);padding:0 12px 8px}
+ nav.open .menu{display:flex}
+ .menu a{padding:15px 8px;font-size:17px;border-top:1px solid var(--line)}
+ .menu a:first-child{border-top:0}
+ .appbox{margin:44px 12px 0;padding:0 12px 24px;border-radius:22px}
+}
+
+html{scroll-padding-top:76px}
+.appbox{margin-bottom:50px}

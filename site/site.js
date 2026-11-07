@@ -210,21 +210,21 @@ en:{m_conv:"Convert (⇧)", m_tools:"Tools (⌥⇧)", m_share:"Share (⌃⇧)", 
  play_hint:"This is a simulation: it shows the wheel, no file is converted or uploaded. Drop on a slice to try it, in the centre to cancel.", kb_hint:"With the keyboard: Tab to the file, Enter to open the wheel, arrow keys to choose, Enter to apply, Esc to cancel.", kb_open:"Press Enter to open the wheel", done:"In the app this creates, next to the original:", sent:"In the app this shares via", mac:"Your files",
  sc_h:"The real wheel", sc_l:"Screenshots of the app. The wheel changes with the file you drag.", sc1:"Convert · a photo", sc2:"Tools · the same photo", sc3:"Convert · a PDF",
  sa1:"Rondelle’s Convert wheel for a photo", sa2:"Rondelle’s Tools wheel for the same photo", sa3:"Rondelle’s Convert wheel for a PDF",
- cl_all:"All releases on GitHub", cl_note:"Release notes are written in English."},
+ cl_all:"All releases on GitHub", lang_l:"Language", sc_tag:"The app", cl_note:"Release notes are written in English."},
 it:{m_conv:"Converti (⇧)", m_tools:"Strumenti (⌥⇧)", m_share:"Condividi (⌃⇧)", wn_conv:"Converti", wn_tools:"Strumenti", wn_share:"Condividi",
  play_h:"Provala qui", sel_h:"Scegli il tipo di file", empty:"Scegli un tipo di file a sinistra per avere un file con cui giocare.",
  play_l:"Scegli un tipo di file, poi trascinalo sulla ruota. Scegli la ruota con i pulsanti, oppure tieni premuto ⇧, ⌥⇧ o ⌃⇧ mentre trascini, come nell’app.",
  play_hint:"È una simulazione: mostra la ruota, nessun file viene convertito o caricato. Rilascia su uno spicchio per provarlo, al centro per annullare.", kb_hint:"Con la tastiera: Tab per arrivare al file, Invio per aprire la ruota, frecce per scegliere, Invio per applicare, Esc per annullare.", kb_open:"Premi Invio per aprire la ruota", done:"Nell’app crea, accanto all’originale:", sent:"Nell’app condivide con", mac:"I tuoi file",
  sc_h:"La ruota vera", sc_l:"Schermate dell’app. La ruota cambia con il file che trascini.", sc1:"Converti · una foto", sc2:"Strumenti · la stessa foto", sc3:"Converti · un PDF",
  sa1:"La ruota Converti di Rondelle per una foto", sa2:"La ruota Strumenti di Rondelle per la stessa foto", sa3:"La ruota Converti di Rondelle per un PDF",
- cl_all:"Tutte le versioni su GitHub", cl_note:"Le note di rilascio sono scritte in inglese."},
+ cl_all:"Tutte le versioni su GitHub", lang_l:"Lingua", sc_tag:"L’app", cl_note:"Le note di rilascio sono scritte in inglese."},
 fr:{m_conv:"Convertir (⇧)", m_tools:"Outils (⌥⇧)", m_share:"Partager (⌃⇧)", wn_conv:"Convertir", wn_tools:"Outils", wn_share:"Partager",
  play_h:"Essayez ici", sel_h:"Choisissez le type de fichier", empty:"Choisissez un type de fichier à gauche pour avoir un fichier à essayer.",
  play_l:"Choisissez un type de fichier, puis faites-le glisser sur la roue. Choisissez la roue avec les boutons, ou maintenez ⇧, ⌥⇧ ou ⌃⇧ pendant le glissement, comme dans l’app.",
  play_hint:"C’est une simulation : elle montre la roue, aucun fichier n’est converti ni envoyé. Relâchez sur une part pour essayer, au centre pour annuler.", kb_hint:"Au clavier : Tab jusqu’au fichier, Entrée pour ouvrir la roue, flèches pour choisir, Entrée pour appliquer, Échap pour annuler.", kb_open:"Appuyez sur Entrée pour ouvrir la roue", done:"Dans l’app, crée à côté de l’original :", sent:"Dans l’app, partage via", mac:"Vos fichiers",
  sc_h:"La vraie roue", sc_l:"Captures de l’app. La roue change selon le fichier que vous faites glisser.", sc1:"Convertir · une photo", sc2:"Outils · la même photo", sc3:"Convertir · un PDF",
  sa1:"La roue Convertir de Rondelle pour une photo", sa2:"La roue Outils de Rondelle pour la même photo", sa3:"La roue Convertir de Rondelle pour un PDF",
- cl_all:"Toutes les versions sur GitHub", cl_note:"Les notes de version sont rédigées en anglais."}};
+ cl_all:"Toutes les versions sur GitHub", lang_l:"Langue", sc_tag:"L’app", cl_note:"Les notes de version sont rédigées en anglais."}};
 const LAB = {compress:["Compress","Comprimi","Compresser"],half:["50%","50%","50 %"],rotate:["Rotate","Ruota","Pivoter"],mirror:["Mirror","Specchia","Miroir"],ocr:["OCR","OCR","OCR"],edit:["Edit","Modifica","Modifier"],
  merge:["Merge","Unisci","Fusionner"],split:["Split","Dividi","Diviser"],password:["Password","Password","Mot de passe"],watermark:["Watermark","Filigrana","Filigrane"],
  trim:["Trim","Taglia","Couper"],p1080:["1080p","1080p","1080p"],p720:["720p","720p","720p"],speed2:["2× speed","Velocità 2×","Vitesse 2×"],mute:["Mute","Muto","Muet"],audioonly:["Audio only","Solo audio","Audio seul"],
@@ -284,6 +284,7 @@ function render() {
     document.getElementById("f-t").textContent = t("t_" + tab);
   }
   document.querySelectorAll("img[data-shot]").forEach(i => { const u = "shots/" + i.dataset.shot + "." + lang + ".png"; if (i.getAttribute("src") !== u) { i.closest("figure").hidden = false; i.src = u; } i.alt = t(i.dataset.alt); });
+  const ls = document.getElementById("lang"); if (ls) ls.value = lang;
   if (typeof playRefresh === "function") playRefresh();
 }
 document.addEventListener("click", e => {
@@ -404,6 +405,19 @@ if(cf){
  });
 }
 render();
+/* top bar: menu button on phones, language list on every screen, collapsible app section */
+const navEl=document.querySelector("nav"), burger=document.getElementById("burger"), langSel=document.getElementById("lang"), appBox=document.getElementById("app");
+if(langSel) langSel.addEventListener("change",()=>{ lang=langSel.value; history.replaceState(null,"",lang==="en"?location.pathname+location.hash:"?lang="+lang+location.hash); render(); });
+if(burger){
+  const setOpen=o=>{ navEl.classList.toggle("open",o); burger.setAttribute("aria-expanded",String(o)); };
+  burger.addEventListener("click",e=>{ e.stopPropagation(); setOpen(!navEl.classList.contains("open")); });
+  document.addEventListener("click",e=>{ if(!navEl.contains(e.target)||e.target.closest(".menu a")) setOpen(false); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&navEl.classList.contains("open")){ setOpen(false); burger.focus(); } });
+}
+if(appBox){
+  if(matchMedia("(max-width:760px)").matches&&location.hash!=="#app") appBox.open=false;
+  addEventListener("hashchange",()=>{ if(location.hash==="#app") appBox.open=true; });
+}
 if(q.get("demo")) document.querySelector('#pick button[data-k="'+q.get("demo")+'"]')?.click();
 /* versions: the list on the press page comes from GitHub Releases (bullet lines only), never typed by hand */
 const cl = document.getElementById("cl");

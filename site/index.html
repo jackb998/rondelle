@@ -5,11 +5,10 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta property="og:type" content="website"><meta property="og:title" content="Rondelle"><meta property="og:description" content="File tools, thoughtfully arranged."><meta property="og:image" content="https://jackb998.github.io/rondelle/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#111214" media="(prefers-color-scheme: dark)"><meta name="theme-color" content="#F5F2EA" media="(prefers-color-scheme: light)">
-<link rel="stylesheet" href="style.css?v=4"></head>
+<link rel="stylesheet" href="style.css?v=7"></head>
 <body>
 <script>if(location.hash=="#dark")document.documentElement.className="dark";if(location.hash=="#light")document.documentElement.className="light"</script>
-<nav><b><svg width="28" viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="M60.353 11.363A40 40 0 1 0 88.637 39.647L69.319 44.824A20 20 0 1 1 55.176 30.681Z"/><circle cx="78.284" cy="21.716" r="10" fill="var(--acc)"/></svg>Rondelle</b>
-<span><a href="#come" data-i="n_how"></a><a href="#formati" data-i="n_fmt"></a><a href="#privacy" data-i="n_priv"></a><a href="press.html" data-keep="press.html" data-i="n_press"></a><a href="https://buymeacoffee.com/jackb998" target="_blank" rel="noopener noreferrer" data-i="n_sup"></a><span class="lang"><a href="#" data-lang="en">EN</a><a href="#" data-lang="it">IT</a><a href="#" data-lang="fr">FR</a></span></span></nav>
+<nav><button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="menu"><span class="sr">Menu</span><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button><b><svg width="28" viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="M60.353 11.363A40 40 0 1 0 88.637 39.647L69.319 44.824A20 20 0 1 1 55.176 30.681Z"/><circle cx="78.284" cy="21.716" r="10" fill="var(--acc)"/></svg>Rondelle</b><div class="menu" id="menu"><a href="#come" data-i="n_how"></a><a href="#formati" data-i="n_fmt"></a><a href="#privacy" data-i="n_priv"></a><a href="press.html" data-keep="press.html" data-i="n_press"></a><a href="https://buymeacoffee.com/jackb998" target="_blank" rel="noopener noreferrer" data-i="n_sup"></a></div><div class="langsel"><label class="sr" for="lang" data-i="lang_l"></label><select id="lang"><option value="en">English</option><option value="it">Italiano</option><option value="fr">Français</option></select></div></nav>
 <section class="hero">
 <svg width="110" viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="M60.353 11.363A40 40 0 1 0 88.637 39.647L69.319 44.824A20 20 0 1 1 55.176 30.681Z"/><circle cx="78.284" cy="21.716" r="10" fill="var(--acc)"/></svg>
 <h1>Rondelle</h1>
@@ -42,9 +41,10 @@
 <div><kbd>⌃ ⇧</kbd><b data-i="ge3h"></b><span data-i="ge3"></span></div>
 </section>
 
-<h2 id="app" data-i="sc_h"></h2>
+<details class="appbox" id="app" open><summary><span class="apptag" data-i="sc_tag"></span><h2 data-i="sc_h"></h2><span class="chev" aria-hidden="true"></span></summary>
 <p class="lead" data-i="sc_l"></p>
 <section class="shots"><figure><img data-shot="wheel-convert-photo" data-alt="sa1" src="shots/wheel-convert-photo.en.png" width="600" height="600" loading="lazy" alt="" onerror="this.closest('figure').hidden=true"><figcaption data-i="sc1"></figcaption></figure><figure><img data-shot="wheel-tools-photo" data-alt="sa2" src="shots/wheel-tools-photo.en.png" width="600" height="600" loading="lazy" alt="" onerror="this.closest('figure').hidden=true"><figcaption data-i="sc2"></figcaption></figure><figure><img data-shot="wheel-convert-pdf" data-alt="sa3" src="shots/wheel-convert-pdf.en.png" width="600" height="600" loading="lazy" alt="" onerror="this.closest('figure').hidden=true"><figcaption data-i="sc3"></figcaption></figure></section>
+</details>
 
 <h2 id="formati" data-i="fm_h"></h2>
 <div class="tabs" id="tabs" style="margin-top:28px"><span data-tab="img" data-i="tab_img"></span><span data-tab="pdf" data-i="tab_pdf"></span><span data-tab="vid" data-i="tab_vid"></span><span data-tab="aud" data-i="tab_aud"></span><span data-tab="doc" data-i="tab_doc"></span><span data-tab="xls" data-i="tab_xls"></span><span data-tab="sub" data-i="tab_sub"></span><span data-tab="arc" data-i="tab_arc"></span></div>
@@ -76,5 +76,5 @@
 <div><h4 data-i="f3h"></h4><span data-i="f3"></span><br><span data-i="f3l"></span></div>
 </section>
 <footer data-i="foot"></footer>
-<script src="site.js?v=2"></script>
+<script src="site.js?v=5"></script>
 </body></html>
