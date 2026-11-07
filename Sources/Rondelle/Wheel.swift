@@ -466,10 +466,10 @@ final class WheelView: NSView {
         guard !blank else { return }
 
         if let g = openGroup, let c = highlightedChild, let members = members(of: g) {
-            drawHub(title: members[c].title, hint: FileHints.line(for: members[c].key), palette: palette)
+            drawHub(title: members[c].title, hint: FileHints.line(for: members[c]), palette: palette)
         } else if let i = highlighted, actions.indices.contains(i) {
             // Hovering: the hub spells out the full name; a label too long for its piece is redrawn on top, unclipped.
-            drawHub(title: actions[i].title, hint: FileHints.line(for: actions[i].key), palette: palette)
+            drawHub(title: actions[i].title, hint: FileHints.line(for: actions[i]), palette: palette)
             if !labelFits(actions[i]) {
                 let d = direction(CGFloat(i) * segment), r = labelRadius + lift * (animates ? lifts[i] ?? 0 : 1)
                 drawPill(for: actions[i], at: NSPoint(x: center.x + d.x * r, y: center.y + d.y * r), accent: palette.accent)
@@ -585,10 +585,10 @@ final class WheelView: NSView {
     private func drawHub(title: String, hint: String?, palette: WheelPalette) {
         let titleFont = NSFont.systemFont(ofSize: 11 * unit, weight: .bold), hintFont = NSFont.systemFont(ofSize: 8.5 * unit)
         let titleWidth = (inner - 10) * 2, hintWidth = (inner - 14) * 2
-        let titleHeight = wrappedHeight(title, font: titleFont, width: titleWidth)
+        let titleHeight = Self.wrappedHeight(title, font: titleFont, width: titleWidth)
         let gap = 3 * unit
-        guard let hint, case let hintHeight = wrappedHeight(hint, font: hintFont, width: hintWidth),
-              titleHeight + gap + hintHeight <= (inner - 12) * 2 else {
+        guard let hint, Self.hubFits(title: title, hint: hint, inner: inner, unit: unit),
+              case let hintHeight = Self.wrappedHeight(hint, font: hintFont, width: hintWidth) else {
             drawWrapped(title, font: titleFont, color: palette.text, width: titleWidth)
             return
         }
@@ -597,7 +597,16 @@ final class WheelView: NSView {
         drawWrapped(hint, font: hintFont, color: palette.secondaryText, width: hintWidth, y: top - titleHeight - gap - hintHeight / 2, weight: .regular)
     }
 
-    private func wrappedHeight(_ text: String, font: NSFont, width: CGFloat) -> CGFloat {
+    /// Whether the hint fits under the title in the hub. Fonts and widths scale with the wheel, so the answer is the
+    /// same at every size; the pizza shape has the smaller hub.
+    static func hubFits(title: String, hint: String, inner: CGFloat, unit: CGFloat) -> Bool {
+        let titleFont = NSFont.systemFont(ofSize: 11 * unit, weight: .bold), hintFont = NSFont.systemFont(ofSize: 8.5 * unit)
+        let titleHeight = wrappedHeight(title, font: titleFont, width: (inner - 10) * 2)
+        let hintHeight = wrappedHeight(hint, font: hintFont, width: (inner - 14) * 2)
+        return titleHeight + 3 * unit + hintHeight <= (inner - 12) * 2
+    }
+
+    private static func wrappedHeight(_ text: String, font: NSFont, width: CGFloat) -> CGFloat {
         NSAttributedString(string: text, attributes: [.font: font])
             .boundingRect(with: NSSize(width: width, height: 200), options: [.usesLineFragmentOrigin]).height
     }
@@ -900,7 +909,9 @@ final class WheelController {
         panel.backgroundColor = .clear
         panel.hasShadow = true
         panel.level = .popUpMenu
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
+        // .auxiliary: Stage Manager leaves the wheel out of Rondelle's stage, so opening or switching it never brings
+        // back the stage's other windows (Settings, even minimised to the Dock).
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .auxiliary]
         view.autoresizingMask = [.width, .height]
         container.addSubview(view)
         panel.contentView = container
@@ -909,7 +920,7 @@ final class WheelController {
         cardPanel.backgroundColor = .clear
         cardPanel.ignoresMouseEvents = true
         cardPanel.level = .popUpMenu
-        cardPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
+        cardPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient, .auxiliary]
         let cardBackground = NSVisualEffectView(frame: cardPanel.contentRect(forFrameRect: cardPanel.frame))
         cardBackground.material = .hudWindow
         cardBackground.state = .active
@@ -927,9 +938,34 @@ final class WheelController {
             // Click mode: clicking anywhere else closes the wheel.
             MainActor.assumeIsolated { if self?.view.clickURLs != nil { self?.hide() } }
         }
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.giveBackFocus() }
+        }
+    }
+
+    /// Opened by a drag while another app was in front: that app, and the windows that were in the Dock.
+    private var dragOwner: NSRunningApplication?
+    private var minimised: [NSWindow] = []
+    #if DEBUG
+    var debugGaveBack = 0
+    #endif
+
+    /// macOS activates the app under a drag after a few seconds; with Stage Manager that brought back Rondelle's
+    /// stage, Settings included. While a drag's wheel is open, the app in front stays in front.
+    private func giveBackFocus() {
+        guard panel.isVisible, view.clickURLs == nil, let owner = dragOwner, !owner.isTerminated else { return }
+        owner.activate(options: [])
+        for window in minimised where !window.isMiniaturized { window.miniaturize(nil) }
+        #if DEBUG
+        debugGaveBack += 1
+        #endif
     }
 
     var isVisible: Bool { panel.isVisible }
+    #if DEBUG
+    /// The wheel and the line under it, as Stage Manager sees them (--test-wheel-behind).
+    var debugBehaviors: [NSWindow.CollectionBehavior] { [panel.collectionBehavior, cardPanel.collectionBehavior] }
+    #endif
 
     /// - Parameter clickMode: true when opened from the Finder menu: used with clicks instead of a drop.
     func show(urls: [URL], mode: WheelMode, clickMode: Bool = false) {
@@ -943,6 +979,8 @@ final class WheelController {
         view.actions = ActionCatalog.actions(for: urls, mode: mode)
         lastURLs = urls
         view.clickURLs = clickMode ? urls : nil
+        dragOwner = clickMode || NSApp.isActive ? nil : NSWorkspace.shared.frontmostApplication
+        minimised = dragOwner == nil ? [] : NSApp.windows.filter(\.isMiniaturized)
         panel.allowsKey = clickMode
         if Settings.animate { view.playOpening() }   // before place(): the first frame drawn is the empty wheel
         place()
@@ -1012,6 +1050,8 @@ final class WheelController {
     }
 
     func hide() {
+        dragOwner = nil
+        minimised = []
         cardTask?.cancel()
         cardPanel.orderOut(nil)
         view.clickURLs = nil

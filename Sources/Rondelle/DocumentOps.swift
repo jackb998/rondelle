@@ -27,7 +27,7 @@ enum DocumentOps {
             let work = ArchiveOps.protectedZipWork.appendingPathComponent(UUID().uuidString, isDirectory: true)
             try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true)
             defer { try? FileManager.default.removeItem(at: work) }
-            if let prepared = PackedImages.prepare(url, in: work) {
+            if let prepared = PackedImages.prepare(url, in: work, floating: target == .pdf) {
                 let text = try PackedImages.finish(try await imported(prepared.copy), prepared, from: url)
                 return [try writeNow(text, from: url, to: target, layout: prepared.layout)]
             }
@@ -217,10 +217,26 @@ enum DocumentOps {
                 ctx.saveGState()
                 ctx.translateBy(x: 0, y: paper.height)
                 ctx.scaleBy(x: 1, y: -1)   // TextKit draws top-down
+                // Pictures anchored on this page (PackedImages.floating): those behind the text first, the others last.
+                var floating: [(PackedImages.Floating, CGRect)] = []
+                text.enumerateAttribute(PackedImages.floating, in: layout.characterRange(forGlyphRange: page.glyphs, actualGlyphRange: nil)) { value, range, _ in
+                    guard let picture = value as? PackedImages.Floating else { return }
+                    let line = layout.lineFragmentRect(forGlyphAt: layout.glyphIndexForCharacter(at: range.location), effectiveRange: nil)
+                    floating.append((picture, picture.frame(on: format, line: line.minY - page.top + format.top)))
+                }
+                func draw(behind: Bool) {
+                    for (picture, frame) in floating where picture.behind == behind {
+                        picture.image.draw(in: frame, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+                    }
+                }
+                draw(behind: true)
+                ctx.saveGState()
                 ctx.clip(to: CGRect(x: format.left, y: format.top, width: body.width, height: body.height))
                 let origin = CGPoint(x: format.left, y: format.top - page.top)
                 layout.drawBackground(forGlyphRange: page.glyphs, at: origin)
                 layout.drawGlyphs(forGlyphRange: page.glyphs, at: origin)
+                ctx.restoreGState()
+                draw(behind: false)
                 ctx.restoreGState()
                 NSGraphicsContext.restoreGraphicsState()
                 ctx.endPDFPage()

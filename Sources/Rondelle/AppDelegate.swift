@@ -51,7 +51,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func setUpStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.image = Self.menuBarIcon()
-        statusItem.button?.toolTip = L("Rondelle")
+        // No toolTip: macOS can leave a status item's tooltip on screen after the menu opens or the app
+        // loses focus. VoiceOver reads the accessibility label instead.
+        statusItem.button?.setAccessibilityLabel(L("Rondelle"))
 
         let menu = NSMenu()
         menu.delegate = self
@@ -98,7 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateItem.isHidden = name == nil
         updateItem.title = name.map { L("Scarica la versione %@…", $0) } ?? ""
         statusItem.button?.image = Self.menuBarIcon(updateDot: name != nil)
-        statusItem.button?.toolTip = name.map { L("È disponibile Rondelle %@", $0) } ?? L("Rondelle")
+        statusItem.button?.setAccessibilityLabel(name.map { L("È disponibile Rondelle %@", $0) } ?? L("Rondelle"))
     }
 
     @objc private func checkUpdates() { Updates.checkAndTell() }

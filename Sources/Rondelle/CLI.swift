@@ -4,6 +4,7 @@
 import AppIntents
 import AppKit
 import AVFoundation
+import PDFKit
 import SwiftUI
 
 @MainActor
@@ -160,18 +161,25 @@ enum CLI {
             return TutorialGIF.write(to: URL(fileURLWithPath: path))
 
         case "--show-tutorial":
-            // --show-tutorial OUT.png [PAGE] [STEP]: the tutorial's real window, stopped on that step of that page.
+            // --show-tutorial OUT.png [PAGE] [STEP] [dark]: the tutorial's real round window, stopped on that step of that
+            // page; transparent outside the circle.
             guard let path = args.first else { return usage() }
             _ = NSApplication.shared
             NSApp.setActivationPolicy(.regular)
-            TutorialWindow.shared.show(page: args.count > 1 ? Int(args[1]) ?? 0 : 0, frozenStep: args.count > 2 ? Int(args[2]) ?? 3 : 3)
+            if args.contains("dark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
+            let numbers = args.dropFirst().compactMap { Int($0) }
+            TutorialWindow.shared.show(page: numbers.first ?? 0, frozenStep: numbers.count > 1 ? numbers[1] : 3)
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.5))
-            guard let window = NSApp.keyWindow ?? NSApp.windows.first(where: \.isVisible), let frame = window.contentView?.superview,
-                  let rep = frame.bitmapImageRepForCachingDisplay(in: frame.bounds) else { return 1 }
-            frame.cacheDisplay(in: frame.bounds, to: rep)
-            let image = NSImage(size: frame.bounds.size, flipped: false) { rect in
-                NSColor.windowBackgroundColor.setFill()
-                rect.fill()
+            guard let window = NSApp.keyWindow ?? NSApp.windows.first(where: \.isVisible), let view = window.contentView,
+                  let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return 1 }
+            view.cacheDisplay(in: view.bounds, to: rep)
+            // The wheel is an AppKit view: in a cached drawing it leaves its corners see-through, the window doesn't.
+            // So the drawing goes on the disc's own colour, inside the circle only.
+            let image = NSImage(size: view.bounds.size, flipped: false) { rect in
+                view.effectiveAppearance.performAsCurrentDrawingAppearance {
+                    NSColor.windowBackgroundColor.setFill()
+                    NSBezierPath(ovalIn: rect).fill()
+                }
                 rep.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
                 return true
             }
@@ -336,6 +344,20 @@ enum CLI {
             let range = CMTimeRange(start: CMTime(seconds: start, preferredTimescale: 600),
                                     end: CMTime(seconds: end, preferredTimescale: 600))
             return execute(.each("Taglia") { try await MediaOps.trim($0, range: range) }, [url])
+
+        case "--test-pdf-page":
+            // --test-pdf-page PDF TEXT: pages, whether page 1 has TEXT, and the colour in the middle of page 1 (r,g,b 0-255).
+            // A DOCX with a full-page picture behind the text must stay one page with the text on the picture.
+            guard args.count >= 2, let pdf = CGPDFDocument(URL(fileURLWithPath: args[0]) as CFURL), let first = pdf.page(at: 1) else { return usage() }
+            let box = first.getBoxRect(.mediaBox)
+            guard let context = CGContext(data: nil, width: Int(box.width), height: Int(box.height), bitsPerComponent: 8, bytesPerRow: 0,
+                                          space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return 1 }
+            context.setFillColor(.white); context.fill(CGRect(origin: .zero, size: box.size))
+            context.drawPDFPage(first)
+            guard let image = context.makeImage(), let color = NSBitmapImageRep(cgImage: image).colorAt(x: image.width / 2, y: image.height / 2)?.usingColorSpace(.sRGB) else { return 1 }
+            let found = PDFDocument(url: URL(fileURLWithPath: args[0]))?.page(at: 0)?.string?.contains(args[1]) ?? false
+            print("pagine=\(pdf.numberOfPages) testo=\(found ? "si" : "no") colore=\(Int(color.redComponent * 255)),\(Int(color.greenComponent * 255)),\(Int(color.blueComponent * 255))")
+            return 0
 
         case "--test-archive-size":
             // --test-archive-size ARCHIVE: the declared expanded size as Rondelle reads it (no limit).
@@ -569,6 +591,50 @@ enum CLI {
             }
             return 0
 
+        case "--test-share-picker":
+            // --test-share-picker FILE: opens «Altro…» as the wheel does, three times. Each time the anchor window must
+            // exist, be visible and key (else Esc and clicks outside don't close the menu), and then go away with nothing of
+            // the app left on screen: closed by Esc, by the menu ending without a choice (service nil), by the app losing focus.
+            let app = NSApplication.shared
+            app.setActivationPolicy(.accessory)
+            let url = URL(fileURLWithPath: args.first ?? "/")
+            func visible() -> [String] { app.windows.filter(\.isVisible).map { String(describing: type(of: $0)) } }
+            /// Runs the loop and hands out events (Esc), as NSApp.run would.
+            func pump(_ seconds: TimeInterval) {
+                let end = Date(timeIntervalSinceNow: seconds)
+                while Date() < end {
+                    if let e = app.nextEvent(matching: .any, until: Date(timeIntervalSinceNow: 0.05), inMode: .default, dequeue: true) {
+                        app.sendEvent(e)
+                    }
+                }
+            }
+            var ok = true
+            let closers: [(String, () -> Void)] = [
+                ("Esc", {
+                    if let e = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                                                windowNumber: ShareOps.PickerSession.shared.anchor?.windowNumber ?? 0, context: nil,
+                                                characters: "\u{1b}", charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53) {
+                        app.postEvent(e, atStart: false)
+                    }
+                }),
+                ("annullato", { ShareOps.PickerSession.shared.sharingServicePicker(NSSharingServicePicker(items: [url]), didChoose: nil) }),
+                ("app non più attiva", { NotificationCenter.default.post(name: NSApplication.didResignActiveNotification, object: app) }),
+            ]
+            for (name, close) in closers {
+                ShareOps.showPicker([url])
+                pump(1)
+                let anchor = ShareOps.PickerSession.shared.anchor
+                let opened = anchor != nil && anchor!.isVisible && anchor!.isKeyWindow
+                print("\(name): appoggio \(anchor == nil ? "assente" : "presente"), visibile \(anchor?.isVisible ?? false), chiave \(anchor?.isKeyWindow ?? false) (app attiva \(app.isActive), chiave: \(app.keyWindow.map { String(describing: type(of: $0)) } ?? "nessuna")); finestre: \(visible())")
+                close()
+                pump(1)
+                let left = visible()
+                let closed = ShareOps.PickerSession.shared.anchor == nil && left.isEmpty
+                print("\(name): \(opened && closed ? "PASS" : "FAIL") (dopo: appoggio \(ShareOps.PickerSession.shared.anchor == nil ? "chiuso" : "aperto"), finestre rimaste \(left))")
+                ok = ok && opened && closed
+            }
+            return ok ? 0 : 1
+
         case "--test-crash-cleanup":
             // What the app does at launch after a crash: remove what unfinished jobs left behind.
             print("elementi rimossi: \(CrashJournal.cleanUp())")
@@ -753,6 +819,40 @@ enum CLI {
             print("\(Int(duration * 10) + 1) fotogrammi")
             return 0
 
+        case "--test-support-link":
+            // --test-support-link: the «Buy me a coffee» URL is https, on buymeacoffee.com, with a plain profile name (no old Mandarino/random id).
+            let u = SupportLink.coffee, name = u.path.dropFirst()
+            let good = u.scheme == "https" && u.host == "buymeacoffee.com" && u.query == nil && u.fragment == nil
+                && name == "jackb998" && !u.absoluteString.lowercased().contains("mandarino")
+            print(good ? "PASS link caffè: \(u.absoluteString)" : "FAIL link caffè: \(u.absoluteString)")
+            return good ? 0 : 1
+
+        case "--test-wheel-hints":
+            // --test-wheel-hints: every entry of every wheel (each kind of file, each mode, groups and what's inside them)
+            // must have a line in the hub, short enough to show with the pizza shape (the smallest hub). Lists the others.
+            let kinds: [(String, FileKind)] = [("immagini", .image), ("PDF", .pdf), ("video", .video), ("audio", .audio),
+                                               ("documenti", .document), ("fogli", .spreadsheet), ("sottotitoli", .subtitle),
+                                               ("archivi", .archive), ("altro", .other)]
+            var seen = Set<String>(), problems: [String] = []
+            for (kindName, kind) in kinds {
+                for (modeName, mode) in [("Converti", WheelMode.convert), ("Strumenti", .tools), ("Condividi", .share)] {
+                    for action in ActionCatalog.allActions(for: kind, mode: mode) {
+                        let entries = action.flattened.count > 1 || action.flattened.first?.key != action.key ? [action] + action.flattened : [action]
+                        for entry in entries where seen.insert("\(entry.id)/\(entry.key)/\(FileHints.line(for: entry) ?? "")").inserted {
+                            let place = "\(modeName) · \(kindName) · \(entry.title)"
+                            guard let hint = FileHints.line(for: entry) else { problems.append("\(place): nessuna descrizione"); continue }
+                            if ProcessInfo.processInfo.environment["RONDELLE_HINTS_LIST"] != nil { print("\(place): \(hint)") }
+                            if !WheelView.hubFits(title: entry.title, hint: hint, inner: 165 * 0.31, unit: 1) {
+                                problems.append("\(place): «\(hint)» non entra nel cerchio")
+                            }
+                        }
+                    }
+                }
+            }
+            problems.forEach { print($0) }
+            print("\(seen.count) voci, \(problems.count) senza descrizione visibile")
+            return problems.isEmpty ? 0 : 1
+
         case "--test-dock-icon":
             // --test-dock-icon [SECONDS]: follows the appearance as Settings does, forcing light and dark for SECONDS
             // each. PASS when the icon (Settings, «Informazioni su») has a light tile with a light Mac and a dark one with
@@ -846,6 +946,60 @@ enum CLI {
             }
             problems.forEach { print("problema: \($0)") }
             return problems.isEmpty ? 0 : 1
+        case "--test-wheel-behind":
+            // --test-wheel-behind FILE: Settings open behind another app (Finder), then a drag's wheel opens and switches
+            // with ⌥ and ⌃. PASS when Rondelle never becomes active, Settings never comes in front of the other apps' windows, and
+            // both wheel panels are auxiliary for Stage Manager (without it, switching wheel brought back Rondelle's
+            // stage, Settings included even when minimised to the Dock), and an activation during the drag (macOS does
+            // it after a few seconds) hands focus back to the app in front.
+            let app = NSApplication.shared
+            app.setActivationPolicy(.accessory)
+            SettingsWindow.shared.show(pane: .behaviour)
+            func wait(_ seconds: Double) { RunLoop.main.run(until: Date().addingTimeInterval(seconds)) }
+            wait(1.0)
+            guard let settings = app.windows.first(where: { $0.isVisible && $0.styleMask.contains(.titled) }),
+                  let finder = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first else { return 1 }
+            finder.activate()
+            wait(1.0)
+            /// Windows of other apps on screen above Settings (front to back), and whether Rondelle is active.
+            func state() -> (above: Int, active: Bool) {
+                let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
+                let me = ProcessInfo.processInfo.processIdentifier
+                var above = 0
+                for info in list {
+                    if (info[kCGWindowNumber as String] as? Int) == settings.windowNumber { break }
+                    if (info[kCGWindowOwnerPID as String] as? Int32) != me, (info[kCGWindowLayer as String] as? Int) == 0 { above += 1 }
+                }
+                return (above, app.isActive)
+            }
+            let before = state()
+            UserDefaults.standard.set(false, forKey: Settings.Key.animate)
+            let wheel = WheelController()
+            var steps = [("prima", before)]
+            wheel.show(urls: args.map { URL(fileURLWithPath: $0) }, mode: .convert)
+            wait(0.5); steps.append(("ruota aperta", state()))
+            wheel.setMode(.tools)
+            wait(0.5); steps.append(("⌥ Strumenti", state()))
+            wheel.setMode(.share)
+            wait(0.5); steps.append(("⌃ Condividi", state()))
+            // What macOS does a few seconds into the drag: Rondelle becomes active. The wheel must hand focus back.
+            NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: app)
+            wait(0.5)
+            let gaveBack = wheel.debugGaveBack == 1
+            wheel.hide()
+            NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: app)
+            let leftAlone = wheel.debugGaveBack == 1   // closed: an activation is the user's own
+            print("attivata durante il trascinamento: primo piano restituito \(gaveBack ? "sì → PASS" : "no → FAIL"); a ruota chiusa lasciata \(leftAlone ? "sì → PASS" : "no → FAIL")")
+            var ok = !before.active && before.above > 0 && gaveBack && leftAlone
+            for (name, now) in steps {
+                let pass = !now.active && now.above > 0   // other apps open and close windows: only "not in front" is stable
+                ok = ok && pass
+                print("\(name): finestre sopra le Impostazioni \(now.above), Rondelle attiva \(now.active ? "sì" : "no") → \(pass ? "PASS" : "FAIL")")
+            }
+            let auxiliary = wheel.debugBehaviors.allSatisfy { $0.contains(.auxiliary) }
+            print("ruota fuori da Stage Manager: \(auxiliary ? "sì → PASS" : "no → FAIL")")
+            return ok && auxiliary ? 0 : 1
+
         case "--test-wheel-switch":
             // --test-wheel-switch: with the wheel open, a key press switches wheel and letting keys go does not.
             let none: NSEvent.ModifierFlags = []

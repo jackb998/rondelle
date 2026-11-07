@@ -24,16 +24,53 @@ enum PackedImages {
     static let maxSide = 3_508
     private static let open = "\u{E100}", close = "\u{E101}", breakMark = "\u{E102}"
 
-    fileprivate struct Picture { let entry: String; let size: CGSize }
+    /// A picture placed on the page rather than in a line (`wp:anchor`) that text doesn't wrap around: behind the
+    /// text (a letterhead, a full-page background) or in front of it. In the PDF it is drawn where the document puts
+    /// it; laid out in a line it would take the room of the whole picture and push the text onto the next page.
+    static let floating = NSAttributedString.Key("RondelleFloating")
+
+    /// Where a floating picture goes on one axis: an offset or an alignment, from the page, a margin or the paragraph.
+    struct Place { var from = "page"; var offset: CGFloat?; var align: String? }
+
+    final class Floating: NSObject {
+        let image: NSImage, size: CGSize, horizontal: Place, vertical: Place, behind: Bool
+        init(image: NSImage, size: CGSize, horizontal: Place, vertical: Place, behind: Bool) {
+            self.image = image; self.size = size; self.horizontal = horizontal; self.vertical = vertical; self.behind = behind
+        }
+
+        /// The picture's frame on a page (top-left origin); `line` is the top of the line it is anchored in.
+        func frame(on page: PageLayout, line: CGFloat) -> CGRect {
+            func spot(_ place: Place, _ boxes: [String: (CGFloat, CGFloat)], _ fallback: (CGFloat, CGFloat), _ side: CGFloat) -> CGFloat {
+                let (start, length) = boxes[place.from] ?? fallback
+                if let offset = place.offset { return start + offset }
+                switch place.align {
+                case "center": return start + (length - side) / 2
+                case "right", "bottom", "outside": return start + length - side
+                default: return start
+                }
+            }
+            let width = page.paper.width - page.left - page.right, height = page.paper.height - page.top - page.bottom
+            let x = spot(horizontal, ["page": (0, page.paper.width), "leftMargin": (0, page.left), "insideMargin": (0, page.left),
+                                      "rightMargin": (page.paper.width - page.right, page.right), "outsideMargin": (page.paper.width - page.right, page.right)],
+                         (page.left, width), size.width)
+            let y = spot(vertical, ["page": (0, page.paper.height), "margin": (page.top, height), "topMargin": (0, page.top),
+                                    "bottomMargin": (page.paper.height - page.bottom, page.bottom)],
+                         (line, 0), size.height)
+            return CGRect(origin: CGPoint(x: x, y: y), size: size)
+        }
+    }
+
+    fileprivate struct Picture { let entry: String; let size: CGSize; var float: (h: Place, v: Place, behind: Bool)? }
     struct Prepared { let copy: URL; let layout: PageLayout; fileprivate let pictures: [Picture] }
 
     /// The marked copy in `work`. Nil when the document isn't laid out as expected: it is then imported as it is.
-    static func prepare(_ url: URL, in work: URL) -> Prepared? {
+    /// `floating`: pictures anchored on the page stay there (for the PDF); otherwise they go in the line, as before.
+    static func prepare(_ url: URL, in work: URL, floating: Bool = false) -> Prepared? {
         let isODT = url.pathExtension.lowercased() == "odt"
         let name = isODT ? "content.xml" : "word/document.xml"
         guard let data = try? ArchiveOps.entryData(in: url, entry: name, maxBytes: Int64(ContentLimits.maxPackedXML)),
               let xml = String(data: data, encoding: .utf8) else { return nil }
-        let result = isODT ? markODT(xml, url) : markDOCX(xml, url)
+        let result = isODT ? markODT(xml, url) : markDOCX(xml, url, floating: floating)
         guard let result else { return nil }
         let copy = work.appendingPathComponent("documento." + url.pathExtension.lowercased())
         let file = work.appendingPathComponent(name)
@@ -70,7 +107,13 @@ enum PackedImages {
             let picture = prepared.pictures[index]
             if loaded[picture.entry] == nil { loaded[picture.entry] = load(picture.entry, from: url) }
             let whole = NSRange(location: open.location, length: end.upperBound - open.location)
-            if let image = loaded[picture.entry] ?? nil {
+            if let image = loaded[picture.entry] ?? nil, let float = picture.float {
+                // A zero-width character keeps the picture's place in the text; `renderPDF` draws it on the page.
+                var attributes = result.attributes(at: open.location, effectiveRange: nil)
+                attributes[floating] = Floating(image: NSImage(cgImage: image, size: picture.size), size: picture.size,
+                                                horizontal: float.h, vertical: float.v, behind: float.behind)
+                result.replaceCharacters(in: whole, with: NSAttributedString(string: "\u{200B}", attributes: attributes))
+            } else if let image = loaded[picture.entry] ?? nil {
                 let attachment = NSTextAttachment()
                 attachment.image = NSImage(cgImage: image, size: picture.size)
                 attachment.bounds = CGRect(origin: .zero, size: picture.size)
@@ -125,7 +168,7 @@ enum PackedImages {
         return path
     }
 
-    private static func markDOCX(_ xml: String, _ url: URL) -> (xml: String, layout: PageLayout, pictures: [Picture])? {
+    private static func markDOCX(_ xml: String, _ url: URL, floating: Bool = false) -> (xml: String, layout: PageLayout, pictures: [Picture])? {
         var links: [String: String] = [:]
         if let data = try? ArchiveOps.entryData(in: url, entry: "word/_rels/document.xml.rels", maxBytes: 5_000_000), let rels = String(data: data, encoding: .utf8) {
             for piece in rels.components(separatedBy: "<Relationship ").dropFirst() {
@@ -141,7 +184,22 @@ enum PackedImages {
             if let cx = attribute("cx", in: piece).flatMap(Double.init), let cy = attribute("cy", in: piece).flatMap(Double.init), cx > 0, cy > 0 {
                 size = CGSize(width: cx / 12700, height: cy / 12700)
             }
-            pictures.append(Picture(entry: entry, size: size))
+            var float: (h: Place, v: Place, behind: Bool)?
+            let behind = attribute("behindDoc", in: piece) == "1"
+            if floating, piece.contains("<wp:anchor"), behind || piece.contains("<wp:wrapNone") {
+                func place(_ axis: String) -> Place {
+                    guard let start = piece.range(of: "<wp:position" + axis) else { return Place() }
+                    let rest = String(piece[start.lowerBound...].prefix(400))
+                    func inside(_ tag: String) -> String? {
+                        guard let a = rest.range(of: "<wp:\(tag)>"), let b = rest.range(of: "</wp:\(tag)>"), a.upperBound <= b.lowerBound else { return nil }
+                        return String(rest[a.upperBound..<b.lowerBound])
+                    }
+                    return Place(from: attribute("relativeFrom", in: rest) ?? "page",
+                                 offset: inside("posOffset").flatMap(Double.init).map { CGFloat($0 / 12700) }, align: inside("align"))
+                }
+                float = (place("H"), place("V"), behind)
+            }
+            pictures.append(Picture(entry: entry, size: size, float: float))
             return "<w:t>\(open)\(pictures.count - 1)\(close)</w:t>"
         }
         var marked = replacing(xml, from: "<w:drawing", to: "</w:drawing>", mark)

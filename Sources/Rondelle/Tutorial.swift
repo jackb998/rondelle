@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 
 /// How the app works, with small animations built on the real wheel. Opens by itself at the first launch, and
 /// from Settings → Aiuto or the menu bar («Come si usa…»). The last page asks for the Home folder permission.
+/// The window is round, shaped like the wheel (a washer): no frame, moved by dragging its background.
 @MainActor
 final class TutorialWindow {
     static let shared = TutorialWindow()
@@ -17,15 +18,20 @@ final class TutorialWindow {
             window.makeKeyAndOrderFront(nil)
             return
         }
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 500),
-                              styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        let size = NSSize(width: TutorialRing.diameter, height: TutorialRing.diameter)
+        let window = RoundWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.title = L("Come si usa Rondelle")
-        window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden   // the key caps of the scenes are up there
+        window.isOpaque = false
+        window.backgroundColor = .clear   // outside the circle
+        window.hasShadow = true
         window.isMovableByWindowBackground = true
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: TutorialView(page: page, frozenStep: frozenStep) { [weak window] in window?.close() })
+        let host = NSHostingView(rootView: TutorialView(page: page, frozenStep: frozenStep) { [weak window] in window?.close() })
+        host.frame = NSRect(origin: .zero, size: size)
+        window.contentView = host
         window.center()
+        // The shadow follows the drawn circle once the page is there.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak window] in window?.invalidateShadow() }
         // Closed for good: the scenes and their timer go with the window.
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -37,6 +43,77 @@ final class TutorialWindow {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
+}
+
+/// A window without frame still takes the keys (Return, arrows, Esc) and closes with ⌘W.
+private final class RoundWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+    override func performClose(_ sender: Any?) { close() }
+}
+
+/// The sizes of the round window, shared by the window, the pages and the fit test (`--test-tutorial`).
+enum TutorialRing {
+    static let diameter: CGFloat = 560
+    static let band: CGFloat = 14
+    /// Everything on a page stays this close to the centre, inside the ring.
+    static let safe: CGFloat = diameter / 2 - band - 4
+    /// The scenes: a rectangle in the upper part of the circle.
+    static let scene = CGSize(width: 440, height: 276)
+    static let sceneCentre = CGPoint(x: 280, y: 198)
+    static let space = "tutorialCircle"
+}
+
+/// Where each piece of a page sits in the circle, by name: read by the fit test.
+private struct TutorialFitKey: PreferenceKey {
+    static let defaultValue: [String: CGRect] = [:]
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+        value.merge(nextValue()) { $1 }
+    }
+}
+
+private extension View {
+    func fits(_ name: String) -> some View {
+        background(GeometryReader { g in
+            Color.clear.preference(key: TutorialFitKey.self, value: [name: g.frame(in: .named(TutorialRing.space))])
+        })
+    }
+}
+
+/// The background, like the wheel: a disc with a ring in the accent colour, cut in six like the wheel's pieces.
+private struct WasherBackground: View {
+    var body: some View {
+        let accent = Color(nsColor: Settings.accentColor), paper = Color(nsColor: .windowBackgroundColor)
+        let r = TutorialRing.diameter / 2, band = TutorialRing.band
+        ZStack {
+            Circle().fill(paper)
+            Circle().fill(LinearGradient(colors: [accent.opacity(0.16), accent.opacity(0.05)], startPoint: .top, endPoint: .bottom))
+            Circle().strokeBorder(LinearGradient(colors: [accent.opacity(0.9), accent.opacity(0.6)], startPoint: .top, endPoint: .bottom),
+                                  lineWidth: band)
+            ForEach(0..<6, id: \.self) { i in
+                Rectangle().fill(paper.opacity(0.85)).frame(width: 2, height: band + 1)
+                    .offset(y: -(r - band / 2))
+                    .rotationEffect(.degrees(Double(i) * 60 + 30))
+            }
+            Circle().inset(by: band).strokeBorder(accent.opacity(0.3), lineWidth: 1)
+        }
+    }
+}
+
+/// The empty parts of the circle move the window.
+private struct WindowDragArea: NSViewRepresentable {
+    final class DragView: NSView {
+        override var mouseDownCanMoveWindow: Bool { true }
+        override func mouseDown(with event: NSEvent) { window?.performDrag(with: event) }
+        // Only the circle: outside it the click goes to what is behind the window.
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            let p = convert(point, from: superview)
+            return hypot(p.x - bounds.midX, p.y - bounds.midY) <= min(bounds.width, bounds.height) / 2 ? super.hitTest(point) : nil
+        }
+    }
+
+    func makeNSView(context: Context) -> NSView { DragView() }
+    func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
 private enum TutorialScene {
@@ -82,7 +159,7 @@ private var tutorialPages: [TutorialPage] {
                      scene: .practice(.convert, tour: true)),
         TutorialPage(title: L("Cambia formato"),
                      text: L("Trascina un file dal Finder e tieni premuto %@: attorno al puntatore compare la ruota dei formati. Rilascia il file sul formato che vuoi; rilasciandolo al centro annulli.", keys(.convert))
-                        + " " + L("Appena compare la ruota puoi lasciare i tasti: resta aperta finché tieni il file. Per cambiare ruota senza ricominciare premi %@ (Converti), %@ (Strumenti) o %@ (Condividi).",
+                        + " " + L("Poi puoi lasciare i tasti: la ruota resta aperta finché tieni il file. Per cambiare ruota premi %@ (Converti), %@ (Strumenti) o %@ (Condividi).",
                                   switchKeys(.convert), switchKeys(.tools), switchKeys(.share)),
                      scene: .practice(.convert, tour: false)),
         TutorialPage(title: L("Usa gli strumenti"),
@@ -115,39 +192,48 @@ private struct TutorialView: View {
     private var shownStep: Int { frozenStep ?? (reduceMotion ? 3 : step) }
 
     var body: some View {
-        let current = tutorialPages[page]
-        VStack(spacing: 0) {
+        let current = tutorialPages[page], d = TutorialRing.diameter
+        ZStack {
+            WasherBackground().overlay(WindowDragArea())
             scene(current.scene)
-                .frame(maxWidth: .infinity)
-                .frame(height: 300)
-                .background(LinearGradient(colors: [Color(nsColor: Settings.accentColor).opacity(0.16), Color(nsColor: Settings.accentColor).opacity(0.04)], startPoint: .top, endPoint: .bottom))
+                .frame(width: TutorialRing.scene.width, height: TutorialRing.scene.height)
                 .id(page)
                 .transition(.opacity)
-            VStack(spacing: 10) {
-                Text(current.title).font(.title2.weight(.semibold))
+                .position(TutorialRing.sceneCentre)
+            VStack(spacing: 6) {
+                Text(current.title).font(.title3.weight(.semibold)).fits("titolo")
                 Text(current.text)
+                    .font(.callout)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: 520)
+                    .frame(width: 376)
+                    .fits("testo")
             }
-            .padding(.top, 20)
-            .padding(.horizontal, 24)
-            Spacer(minLength: 8)
-            controls.padding(20)
+            .frame(width: 400, height: 118, alignment: .top)
+            .position(x: d / 2, y: 346 + 59)
+            controls.fits("navigazione").position(x: d / 2, y: 480)
+            dots.fits("puntini").position(x: d / 2, y: 510)
+            closeButton.fits("chiudi").position(x: d / 2, y: 38)
         }
-        .frame(width: 640, height: 500)
-        .ignoresSafeArea()
+        .frame(width: d, height: d)
+        .coordinateSpace(name: TutorialRing.space)
+        .clipShape(Circle())
+        .onPreferenceChange(TutorialFitKey.self) { frames in
+            #if DEBUG
+            MainActor.assumeIsolated { TutorialFit.frames = frames }
+            #endif
+        }
         .onReceive(timer) { _ in
             guard frozenStep == nil, !reduceMotion else { return }
-            step = (step + 1) % sceneSteps(current.scene)
+            step = (step + 1) % Self.sceneSteps(current.scene)
         }
     }
 
-    private func sceneSteps(_ scene: TutorialScene) -> Int {
+    static func sceneSteps(_ scene: TutorialScene) -> Int {
         switch scene {
         case .practice: return 7
-        case .features(let list): return list.count + 3
+        case .features(let list): return list.count * 3
         case .menus: return 7
         case .privacy: return 4
         }
@@ -158,41 +244,56 @@ private struct TutorialView: View {
         case .practice(let goal, let tour):
             // `frozenStep` (snapshots) stops the scene at that half second.
             PracticeScene(goal: goal, auto: tour && !reduceMotion, frozen: frozenStep.map { Double($0) * 0.5 } ?? (tour && reduceMotion ? 2 : nil), tour: tour)
-        case .features(let list): FeaturesScene(features: list, step: frozenStep ?? (reduceMotion ? list.count : step))
+        case .features(let list):
+            // One feature at a time, about three seconds each; without movement the first, until one is clicked.
+            FeaturesScene(features: list, shown: frozenStep.map { min($0, list.count - 1) } ?? (reduceMotion ? 0 : step / 3 % list.count))
         case .menus: MenusScene(step: shownStep)
         case .privacy: PrivacyScene()
         }
     }
 
-    private var controls: some View {
-        HStack {
-            Button(L("Salta"), action: close)
-                .keyboardShortcut(.cancelAction)
-                .rondelleButton()
-                .opacity(page == tutorialPages.count - 1 ? 0 : 1)
-                .disabled(page == tutorialPages.count - 1)
-            Spacer()
-            HStack(spacing: 7) {
-                ForEach(tutorialPages.indices, id: \.self) { i in
-                    Circle().fill(i == page ? Color(nsColor: Settings.accentColor) : Color.secondary.opacity(0.3)).frame(width: 7, height: 7)
-                }
+    private var closeButton: some View {
+        Button(action: close) {
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(Color.secondary.opacity(0.16)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .keyboardShortcut(.cancelAction)
+        .help(L("Chiudi"))
+        .accessibilityLabel(L("Chiudi"))
+    }
+
+    private var dots: some View {
+        HStack(spacing: 7) {
+            ForEach(tutorialPages.indices, id: \.self) { i in
+                Circle().fill(i == page ? Color(nsColor: Settings.accentColor) : Color.secondary.opacity(0.3)).frame(width: 7, height: 7)
+                    .padding(2)
+                    .contentShape(Circle())
+                    .onTapGesture { go(i) }
             }
-            .accessibilityLabel(L("Pagina %@ di %@", page + 1, tutorialPages.count))
-            Spacer()
-            HStack(spacing: 8) {
-                Button(L("Indietro")) { go(page - 1) }
-                    .keyboardShortcut(.leftArrow, modifiers: [])
-                    .rondelleButton()
-                    .disabled(page == 0)
-                if page == tutorialPages.count - 1 {
-                    Button(L("Inizia"), action: close)
-                        .keyboardShortcut(.defaultAction)
-                        .rondelleProminentButton()
-                } else {
-                    Button(L("Avanti")) { go(page + 1) }
-                        .keyboardShortcut(.defaultAction)
-                        .rondelleProminentButton()
-                }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L("Pagina %@ di %@", page + 1, tutorialPages.count))
+    }
+
+    private var controls: some View {
+        HStack(spacing: 10) {
+            Button(L("Indietro")) { go(page - 1) }
+                .keyboardShortcut(.leftArrow, modifiers: [])
+                .rondelleButton()
+                .disabled(page == 0)
+            if page == tutorialPages.count - 1 {
+                Button(L("Inizia"), action: close)
+                    .keyboardShortcut(.defaultAction)
+                    .rondelleProminentButton()
+            } else {
+                Button(L("Avanti")) { go(page + 1) }
+                    .keyboardShortcut(.defaultAction)
+                    .rondelleProminentButton()
             }
         }
     }
@@ -212,12 +313,13 @@ private struct PracticeFrame {
     var file = PracticeModel.home
     var held: NSEvent.ModifierFlags = []
     var wheel: WheelMode?
-    var centre = CGPoint(x: 320, y: 150)
+    var centre = PracticeModel.middle
     var highlight: Int?
     var result: PracticeModel.Result?
     var cancelled = false
     var dragging = false
     var cursor = false   // drawn only when the scene plays by itself
+    var panel: String?   // the group whose options panel is open (its key)
 }
 
 /// Interactive practice: the sample file is dragged for real, the keys open the wheel, the drop shows the result.
@@ -230,7 +332,10 @@ private final class PracticeModel: ObservableObject {
         case sent(String)
     }
 
-    nonisolated static let home = CGPoint(x: 110, y: 205)
+    /// The scene's size and middle, inside the round window (TutorialRing).
+    nonisolated static let size = TutorialRing.scene
+    nonisolated static let middle = CGPoint(x: TutorialRing.scene.width / 2, y: TutorialRing.scene.height / 2)
+    nonisolated static let home = CGPoint(x: 64, y: 180)
     nonisolated static let radius: CGFloat = 100
     nonisolated static let hole: CGFloat = 28
 
@@ -270,6 +375,7 @@ private final class PracticeModel: ObservableObject {
     }
 
     func drag(to point: CGPoint) {
+        guard frame.panel == nil else { return }
         reset?.cancel()
         if !frame.dragging {
             frame = PracticeFrame(file: point, held: frame.held, dragging: true)
@@ -280,8 +386,18 @@ private final class PracticeModel: ObservableObject {
     }
 
     func drop() {
+        guard frame.panel == nil else { return }
         frame.dragging = false
         if frame.wheel != nil, let index = frame.highlight {
+            // A group opens its options panel, as on the real wheel (unless Settings → Ruota says «Solo anello»).
+            if case .group = actions[index].work, Settings.wheelStyle.opensPanel {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    frame.panel = actions[index].key
+                    frame.wheel = nil
+                    frame.highlight = nil
+                }
+                return
+            }
             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                 frame.result = Self.result(of: actions[index], mode: frame.wheel ?? goal)
                 frame.wheel = nil
@@ -294,6 +410,20 @@ private final class PracticeModel: ObservableObject {
                 frame.file = Self.home
             }
         }
+        scheduleReset()
+    }
+
+    /// A variant picked in the options panel, or nil (closed): the result, or the photo back in its place.
+    func choose(_ option: WheelAction?) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            frame.panel = nil
+            if let option { frame.result = Self.result(of: option, mode: .tools) } else { frame.file = Self.home }
+        }
+        scheduleReset()
+    }
+
+    private func scheduleReset() {
+        reset?.cancel()
         reset = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             guard let self, !Task.isCancelled, !self.frame.dragging else { return }
@@ -313,8 +443,12 @@ private final class PracticeModel: ObservableObject {
     }
 
     /// Where the wheel opens: around the file, kept inside the scene.
+    /// Near the file, but only in the middle of the scene, so a newcomer always finds the wheel in the same area.
+    /// How far from the middle the wheel may open, each way: it always stays inside the circle.
+    nonisolated static let zone = CGSize(width: 60, height: 25)
+
     static func wheelCentre(near point: CGPoint) -> CGPoint {
-        CGPoint(x: min(max(point.x, radius + 10), 640 - radius - 10), y: min(max(point.y, radius + 4), 300 - radius - 4))
+        CGPoint(x: min(max(point.x, middle.x - zone.width), middle.x + zone.width), y: min(max(point.y, middle.y - zone.height), middle.y + zone.height))
     }
 
     /// As in WheelView: segment 0 at the top, then clockwise; the hole in the middle cancels.
@@ -338,8 +472,9 @@ private final class PracticeModel: ObservableObject {
         switch mode {
         case .convert: return ["PNG", "HEIC", "PDF", "WebP", "TIFF", "GIF"].map { .each($0) { _ in [] } }
         case .tools: return [
-            .each("Comprimi", "arrow.down.circle") { _ in [] },
-            .each("Ridimensiona", "arrow.up.left.and.arrow.down.right") { _ in [] },
+            WheelAction(title: "Comprimi", symbol: "arrow.down.circle", work: .group(members(of: "Comprimi")), id: "group.compress"),
+            WheelAction(title: "Ridimensiona", symbol: "arrow.up.left.and.arrow.down.right", work: .group(members(of: "Ridimensiona")),
+                        id: "group.resize"),
             .each("Modifica", "pencil.tip.crop.circle") { _ in [] },
             .each("Testo e QR", "text.viewfinder") { _ in [] },
             .each("Sfondo", "person.crop.square") { _ in [] },
@@ -355,6 +490,13 @@ private final class PracticeModel: ObservableObject {
         }
     }
 
+    /// The variants an image really gets in those two groups (the sizes of Settings → Conversioni included), as in WheelGroups.
+    static func members(of group: String) -> [WheelAction] {
+        let all = ActionCatalog.allActions(for: .image, mode: .tools).flatMap(\.flattened)
+        if group == "Comprimi" { return all.filter { ["Comprimi", "Comprimi +", "Peso…"].contains($0.key) } }
+        return all.filter { $0.key == "50%" || $0.key == "Misura…" || ($0.key.hasSuffix("px") && $0.symbol != nil) }
+    }
+
     static func result(of action: WheelAction, mode: WheelMode) -> Result {
         switch mode {
         case .convert:
@@ -362,6 +504,10 @@ private final class PracticeModel: ObservableObject {
             return .file(name: L("foto") + ".\(ext)", type: UTType(filenameExtension: ext) ?? .image)
         case .tools:
             if action.key == "ZIP" { return .file(name: L("foto") + ".zip", type: .zip) }
+            // A variant that asks (Misura…, Peso…) is shown with the value it proposes.
+            if case .asking(_, let value, _, _) = action.work {
+                return .file(name: L("foto (%@).jpg", action.key == "Misura…" ? "\(value)px" : "\(value) MB"), type: .jpeg)
+            }
             return .file(name: L("foto (%@).jpg", action.title.lowercased()), type: .jpeg)
         case .share:
             return .sent(L("Inviato con %@", action.title))
@@ -372,11 +518,14 @@ private final class PracticeModel: ObservableObject {
 /// The scene playing by itself: the file is picked up, the keys open the wheel, then (on the first page and in the
 /// README) the other keys switch wheel before the file lands on a segment. `t` in seconds; it loops.
 private enum PracticeScript {
-    static func duration(_ goal: WheelMode, tour: Bool) -> Double { tour ? 9.5 : 6 }
+    static func duration(_ goal: WheelMode, tour: Bool) -> Double { tour ? 15 : 6 }
+
+    /// Where the first option sits in the panel drawn by PracticeCanvas (scaled, in the middle of the scene).
+    static let firstOption = CGPoint(x: 177, y: 117)
 
     @MainActor static func frame(at t: Double, goal: WheelMode, tour: Bool) -> PracticeFrame {
         let target = 0, count = PracticeModel.actions(goal).count
-        let grab = CGPoint(x: 300, y: 160)
+        let grab = CGPoint(x: 200, y: 150)
         let centre = PracticeModel.wheelCentre(near: grab)
         func mix(_ a: CGPoint, _ b: CGPoint, _ k: Double) -> CGPoint {
             let k = max(0, min(1, k)), e = k * k * (3 - 2 * k)
@@ -411,6 +560,26 @@ private enum PracticeScript {
         if t < dropAt { return f }
         f = PracticeFrame(cursor: true)
         f.result = PracticeModel.result(of: PracticeModel.actions(goal)[target], mode: goal)
+        guard tour, t >= 9.2 else { return f }
+        // Then the tools: dropped on «Ridimensiona», a group, the panel with its variants opens; one is picked.
+        let tools = PracticeModel.actions(.tools), group = 1
+        let slot = PracticeModel.point(of: group, count: tools.count, centre: centre)
+        f = PracticeFrame(dragging: true, cursor: true)
+        f.file = mix(PracticeModel.home, grab, (t - 9.2) / 0.8)
+        if t < 10.1 { return f }
+        f.centre = centre
+        f.wheel = .tools
+        f.held = t < 10.8 ? keysOf(.tools) : []
+        if t < 11.0 { return f }
+        f.file = mix(grab, slot, (t - 11.0) / 0.7)
+        f.highlight = t >= 11.4 ? group : nil
+        if t < 11.9 { return f }
+        f = PracticeFrame(cursor: true)
+        f.panel = tools[group].key
+        f.file = mix(slot, firstOption, (t - 12.2) / 0.7)
+        if t < 13.4 { return f }
+        f.panel = nil
+        if let first = PracticeModel.members(of: tools[group].key).first { f.result = PracticeModel.result(of: first, mode: .tools) }
         return f
     }
 }
@@ -442,7 +611,7 @@ private struct PracticeScene: View {
                     PracticeCanvas(frame: PracticeScript.frame(at: t, goal: goal, tour: tour), goal: goal, interactive: false)
                 }
             } else {
-                PracticeCanvas(frame: model.frame, goal: goal, interactive: true)
+                PracticeCanvas(frame: model.frame, goal: goal, interactive: true, choose: { model.choose($0) })
                     .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .named("practice"))
                         .onChanged { model.drag(to: $0.location) }
                         .onEnded { _ in model.drop() })
@@ -451,7 +620,7 @@ private struct PracticeScene: View {
             }
         }
         .coordinateSpace(name: "practice")
-        .frame(width: 640, height: 300)
+        .frame(width: PracticeModel.size.width, height: PracticeModel.size.height)
     }
 }
 
@@ -460,6 +629,7 @@ private struct PracticeCanvas: View {
     let frame: PracticeFrame
     let goal: WheelMode
     let interactive: Bool
+    var choose: (WheelAction?) -> Void = { _ in }
 
     private var accent: Color { Color(nsColor: Settings.accentColor) }
 
@@ -470,6 +640,7 @@ private struct PracticeCanvas: View {
             case .sent(let text): return text
             }
         }
+        if frame.panel != nil { return L("Una voce con più varianti: scegline una. Nell'app il pannello si apre accanto al file.") }
         if frame.cancelled { return L("Rilasciata al centro: annullato. Riprova!") }
         if frame.wheel != nil {
             return frame.held.isEmpty
@@ -483,16 +654,18 @@ private struct PracticeCanvas: View {
     var body: some View {
         ZStack {
             // The three wheels and their keys: the one in use lights up.
-            HStack(spacing: 14) {
+            // The name under each key, so the row is narrow enough for the top of the circle.
+            HStack(alignment: .top, spacing: 14) {
                 ForEach([WheelMode.convert, .tools, .share], id: \.self) { mode in
                     let on = frame.wheel == mode || (frame.wheel == nil && !frame.held.isEmpty && Settings.keys(for: mode).flags == frame.held)
-                    HStack(spacing: 6) {
+                    VStack(spacing: 2) {
                         KeyCaps(label: Settings.switchKey(for: mode).label, held: Settings.switchMode(from: [], to: frame.held) == mode)
-                        Text(mode.wheelName).font(.caption.weight(.medium)).foregroundStyle(on ? accent : .secondary)
+                        Text(mode.wheelName).font(.caption.weight(.medium)).foregroundStyle(on ? accent : .secondary).fixedSize()
                     }
                 }
             }
-            .position(x: 320, y: 26)
+            .fits("tasti")
+            .position(x: PracticeModel.middle.x, y: 24)
 
             // Always there, shown by its opacity: an AppKit view inserted with a transition gets an opaque backdrop.
             let mode = frame.wheel ?? goal
@@ -500,6 +673,7 @@ private struct PracticeCanvas: View {
                 .frame(width: PracticeModel.radius * 2, height: PracticeModel.radius * 2)
                 .scaleEffect(frame.wheel == nil ? 0.7 : 1)
                 .opacity(frame.wheel == nil ? 0 : 1)
+                .fits("ruota")
                 .position(frame.centre)
                 .allowsHitTesting(false)
 
@@ -516,7 +690,8 @@ private struct PracticeCanvas: View {
                     }
                     if case .file(let name, _) = result { Text(name).font(.callout.weight(.medium)) }
                 }
-                .position(x: 320, y: 150)
+                .fits("risultato")
+                .position(PracticeModel.middle)
                 .transition(.scale(scale: 0.6).combined(with: .opacity))
             } else {
                 VStack(spacing: 4) {
@@ -529,6 +704,8 @@ private struct PracticeCanvas: View {
                     }
                 }
                 .scaleEffect(frame.highlight != nil ? 0.7 : 1)
+                .opacity(frame.panel == nil ? 1 : 0)
+                .fits(frame.dragging ? "foto trascinata" : "foto")
                 .position(frame.file)
                 .onHover { inside in
                     guard interactive else { return }
@@ -536,13 +713,32 @@ private struct PracticeCanvas: View {
                 }
             }
 
+            // The real options panel, smaller: the variants of the group the photo was dropped on.
+            if let group = frame.panel {
+                OptionsView(title: L(group), actions: PracticeModel.members(of: group), fileCount: 1, choose: choose)
+                    .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color(nsColor: .windowBackgroundColor))
+                        .shadow(color: .black.opacity(0.25), radius: 14, y: 6))
+                    .fits("pannello")
+                    .scaleEffect(0.58)
+                    .position(x: PracticeModel.middle.x, y: PracticeModel.middle.y - 4)
+                    .allowsHitTesting(interactive)
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                if frame.cursor {
+                    Image(systemName: "cursorarrow").font(.title3).foregroundStyle(.primary).position(frame.file)
+                }
+            }
+
             Text(hint)
                 .font(.callout.weight(.medium))
                 .foregroundStyle(.secondary)
-                .position(x: 320, y: 284)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(width: 420)
+                .fits("suggerimento")
+                .position(x: PracticeModel.middle.x, y: PracticeModel.size.height - 16)
                 .animation(.none, value: hint)
         }
-        .frame(width: 640, height: 300)
+        .frame(width: PracticeModel.size.width, height: PracticeModel.size.height)
         .contentShape(Rectangle())
     }
 }
@@ -565,9 +761,9 @@ private struct KeyCaps: View {
         HStack(spacing: 6) {
             ForEach(label.components(separatedBy: " + "), id: \.self) { key in
                 Text(key)
-                    .font(.callout.weight(.medium))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .font(.footnote.weight(.medium))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
                     .foregroundStyle(held ? Color.white : Color.primary)
                     .background(held ? Color(nsColor: Settings.accentColor) : Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                     .scaleEffect(held ? 0.96 : 1)
@@ -576,29 +772,44 @@ private struct KeyCaps: View {
     }
 }
 
+/// The features of the tools wheel: a tile each, and the text of the one shown (it changes by itself; a click picks one).
 private struct FeaturesScene: View {
     let features: [TutorialFeature]
-    let step: Int
+    let shown: Int
+    @State private var picked: Int?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(features.indices, id: \.self) { i in
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: features[i].symbol)
-                        .font(.title2)
-                        .foregroundStyle(Color(nsColor: Settings.accentColor))
-                        .frame(width: 34)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(features[i].title).font(.headline)
-                        Text(features[i].text).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        let current = picked ?? shown, accent = Color(nsColor: Settings.accentColor)
+        VStack(spacing: 16) {
+            HStack(spacing: 10) {
+                ForEach(features.indices, id: \.self) { i in
+                    Button { picked = i } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: features[i].symbol).font(.title2).frame(height: 26)
+                            Text(features[i].title).font(.caption.weight(.medium)).multilineTextAlignment(.center).lineLimit(2)
+                        }
+                        .foregroundStyle(i == current ? accent : Color.secondary)
+                        .frame(width: 86, height: 70)
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(i == current ? accent.opacity(0.2) : Color.secondary.opacity(0.08)))
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
-                .opacity(step >= i ? 1 : 0.2)
-                .offset(x: step >= i ? 0 : 12)
             }
+            .fits("funzioni")
+            Text(features[current].text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(width: 380)
+                .fits("funzione")
+                .id(current)
+                .transition(.opacity)
         }
-        .frame(width: 540)
-        .animation(step == 0 ? .none : .easeOut(duration: 0.45), value: step)
+        .frame(width: TutorialRing.scene.width, height: TutorialRing.scene.height)
+        .animation(.easeOut(duration: 0.3), value: current)
     }
 }
 
@@ -607,23 +818,25 @@ private struct MenusScene: View {
     let step: Int
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        ZStack {
             MockMenu(rows: [(L("Apri"), false), (L("Copia"), false), (L("Servizi"), step == 1 || step == 2)])
-                .overlay(alignment: .topTrailing) {
-                    MockMenu(rows: [(L("Rondelle: Converti…"), step == 2), (L("Rondelle: Strumenti…"), false), (L("Rondelle: Comprimi"), false)])
-                        .fixedSize()
-                        .offset(x: 210, y: 46)
-                        .opacity(step >= 1 && step <= 2 ? 1 : 0.15)
-                }
-                .frame(width: 170)
-            Spacer().frame(width: 230)
-            VStack(spacing: 8) {
+                .frame(width: 150)
+                .fits("menu Finder")
+                .position(x: 125, y: 84)
+            MockMenu(rows: [(L("Rondelle: Converti…"), step == 2), (L("Rondelle: Strumenti…"), false), (L("Rondelle: Comprimi"), false)])
+                .fixedSize()
+                .fits("menu Servizi")
+                .position(x: 290, y: 122)
+                .opacity(step >= 1 && step <= 2 ? 1 : 0.15)
+            HStack(alignment: .top, spacing: 8) {
                 Image(nsImage: AppDelegate.menuBarIcon())
                 MockMenu(rows: [(L("Annulla ultima conversione"), step >= 4 && step <= 5), (L("Recenti"), false)]).fixedSize()
             }
+            .fits("menu Rondelle")
+            .position(x: 230, y: 214)
             .opacity(step >= 3 ? 1 : 0.25)
         }
-        .frame(width: 640, height: 300)
+        .frame(width: TutorialRing.scene.width, height: TutorialRing.scene.height)
         .animation(step == 0 ? .none : .easeInOut(duration: 0.35), value: step)
     }
 }
@@ -655,22 +868,24 @@ private struct PrivacyScene: View {
     @State private var granted = false
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             Image(systemName: granted ? "checkmark.shield.fill" : "lock.shield.fill")
-                .font(.system(size: 58))
+                .font(.system(size: 50))
                 .foregroundStyle(granted ? Color.green : Color.orange)
             Text(L("Per salvare i risultati accanto agli originali, consenti l'accesso alla cartella Inizio. Puoi revocarlo quando vuoi da Impostazioni → Privacy; se preferisci, Rondelle chiederà cartella per cartella."))
                 .font(.callout)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
-                .frame(width: 460)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(width: 360)
             Button(granted ? L("Cartella Inizio consentita") : L("Consenti cartella Inizio…")) {
                 granted = FolderAccess.request(FolderAccess.realHome, explanation: L("Seleziona la cartella Inizio e premi «Consenti»."))
             }
             .rondelleButton()
             .disabled(granted)
         }
-        .frame(width: 640, height: 300)
+        .fits("privacy")
+        .frame(width: TutorialRing.scene.width, height: TutorialRing.scene.height)
     }
 }
 
@@ -682,7 +897,7 @@ enum TutorialPracticeTest {
         var problems: [String] = []
         func expect(_ ok: Bool, _ what: String) { if !ok { problems.append(what) } }
         let model = PracticeModel(goal: .convert)
-        model.drag(to: CGPoint(x: 300, y: 160))
+        model.drag(to: CGPoint(x: 200, y: 150))
         expect(model.frame.dragging && model.frame.wheel == nil, "trascino senza tasti: nessuna ruota")
         model.keys(Settings.keys(for: .convert).flags)
         expect(model.frame.wheel == .convert, "i tasti di Converti aprono la ruota")
@@ -695,6 +910,13 @@ enum TutorialPracticeTest {
             expect(model.frame.wheel == mode, "lasciato il tasto resta \(mode)")
         }
         let centre = model.frame.centre
+        let mid = PracticeModel.middle, zone = PracticeModel.zone
+        func central(_ c: CGPoint) -> Bool { abs(c.x - mid.x) <= zone.width && abs(c.y - mid.y) <= zone.height }
+        expect(central(centre), "ruota nella zona centrale: \(centre)")
+        for corner in [CGPoint(x: 0, y: 0), CGPoint(x: PracticeModel.size.width, y: PracticeModel.size.height), CGPoint(x: 5, y: PracticeModel.size.height - 5)] {
+            let c = PracticeModel.wheelCentre(near: corner)
+            expect(central(c), "foto nell'angolo \(corner): ruota al centro \(c)")
+        }
         model.drag(to: PracticeModel.point(of: 2, count: model.actions.count, centre: centre))
         expect(model.frame.highlight == 2, "sopra la terza voce: evidenziata (\(String(describing: model.frame.highlight)))")
         model.drop()
@@ -703,7 +925,7 @@ enum TutorialPracticeTest {
         } else {
             problems.append("rilasciata su una voce: nessun risultato")
         }
-        model.drag(to: CGPoint(x: 300, y: 160))
+        model.drag(to: CGPoint(x: 200, y: 150))
         expect(model.frame.result == nil && model.frame.dragging, "si ricomincia trascinando di nuovo")
         model.keys(Settings.keys(for: .convert).flags)
         model.drag(to: model.frame.centre)
@@ -711,24 +933,124 @@ enum TutorialPracticeTest {
         model.drop()
         expect(model.frame.cancelled && model.frame.wheel == nil && model.frame.result == nil, "al centro: annullato")
         model.keys([])
-        model.drag(to: CGPoint(x: 400, y: 100))
+        model.drag(to: CGPoint(x: 330, y: 80))
         model.drop()
         expect(!model.frame.cancelled && model.frame.file == PracticeModel.home, "senza ruota la foto torna al suo posto")
+        // A group (Ridimensiona) opens the options panel with the real variants; one of them gives the result.
+        if Settings.wheelStyle.opensPanel {
+            model.drag(to: CGPoint(x: 200, y: 150))
+            model.keys(Settings.keys(for: .tools).flags)
+            model.keys([])
+            let tools = PracticeModel.actions(.tools)
+            model.drag(to: PracticeModel.point(of: 1, count: tools.count, centre: model.frame.centre))
+            model.drop()
+            expect(model.frame.panel == "Ridimensiona" && model.frame.wheel == nil, "rilasciata su Ridimensiona: pannello delle varianti")
+            let variants = PracticeModel.members(of: "Ridimensiona")
+            expect(variants.contains { $0.key == "50%" } && variants.contains { $0.key == "Misura…" }, "varianti vere: \(variants.map(\.key))")
+            model.drag(to: CGPoint(x: 10, y: 10))
+            expect(model.frame.panel != nil && !model.frame.dragging, "col pannello aperto la foto non si trascina")
+            model.choose(variants.first { $0.key == "Misura…" })
+            if case .file(let name, _)? = model.frame.result {
+                expect(model.frame.panel == nil && name.contains("px"), "scelta Misura…: \(name)")
+            } else {
+                problems.append("scelta una variante: nessun risultato")
+            }
+            expect(PracticeModel.members(of: "Comprimi").count >= 2, "Comprimi ha le sue varianti")
+        }
         model.stop()
         let demo = PracticeScript.frame(at: 2.0, goal: .convert, tour: true)
         expect(demo.wheel == .convert && demo.cursor, "la scena da sola apre la ruota")
         let end = PracticeScript.frame(at: PracticeScript.duration(.convert, tour: true) - 0.1, goal: .convert, tour: true)
         expect(end.result != nil, "la scena da sola finisce con un risultato")
-        return problems
+        expect(PracticeScript.frame(at: 12.8, goal: .convert, tour: true).panel != nil, "la scena da sola mostra il pannello delle varianti")
+        // The wheel stays inside the circle wherever it opens.
+        let scene = TutorialRing.sceneCentre, circle = TutorialRing.diameter / 2
+        for dx in [-zone.width, zone.width] {
+            for dy in [-zone.height, zone.height] {
+                let x = scene.x + dx - circle, y = scene.y + dy - circle
+                expect(hypot(x, y) + PracticeModel.radius <= TutorialRing.safe, "ruota aperta a (\(dx), \(dy)) fuori dal cerchio")
+            }
+        }
+        return problems + fitProblems()
     }
+
+    /// Every page, at every step of its scene, drawn in the round window: each named piece (`fits`) inside the circle,
+    /// the text above the buttons. The wheel counts as round.
+    static func fitProblems() -> [String] {
+        var problems: [String] = []
+        let d = TutorialRing.diameter, centre = CGPoint(x: d / 2, y: d / 2)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: d, height: d), styleMask: [.borderless], backing: .buffered, defer: false)
+        var worst: (CGFloat, String) = (0, "")
+        for (index, page) in tutorialPages.enumerated() {
+            let steps = index == 0 ? Int(PracticeScript.duration(.convert, tour: true) * 2) + 1 : TutorialView.sceneSteps(page.scene)
+            for step in 0..<steps {
+                TutorialFit.frames = [:]
+                let host = NSHostingView(rootView: TutorialView(page: index, frozenStep: step) {})
+                host.frame = NSRect(x: 0, y: 0, width: d, height: d)
+                window.contentView = host
+                host.layoutSubtreeIfNeeded()
+                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
+                let frames = TutorialFit.frames, place = "pagina \(index + 1) passo \(step)"
+                for name in ["titolo", "testo", "navigazione", "puntini", "chiudi"] where frames[name] == nil {
+                    problems.append("\(place): manca «\(name)»")
+                }
+                for (name, rect) in frames {
+                    let far: CGFloat
+                    if name == "ruota" {
+                        far = hypot(rect.midX - centre.x, rect.midY - centre.y) + rect.width / 2
+                    } else {
+                        far = [CGPoint(x: rect.minX, y: rect.minY), CGPoint(x: rect.maxX, y: rect.minY),
+                               CGPoint(x: rect.minX, y: rect.maxY), CGPoint(x: rect.maxX, y: rect.maxY)]
+                            .map { hypot($0.x - centre.x, $0.y - centre.y) }.max() ?? 0
+                    }
+                    if far > worst.0 { worst = (far, "\(name), \(place)") }
+                    // The dragged photo follows the pointer: the circle cuts it like the window's edge.
+                    if far > TutorialRing.safe, name != "foto trascinata" {
+                        problems.append("\(place): «\(name)» esce dal cerchio (\(Int(far)) > \(Int(TutorialRing.safe)) punti)")
+                    }
+                }
+                if let text = frames["testo"], let buttons = frames["navigazione"], text.maxY > buttons.minY - 4 {
+                    problems.append("\(place): il testo tocca i pulsanti (\(Int(text.maxY)) > \(Int(buttons.minY - 4)))")
+                }
+                if let text = frames["titolo"], text.minY < TutorialRing.sceneCentre.y + TutorialRing.scene.height / 2 {
+                    problems.append("\(place): il titolo entra nella scena")
+                }
+            }
+        }
+        print("pezzo più lontano dal centro: \(worst.1), \(Int(worst.0)) punti su \(Int(TutorialRing.safe))")
+        // The real window: round, without frame, takes the keys; the empty background moves it.
+        _ = NSApplication.shared
+        TutorialWindow.shared.show(page: 4, frozenStep: 0)
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
+        if let round = NSApp.windows.first(where: { $0 is RoundWindow && $0.isVisible }) {
+            if !(round.styleMask == [.borderless] && !round.isOpaque && round.backgroundColor == .clear && round.canBecomeKey
+                 && round.frame.size == NSSize(width: d, height: d)) {
+                problems.append("finestra del tutorial non tonda o senza tasti: \(round.styleMask) \(round.frame.size)")
+            }
+            // Below the page dots, near the bottom of the disc: nothing there but the background.
+            let hit = round.contentView?.hitTest(NSPoint(x: d / 2, y: 30))
+            if !(hit is WindowDragArea.DragView) { problems.append("lo sfondo non sposta la finestra: \(String(describing: hit))") }
+            if round.contentView?.hitTest(NSPoint(x: 6, y: 6)) is WindowDragArea.DragView { problems.append("fuori dal cerchio un clic sposta la finestra") }
+            round.close()
+        } else {
+            problems.append("la finestra tonda del tutorial non si apre")
+        }
+        return Array(Set(problems)).sorted()
+    }
+}
+
+/// What the pages reported, for the fit test.
+@MainActor
+enum TutorialFit {
+    static var frames: [String: CGRect] = [:]
 }
 
 /// The README's animation: the first scene playing by itself, drawn frame by frame in the app (no screen capture),
 /// with the wheel's own background instead of Liquid Glass, which a drawing of the view can't reproduce.
 @MainActor
 enum TutorialGIF {
-    static func write(to url: URL, fps: Double = 10) -> Int32 {
-        let size = NSSize(width: 640, height: 300)
+    static func write(to url: URL, fps: Double = 15) -> Int32 {
+        let size = NSSize(width: 640, height: 300), scale = 2
         let total = PracticeScript.duration(.convert, tour: true) + 1.6
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         guard let gif = CGImageDestinationCreateWithURL(url as CFURL, UTType.gif.identifier as CFString, Int(total * fps) + 1, nil) else {
@@ -748,17 +1070,20 @@ enum TutorialGIF {
             window.contentView = host
             host.layoutSubtreeIfNeeded()
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.03))
-            guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { print("nessuna immagine a \(t) s"); return 1 }
+            // Two pixels per point, whatever the screen: the README shows it 640 wide, so it stays sharp on Retina.
+            guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size.width) * scale, pixelsHigh: Int(size.height) * scale,
+                                             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                             colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { print("nessuna immagine a \(t) s"); return 1 }
+            rep.size = size
             host.cacheDisplay(in: host.bounds, to: rep)
-            // One pixel per point: the GIF stays small and shows at 640 wide on GitHub.
             guard let source = rep.cgImage,
-                  let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8, bytesPerRow: 0,
+                  let context = CGContext(data: nil, width: Int(size.width) * scale, height: Int(size.height) * scale, bitsPerComponent: 8, bytesPerRow: 0,
                                           space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else {
                 print("fotogramma non disegnabile a \(t) s")
                 return 1
             }
             context.interpolationQuality = .high
-            context.draw(source, in: CGRect(origin: .zero, size: size))
+            context.draw(source, in: CGRect(x: 0, y: 0, width: size.width * CGFloat(scale), height: size.height * CGFloat(scale)))
             guard let frame = context.makeImage() else { print("fotogramma non creato a \(t) s"); return 1 }
             CGImageDestinationAddImage(gif, frame, [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: 1 / fps]] as CFDictionary)
             t += 1 / fps

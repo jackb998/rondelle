@@ -21,7 +21,7 @@ Available in **Italian, English and French**
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/tutorial-dark.gif">
-    <img src="docs/tutorial.gif" width="640" alt="Rondelle's tutorial: drag a photo, press Shift and the format wheel opens; Option and Control switch to Tools and Share; drop it on PNG and the converted file appears">
+    <img src="docs/tutorial.gif" width="640" alt="Rondelle's tutorial: drag a photo, press Shift and the format wheel opens; Option and Control switch to Tools and Share; drop it on PNG and the converted file appears; dropped on Resize, the panel of its variants opens">
   </picture>
   <br><sub>From the interactive tutorial that opens at the first launch: there you drag the sample photo yourself.</sub>
 </p>

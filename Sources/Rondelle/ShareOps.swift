@@ -204,29 +204,77 @@ enum ShareOps {
     }
 
     /// The full macOS share menu, opened where the files were dropped.
-    private static func showPicker(_ urls: [URL]) {
-        let point = NSEvent.mouseLocation
-        let anchor = NSWindow(contentRect: NSRect(x: point.x - 1, y: point.y - 1, width: 2, height: 2),
-                              styleMask: .borderless, backing: .buffered, defer: false)
-        anchor.isOpaque = false
-        anchor.backgroundColor = .clear
-        anchor.level = .popUpMenu
-        anchor.isReleasedWhenClosed = false
-        anchor.orderFrontRegardless()
-        let picker = NSSharingServicePicker(items: urls)
-        PickerDelegate.shared.anchor = anchor
-        picker.delegate = PickerDelegate.shared
-        picker.show(relativeTo: anchor.contentView!.bounds, of: anchor.contentView!, preferredEdge: .minY)
+    static func showPicker(_ urls: [URL]) {
+        PickerSession.shared.open(urls, at: NSEvent.mouseLocation)
     }
 
-    /// Closes the invisible anchor window once the menu is done.
-    @MainActor private final class PickerDelegate: NSObject, @preconcurrency NSSharingServicePickerDelegate {
-        static let shared = PickerDelegate()
-        var anchor: NSWindow?
+    /// Invisible panel the share menu hangs from. Before 1.0.2 it was a borderless NSWindow, which can't become key,
+    /// and the app is often not active after a drop (macOS may refuse the activation): no window of the app had the
+    /// keyboard, so Esc reached no one, and a click in another app never reached the menu (a popover) either. A
+    /// non-activating panel takes the keyboard without bringing the app forward.
+    final class PickerAnchor: NSPanel {
+        override var canBecomeKey: Bool { true }
+        override func cancelOperation(_ sender: Any?) { PickerSession.shared.finish() }
+    }
 
-        func sharingServicePicker(_ picker: NSSharingServicePicker, didChoose service: NSSharingService?) {
-            anchor?.orderOut(nil)
+    /// One open share menu: its anchor window, and what closes it (a choice, Esc, a click outside, the app losing focus).
+    @MainActor final class PickerSession: NSObject, @preconcurrency NSSharingServicePickerDelegate {
+        static let shared = PickerSession()
+        private(set) var anchor: PickerAnchor?
+        private var picker: NSSharingServicePicker?
+        private var monitors: [Any] = []
+        private var observer: NSObjectProtocol?
+
+        func open(_ urls: [URL], at point: NSPoint) {
+            finish()
+            let anchor = PickerAnchor(contentRect: NSRect(x: point.x - 1, y: point.y - 1, width: 2, height: 2),
+                                      styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            anchor.isOpaque = false
+            anchor.backgroundColor = .clear
+            anchor.level = .popUpMenu
+            anchor.isReleasedWhenClosed = false
+            anchor.hidesOnDeactivate = false
+            self.anchor = anchor
+            anchor.makeKeyAndOrderFront(nil)
+            let picker = NSSharingServicePicker(items: urls)
+            picker.delegate = self
+            self.picker = picker
+            picker.show(relativeTo: anchor.contentView!.bounds, of: anchor.contentView!, preferredEdge: .minY)
+            // A click in another app (global monitors of the mouse need no permission), Esc in this one.
+            if let global = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown],
+                                                              handler: { _ in MainActor.assumeIsolated { PickerSession.shared.finish() } }) {
+                monitors.append(global)
+            }
+            if let local = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { event in
+                guard event.keyCode == 53 else { return event }
+                MainActor.assumeIsolated { PickerSession.shared.finish() }
+                return nil
+            }) {
+                monitors.append(local)
+            }
+            observer = NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil,
+                                                              queue: .main) { _ in MainActor.assumeIsolated { PickerSession.shared.finish() } }
+        }
+
+        /// Closes the menu (with its anchor) and stops listening. Safe to call more than once.
+        func finish(closingMenu: Bool = true) {
+            monitors.forEach(NSEvent.removeMonitor)
+            monitors = []
+            if let observer { NotificationCenter.default.removeObserver(observer) }
+            observer = nil
+            // Closing the anchor alone leaves the menu on screen: it must be closed itself (macOS 13).
+            let open = picker
+            picker = nil
+            open?.delegate = nil
+            if closingMenu { open?.close() }
+            anchor?.close()
             anchor = nil
+        }
+
+        /// Also with `service == nil`: the menu was dismissed without a choice. The menu is already going away by
+        /// itself: closing it again could stop the chosen service.
+        func sharingServicePicker(_ picker: NSSharingServicePicker, didChoose service: NSSharingService?) {
+            finish(closingMenu: false)
         }
     }
 

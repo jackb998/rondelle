@@ -54,10 +54,10 @@ enum FileHints {
     }
 
     /// What a format on the wheel is for, or what a tool does.
-    static func line(for key: String) -> String? {
-        let upper = key.uppercased()
+    static func line(for action: WheelAction) -> String? {
+        let upper = action.key.uppercased()
         if let format = formats[aliases[upper] ?? upper] { return L(format) }
-        return OptionsView.hint(key)
+        return OptionsView.hint(for: action)
     }
 
     /// What the dragged files are, when they are all of one format.

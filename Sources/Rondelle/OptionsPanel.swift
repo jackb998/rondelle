@@ -57,7 +57,10 @@ struct OptionsView: View {
     private let columns = [GridItem(.fixed(150), spacing: 10), GridItem(.fixed(150), spacing: 10)]
 
     /// One line under the options that look alike, so the choice is clear without trying them.
-    static func hint(_ key: String) -> String? {
+    /// What a tool does, in a few words (wheel hub and options panel). By id first: one name can mean two tools
+    /// («Ruota» turns a photo, the «Ruota» group turns a PDF's pages).
+    static func hint(for action: WheelAction) -> String? {
+        let key = action.key
         if key.hasSuffix("px"), key != "Misura…", let px = Int(key.dropLast(2)) { return L("Lato lungo %@ pixel", px) }
         let hints = [
             "Comprimi": "Più leggero, qualità quasi uguale",
@@ -78,7 +81,7 @@ struct OptionsView: View {
             "Numera pagine": "Numero su ogni pagina",
             "Unisci e dividi": "Più PDF in uno, o separa",
             "Organizza e dividi": "Riordina o separa",
-            "Unisci": "Più PDF in uno, in ordine",
+            "Unisci": "Più file in uno, in ordine",
             "Organizza": "Riordina, ruota, elimina pagine",
             "Copia testo": "Negli appunti, nessun file",
             "Testo": "In un file TXT, e negli appunti",
@@ -87,7 +90,8 @@ struct OptionsView: View {
             "SRT inglese": "Se si parla inglese",
             "SRT francese": "Se si parla francese",
             "Oscura": "Toglie davvero il testo coperto",
-            "Ruota": "Tutte le pagine del PDF",
+            "group.turn": "Tutte le pagine del PDF",
+            "Ruota": "90° in senso orario",
             "Ruota a destra": "Tutte le pagine, 90°",
             "Ruota a sinistra": "Tutte le pagine, −90°",
             "Capovolgi": "Tutte le pagine, 180°",
@@ -98,8 +102,42 @@ struct OptionsView: View {
             "Modifica": "Regola, ritaglia, annota",
             "Con formattazione": "Dove è possibile",
             "Senza formattazione": "Solo il testo",
+            "Ridimensiona": "Meno pixel, file più leggero",
+            "Specchio": "Ribalta da sinistra a destra",
+            "Sfondo": "Toglie lo sfondo, resta il soggetto",
+            "Testo e QR": "Legge testo e codici",
+            "QR": "Legge QR e codici a barre",
+            "group.metadati": "Leggi o togli data, luogo, autore",
+            "Rimuovi": "Copia senza data, luogo, autore",
+            "Leggi": "Mostra i dati nascosti nel file",
+            "Layout": "Più foto in un'unica immagine",
+            "PDF e layout": "Le foto in un PDF o in una griglia",
+            "OCR": "PDF in cui si può cercare",
+            "Protezione": "Password, oscura, filigrana",
+            "Traduci": "Una copia in un'altra lingua",
+            "In italiano": "Copia tradotta in italiano",
+            "In inglese": "Copia tradotta in inglese",
+            "In francese": "Copia tradotta in francese",
+            "Taglia": "Tieni solo un pezzo",
+            "Velocità": "Più veloce o al rallentatore",
+            "Fotogramma": "Un'immagine dal centro del video",
+            "group.audio": "Togli o estrai l'audio",
+            "Normalizza": "Volume più alto, senza distorcere",
+            "Mono": "Tutti i canali in uno",
+            "Apri in Pages": "Apre i file in Pages",
+            "Apri in Numbers": "Apre i file in Numbers",
+            "Estrai": "Tira fuori i file dall'archivio",
+            "AirDrop": "Ai dispositivi Apple vicini",
+            "Messaggi": "In un messaggio",
+            "Mail": "Allegati a una nuova email",
+            "Copia": "Negli appunti, incolla con ⌘V",
+            "Terminale": "Finestra nella cartella dei file",
+            "Altro…": "Le altre app di condivisione",
         ]
-        return hints[key].map(L)
+        if let hint = hints[action.id] ?? hints[key] { return L(hint) }
+        // Apps and services on the share wheel (Telegram, WhatsApp, the ones added in Settings).
+        if case .share = action.work { return L("Manda i file a %@", action.title) }
+        return nil
     }
 
     var body: some View {
@@ -123,7 +161,7 @@ struct OptionsView: View {
                         VStack(spacing: 6) {
                             Image(systemName: action.symbol ?? "doc").font(.system(size: 22, weight: .medium))
                             Text(action.title).font(.callout.weight(.semibold)).lineLimit(2).multilineTextAlignment(.center)
-                            if let hint = Self.hint(action.key) {
+                            if let hint = Self.hint(for: action) {
                                 Text(hint).font(.caption2).lineLimit(2).multilineTextAlignment(.center)
                                     .foregroundStyle(hovered == i ? Color.white.opacity(0.85) : Color.secondary)
                             }

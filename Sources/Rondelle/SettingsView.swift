@@ -1257,9 +1257,12 @@ private struct AboutPane: View {
 
 // MARK: Support
 
+/// «Buy me a coffee» page, opened in the default browser: Rondelle itself still has no network access.
+enum SupportLink {
+    static let coffee = URL(string: "https://buymeacoffee.com/jackb998")!
+}
+
 private struct SupportPane: View {
-    /// Opened in the default browser: Rondelle itself still has no network access.
-    private static let coffee = URL(string: "https://buymeacoffee.com/jackb998")!
 
     var body: some View {
         Form {
@@ -1268,7 +1271,7 @@ private struct SupportPane: View {
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Button {
-                    NSWorkspace.shared.open(Self.coffee)
+                    NSWorkspace.shared.open(SupportLink.coffee)
                 } label: {
                     Label(L("Offrimi un caffè"), systemImage: "cup.and.saucer.fill")
                 }
