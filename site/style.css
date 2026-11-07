@@ -139,3 +139,16 @@ nav .lang{display:flex;gap:10px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
 .shots figure[hidden]{display:none}.shots img{border:0}
+
+/* phones: easier taps, no keyboard hint on touch screens */
+html{-webkit-text-size-adjust:100%}
+@media (hover:none){.kbhint{display:none}}
+@media (max-width:760px){
+ nav{gap:0 16px;padding:8px 12px}
+ nav b{padding:6px 8px}
+ nav span{gap:0}
+ nav span a{padding:10px 8px}
+ nav .lang{gap:0}
+ .small a{display:inline-block;padding:10px 6px}
+ .pick button,.modes button,.tabs span,.kinds label{min-height:40px}
+}
