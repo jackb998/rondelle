@@ -283,7 +283,7 @@ function render() {
     document.getElementById("f-c").innerHTML = d.c ? chips(d.c) : `<span class="chip">${t("x_ext")}</span>`;
     document.getElementById("f-t").textContent = t("t_" + tab);
   }
-  document.querySelectorAll("img[data-shot]").forEach(i => { const u = "shots/" + i.dataset.shot + "." + lang + ".png"; if (i.getAttribute("src") !== u) i.src = u; i.alt = t(i.dataset.alt); });
+  document.querySelectorAll("img[data-shot]").forEach(i => { const u = "shots/" + i.dataset.shot + "." + lang + ".png"; if (i.getAttribute("src") !== u) { i.closest("figure").hidden = false; i.src = u; } i.alt = t(i.dataset.alt); });
   if (typeof playRefresh === "function") playRefresh();
 }
 document.addEventListener("click", e => {

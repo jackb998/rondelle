@@ -137,3 +137,5 @@ nav .lang{display:flex;gap:10px}
 #clnote{font-size:13px;color:var(--mut)}
 @media (max-width:760px){.shots{grid-template-columns:1fr}.shots figure{max-width:340px;margin:0 auto}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+.shots figure[hidden]{display:none}.shots img{border:0}
