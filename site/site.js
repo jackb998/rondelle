@@ -207,15 +207,24 @@ const P = {
 en:{m_conv:"Convert (⇧)", m_tools:"Tools (⌥⇧)", m_share:"Share (⌃⇧)", wn_conv:"Convert", wn_tools:"Tools", wn_share:"Share",
  play_h:"Try it right here", sel_h:"Select your file type", empty:"Pick a file type on the left to get a file to play with.",
  play_l:"Pick a file type, then drag the file onto the wheel. Pick a wheel with the buttons, or hold ⇧, ⌥⇧ or ⌃⇧ while you drag, like in the app.",
- play_hint:"Drop on a slice to use it, in the centre to cancel. Nothing is uploaded: this is only a demo.", done:"Created next to the original:", sent:"Shared via", mac:"Your files"},
+ play_hint:"This is a simulation: it shows the wheel, no file is converted or uploaded. Drop on a slice to try it, in the centre to cancel.", kb_hint:"With the keyboard: Tab to the file, Enter to open the wheel, arrow keys to choose, Enter to apply, Esc to cancel.", kb_open:"Press Enter to open the wheel", done:"In the app this creates, next to the original:", sent:"In the app this shares via", mac:"Your files",
+ sc_h:"The real wheel", sc_l:"Screenshots of the app. The wheel changes with the file you drag.", sc1:"Convert · a photo", sc2:"Tools · the same photo", sc3:"Convert · a PDF",
+ sa1:"Rondelle’s Convert wheel for a photo", sa2:"Rondelle’s Tools wheel for the same photo", sa3:"Rondelle’s Convert wheel for a PDF",
+ cl_all:"All releases on GitHub", cl_note:"Release notes are written in English."},
 it:{m_conv:"Converti (⇧)", m_tools:"Strumenti (⌥⇧)", m_share:"Condividi (⌃⇧)", wn_conv:"Converti", wn_tools:"Strumenti", wn_share:"Condividi",
  play_h:"Provala qui", sel_h:"Scegli il tipo di file", empty:"Scegli un tipo di file a sinistra per avere un file con cui giocare.",
  play_l:"Scegli un tipo di file, poi trascinalo sulla ruota. Scegli la ruota con i pulsanti, oppure tieni premuto ⇧, ⌥⇧ o ⌃⇧ mentre trascini, come nell’app.",
- play_hint:"Rilascia su uno spicchio per usarlo, al centro per annullare. Non viene caricato nulla: è solo una demo.", done:"Creato accanto all’originale:", sent:"Condiviso con", mac:"I tuoi file"},
+ play_hint:"È una simulazione: mostra la ruota, nessun file viene convertito o caricato. Rilascia su uno spicchio per provarlo, al centro per annullare.", kb_hint:"Con la tastiera: Tab per arrivare al file, Invio per aprire la ruota, frecce per scegliere, Invio per applicare, Esc per annullare.", kb_open:"Premi Invio per aprire la ruota", done:"Nell’app crea, accanto all’originale:", sent:"Nell’app condivide con", mac:"I tuoi file",
+ sc_h:"La ruota vera", sc_l:"Schermate dell’app. La ruota cambia con il file che trascini.", sc1:"Converti · una foto", sc2:"Strumenti · la stessa foto", sc3:"Converti · un PDF",
+ sa1:"La ruota Converti di Rondelle per una foto", sa2:"La ruota Strumenti di Rondelle per la stessa foto", sa3:"La ruota Converti di Rondelle per un PDF",
+ cl_all:"Tutte le versioni su GitHub", cl_note:"Le note di rilascio sono scritte in inglese."},
 fr:{m_conv:"Convertir (⇧)", m_tools:"Outils (⌥⇧)", m_share:"Partager (⌃⇧)", wn_conv:"Convertir", wn_tools:"Outils", wn_share:"Partager",
  play_h:"Essayez ici", sel_h:"Choisissez le type de fichier", empty:"Choisissez un type de fichier à gauche pour avoir un fichier à essayer.",
  play_l:"Choisissez un type de fichier, puis faites-le glisser sur la roue. Choisissez la roue avec les boutons, ou maintenez ⇧, ⌥⇧ ou ⌃⇧ pendant le glissement, comme dans l’app.",
- play_hint:"Relâchez sur une part pour l’utiliser, au centre pour annuler. Rien n’est envoyé : ce n’est qu’une démo.", done:"Créé à côté de l’original :", sent:"Partagé via", mac:"Vos fichiers"}};
+ play_hint:"C’est une simulation : elle montre la roue, aucun fichier n’est converti ni envoyé. Relâchez sur une part pour essayer, au centre pour annuler.", kb_hint:"Au clavier : Tab jusqu’au fichier, Entrée pour ouvrir la roue, flèches pour choisir, Entrée pour appliquer, Échap pour annuler.", kb_open:"Appuyez sur Entrée pour ouvrir la roue", done:"Dans l’app, crée à côté de l’original :", sent:"Dans l’app, partage via", mac:"Vos fichiers",
+ sc_h:"La vraie roue", sc_l:"Captures de l’app. La roue change selon le fichier que vous faites glisser.", sc1:"Convertir · une photo", sc2:"Outils · la même photo", sc3:"Convertir · un PDF",
+ sa1:"La roue Convertir de Rondelle pour une photo", sa2:"La roue Outils de Rondelle pour la même photo", sa3:"La roue Convertir de Rondelle pour un PDF",
+ cl_all:"Toutes les versions sur GitHub", cl_note:"Les notes de version sont rédigées en anglais."}};
 const LAB = {compress:["Compress","Comprimi","Compresser"],half:["50%","50%","50 %"],rotate:["Rotate","Ruota","Pivoter"],mirror:["Mirror","Specchia","Miroir"],ocr:["OCR","OCR","OCR"],edit:["Edit","Modifica","Modifier"],
  merge:["Merge","Unisci","Fusionner"],split:["Split","Dividi","Diviser"],password:["Password","Password","Mot de passe"],watermark:["Watermark","Filigrana","Filigrane"],
  trim:["Trim","Taglia","Couper"],p1080:["1080p","1080p","1080p"],p720:["720p","720p","720p"],speed2:["2× speed","Velocità 2×","Vitesse 2×"],mute:["Mute","Muto","Muet"],audioonly:["Audio only","Solo audio","Audio seul"],
@@ -274,6 +283,7 @@ function render() {
     document.getElementById("f-c").innerHTML = d.c ? chips(d.c) : `<span class="chip">${t("x_ext")}</span>`;
     document.getElementById("f-t").textContent = t("t_" + tab);
   }
+  document.querySelectorAll("img[data-shot]").forEach(i => { const u = "shots/" + i.dataset.shot + "." + lang + ".png"; if (i.getAttribute("src") !== u) i.src = u; i.alt = t(i.dataset.alt); });
   if (typeof playRefresh === "function") playRefresh();
 }
 document.addEventListener("click", e => {
@@ -287,8 +297,8 @@ const $=id=>document.getElementById(id);
 const stage=$("stage"); let mode="conv", cur=null, items=[], sel=-1, pos={x:0,y:0}, wpx=300;
 const kindOf=n=>KIND[n.split(".").pop().toLowerCase()]||"doc";
 const lab=k=>LAB[k]?LAB[k][LI[lang]]:k;
-function fileEl(n){const e=document.createElement("div");e.className="fi";e.dataset.name=n;e.innerHTML=`<div class="ic"><b>${n.split(".").pop().toUpperCase()}</b></div><span>${n}</span>`;e.addEventListener("pointerdown",down);return e;}
-function playRefresh(){ if(!stage) return; const r=$("hubrest"); if(r&&sel<0) $("hub").textContent=t("wn_"+mode); document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on",b.dataset.mode===mode)); }
+function fileEl(n){const e=document.createElement("div");e.className="fi";e.dataset.name=n;e.innerHTML=`<div class="ic"><b>${n.split(".").pop().toUpperCase()}</b></div><span>${n}</span>`;e.addEventListener("pointerdown",down);e.tabIndex=0;e.setAttribute("role","button");e.addEventListener("keydown",kbOpen);return e;}
+function playRefresh(){ if(!stage) return; document.querySelectorAll("#files .fi").forEach(f=>f.setAttribute("aria-label",f.dataset.name+". "+t("kb_open"))); const r=$("hubrest"); if(r&&sel<0) $("hub").textContent=t("wn_"+mode); document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on",b.dataset.mode===mode)); }
 function itemsFor(name){
   const ext=name.split(".").pop().toLowerCase(), k=kindOf(name);
   if(mode==="share") return SHARE.map(x=>({k:x,l:lab(x)}));
@@ -313,6 +323,7 @@ function setSel(i){
   sel=i; document.querySelectorAll("#sl .s").forEach((e,j)=>e.classList.toggle("on",j===i));
   const N=items.length, c=i<0?-90:-90+i*360/N, [dx,dy]=arc(63,c), d=$("dot"); d.setAttribute("cx",dx); d.setAttribute("cy",dy);
   $("hub").textContent=i<0?t("wn_"+mode):items[i].l;
+  const lv=$("live"); if(lv&&kb) lv.textContent=i<0?"":items[i].l;
 }
 function place(){
   const R=stage.getBoundingClientRect(); wpx=Math.min(300,R.width-16);
@@ -338,16 +349,33 @@ function move(e){
   const N=items.length, a=(((Math.atan2(dy,dx)*180/Math.PI+90)%360)+360)%360, i=Math.round(a/(360/N))%N;
   if(i!==sel) setSel(i);
 }
-function up(){
-  const el=cur, it=sel>=0?items[sel]:null, name=el.dataset.name; cur=null; el.onpointermove=el.onpointerup=el.onpointercancel=null;
-  $("wh").style.display="none"; $("ghost").style.display="none"; el.classList.remove("drag"); setSel(-1);
-  if(!it) return;
+function finish(name,it){
   const base=name.replace(/\.[^.]+$/,""), ext=name.split(".").pop();
   if(mode==="share") return say(t("sent")+" "+it.l);
   let nn; if(mode==="conv"&&it.k!=="extract") nn=base+"."+it.k; else if(it.k==="extract") nn=base+" (folder)"; else nn=base+" ("+it.l+")."+ext;
-  if(!nn.includes("(folder)")&&!KIND[nn.split(".").pop().toLowerCase()]&&mode==="conv") nn=nn; 
   say(t("done")+" "+nn);
 }
+function up(){
+  const el=cur, it=sel>=0?items[sel]:null, name=el.dataset.name; cur=null; el.onpointermove=el.onpointerup=el.onpointercancel=null;
+  $("wh").style.display="none"; $("ghost").style.display="none"; el.classList.remove("drag"); setSel(-1);
+  if(it) finish(name,it);
+}
+/* keyboard: Enter opens the wheel on the focused file, arrows choose, Enter applies, Esc cancels */
+let kb=null;
+function kbOpen(e){
+  if(e.key!=="Enter"&&e.key!==" ") return; e.preventDefault(); e.stopPropagation(); if(kb||cur) return;
+  const R=stage.getBoundingClientRect(); kb=e.currentTarget; pos={x:R.width/2,y:R.height/2};
+  mode=$("modes").dataset.base; items=itemsFor(kb.dataset.name);
+  place(); build(); $("wh").style.display="block"; $("toast").style.opacity=0; playRefresh();
+}
+function kbClose(){ kb=null; $("wh").style.display="none"; setSel(-1); }
+document.addEventListener("keydown",e=>{
+  if(!kb) return; const N=items.length;
+  if(e.key==="ArrowRight"||e.key==="ArrowDown"){ e.preventDefault(); setSel(sel<0?0:(sel+1)%N); }
+  else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){ e.preventDefault(); setSel(sel<=0?N-1:sel-1); }
+  else if(e.key==="Enter"||e.key===" "){ e.preventDefault(); const it=sel>=0?items[sel]:null, name=kb.dataset.name; kbClose(); if(it) finish(name,it); }
+  else if(e.key==="Escape"||e.key==="Tab") kbClose();
+});
 let tt; function say(s){const e=$("toast"); e.textContent="✓ "+s; e.style.opacity=1; clearTimeout(tt); tt=setTimeout(()=>e.style.opacity=0,3000);}
 if(stage){
   $("pick").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; document.querySelectorAll("#pick button").forEach(x=>x.classList.toggle("on",x===b)); $("files").innerHTML=""; const f=fileEl(SAMPLE[b.dataset.k]); f.classList.add("pop"); $("files").appendChild(f); $("empty").style.display="none";});
@@ -377,6 +405,19 @@ if(cf){
 }
 render();
 if(q.get("demo")) document.querySelector('#pick button[data-k="'+q.get("demo")+'"]')?.click();
+/* versions: the list on the press page comes from GitHub Releases (bullet lines only), never typed by hand */
+const cl = document.getElementById("cl");
+if (cl) fetch("https://api.github.com/repos/jackb998/rondelle/releases?per_page=30").then(r => r.ok ? r.json() : Promise.reject()).then(rs => {
+  const esc = x => x.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const md = x => esc(x).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\*(.+?)\*/g,"<i>$1</i>").replace(/`(.+?)`/g,"<code>$1</code>");
+  const rows = rs.filter(r => !r.draft && !r.prerelease).map(r => {
+    const bullets = (r.body||"").split("\n").filter(l => l.startsWith("- ")).map(l => "<p>" + md(l.slice(2)) + "</p>").join("");
+    const d = new Date(r.published_at).toLocaleDateString(lang, {year:"numeric", month:"long", day:"numeric"});
+    return "<div><b>" + esc(r.tag_name.replace(/^v/,"")) + "</b><i>" + d + "</i>" + bullets + "</div>";
+  });
+  if (rows.length) cl.innerHTML = rows.join("");
+  const m = document.getElementById("clnote"); if (m) m.innerHTML = t("cl_note") + " · <a href='https://github.com/jackb998/rondelle/releases' target='_blank' rel='noopener noreferrer'>" + t("cl_all") + "</a>";
+}).catch(() => {});
 /* version and date come from the latest GitHub release, never typed by hand */
 const v = document.getElementById("ver");
 if (v) fetch("https://api.github.com/repos/jackb998/rondelle/releases/latest").then(r => r.ok ? r.json() : Promise.reject())

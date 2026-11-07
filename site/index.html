@@ -3,7 +3,7 @@
 <title>Rondelle</title>
 <meta name="description" content="">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta property="og:type" content="website"><meta property="og:title" content="Rondelle"><meta property="og:description" content="File tools, thoughtfully arranged."><meta property="og:image" content="https://jackb998.github.io/rondelle/icon.png"><meta name="twitter:card" content="summary">
+<meta property="og:type" content="website"><meta property="og:title" content="Rondelle"><meta property="og:description" content="File tools, thoughtfully arranged."><meta property="og:image" content="https://jackb998.github.io/rondelle/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="style.css"></head>
 <body>
 <script>if(location.hash=="#dark")document.documentElement.className="dark";if(location.hash=="#light")document.documentElement.className="light"</script>
@@ -24,8 +24,8 @@
 <div class="arena"><div class="modes" id="modes"><button data-mode="conv" data-i="m_conv"></button><button data-mode="tools" data-i="m_tools"></button><button data-mode="share" data-i="m_share"></button></div>
 <div class="stage2" id="stage"><div class="files" id="files"></div><p class="empty" id="empty" data-i="empty"></p>
 <svg class="wheel ov" id="wh" viewBox="-170 -170 340 340" aria-hidden="true"><g id="sl"></g><circle class="hub" r="55"/><text class="hubt" id="hub" y="5"></text><circle class="dotw" id="dot" cx="0" cy="-63" r="5.5"/></svg>
-<div class="fi ghost" id="ghost"></div><div class="toast" id="toast"></div></div>
-<p class="hint" data-i="play_hint"></p></div></div>
+<div class="fi ghost" id="ghost"></div><div class="toast" id="toast" role="status"></div><div class="sr" id="live" aria-live="polite"></div></div>
+<p class="hint" data-i="play_hint"></p><p class="hint" data-i="kb_hint"></p></div></div>
 
 <section class="grid3" style="margin-top:70px"><div><span class="dot"></span><h3 data-i="g1h"></h3><span data-i="g1"></span></div><div><span class="dot"></span><h3 data-i="g2h"></h3><span data-i="g2"></span></div><div><span class="dot"></span><h3 data-i="g3h"></h3><span data-i="g3"></span></div></section>
 
@@ -40,6 +40,10 @@
 <div><kbd>⌥ ⇧</kbd><b data-i="ge2h"></b><span data-i="ge2"></span></div>
 <div><kbd>⌃ ⇧</kbd><b data-i="ge3h"></b><span data-i="ge3"></span></div>
 </section>
+
+<h2 id="app" data-i="sc_h"></h2>
+<p class="lead" data-i="sc_l"></p>
+<section class="shots"><figure><img data-shot="wheel-convert-photo" data-alt="sa1" width="600" height="600" loading="lazy" alt=""><figcaption data-i="sc1"></figcaption></figure><figure><img data-shot="wheel-tools-photo" data-alt="sa2" width="600" height="600" loading="lazy" alt=""><figcaption data-i="sc2"></figcaption></figure><figure><img data-shot="wheel-convert-pdf" data-alt="sa3" width="600" height="600" loading="lazy" alt=""><figcaption data-i="sc3"></figcaption></figure></section>
 
 <h2 id="formati" data-i="fm_h"></h2>
 <div class="tabs" id="tabs" style="margin-top:28px"><span data-tab="img" data-i="tab_img"></span><span data-tab="pdf" data-i="tab_pdf"></span><span data-tab="vid" data-i="tab_vid"></span><span data-tab="aud" data-i="tab_aud"></span><span data-tab="doc" data-i="tab_doc"></span><span data-tab="xls" data-i="tab_xls"></span><span data-tab="sub" data-i="tab_sub"></span><span data-tab="arc" data-i="tab_arc"></span></div>

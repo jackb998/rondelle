@@ -127,3 +127,13 @@ nav .lang{display:flex;gap:10px}
 .status{text-align:center;font-size:14px;min-height:20px;color:var(--fg)}.status[data-s=err]{color:#c0392b}
 :root.dark .status[data-s=err]{color:#ff8a7a}
 @media (prefers-color-scheme:dark){:root:not(.light) .status[data-s=err]{color:#ff8a7a}}
+
+/* showcase, keyboard focus, screen-reader text, reduced motion */
+.shots{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin:34px auto 0;max-width:1000px}
+.shots figure{margin:0;text-align:center}.shots img{width:100%;height:auto;display:block}
+.shots figcaption{font-size:14px;color:var(--mut);margin-top:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.fi:focus-visible{outline:2px solid var(--acc);outline-offset:4px;border-radius:12px}
+#clnote{font-size:13px;color:var(--mut)}
+@media (max-width:760px){.shots{grid-template-columns:1fr}.shots figure{max-width:340px;margin:0 auto}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
