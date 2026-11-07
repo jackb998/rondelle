@@ -1213,6 +1213,11 @@ private struct PrivacyPane: View {
     }
 }
 
+/// The project site. Opened in the default browser: Rondelle itself sends nothing there.
+enum Website {
+    static let url = URL(string: "https://jackb998.github.io/rondelle/")!
+}
+
 // MARK: About
 
 private struct AboutPane: View {
@@ -1234,6 +1239,15 @@ private struct AboutPane: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: 420)
+            Button {
+                NSWorkspace.shared.open(Website.url)
+            } label: {
+                Label(L("Sito web di Rondelle"), systemImage: "safari")
+            }
+            .rondelleButton()
+            Text(L("Il link si apre nel browser: Rondelle non invia nulla a quel sito."))
+                .font(.caption)
+                .foregroundStyle(.tertiary)
             Text(L("© 2026 jackb998")).font(.caption).foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1245,7 +1259,7 @@ private struct AboutPane: View {
 
 private struct SupportPane: View {
     /// Opened in the default browser: Rondelle itself still has no network access.
-    private static let coffee = URL(string: "https://buymeacoffee.com/gq974fttf9y")!
+    private static let coffee = URL(string: "https://buymeacoffee.com/jackb998")!
 
     var body: some View {
         Form {

@@ -845,3 +845,5 @@
 "Informazioni su Rondelle" = "About Rondelle";
 "Build %@" = "Build %@";
 "Cerchio che si completa" = "Completing circle";
+"Sito web di Rondelle" = "Rondelle website";
+"Il link si apre nel browser: Rondelle non invia nulla a quel sito." = "The link opens in your browser: Rondelle sends nothing to that site.";

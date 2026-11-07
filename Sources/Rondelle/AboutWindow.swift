@@ -36,6 +36,13 @@ private struct AboutView: View {
                 .font(.callout)
             Text(L("Build %@", info["CFBundleVersion"] as? String ?? "—"))
                 .font(.caption).foregroundStyle(.secondary)
+            Button {
+                NSWorkspace.shared.open(Website.url)
+            } label: {
+                Label(L("Sito web di Rondelle"), systemImage: "safari")
+            }
+            .rondelleButton()
+            .padding(.top, 8)
             if let copyright = info["NSHumanReadableCopyright"] as? String {
                 Text(copyright).font(.caption2).foregroundStyle(.tertiary).padding(.top, 6)
             }
