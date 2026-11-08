@@ -371,6 +371,32 @@ enum CLI {
                 return 1
             }
 
+        case "--test-pptx-text":
+            // --test-pptx-text FILE.pptx TEXT: how many slides Rondelle reads, whether TEXT is in their text, and how many
+            // pictures, tables and free-form outlines they hold (the slide's own, with the master's and the layout's).
+            guard args.count >= 2 else { return usage() }
+            do {
+                let url = URL(fileURLWithPath: args[0])
+                try PptxOps.check(url)
+                let deck = try PptxReader.read(url)
+                var pictures = 0, tables = 0, outlines = 0
+                for slide in deck.slides {
+                    for item in slide.items {
+                        switch item.content {
+                        case .picture: pictures += 1
+                        case .table: tables += 1
+                        case .shape(.custom, _, _, _, _): outlines += 1
+                        default: break
+                        }
+                    }
+                }
+                print("diapositive=\(deck.slides.count) testo=\(PptxOps.text(deck).contains(args[1]) ? "si" : "no") immagini=\(pictures) tabelle=\(tables) larghezza=\(Int(deck.size.width)) libere=\(outlines)")
+                return 0
+            } catch {
+                fputs("\(error.localizedDescription)\n", stderr)
+                return 1
+            }
+
         case "--test-archive-size":
             // --test-archive-size ARCHIVE: the declared expanded size as Rondelle reads it (no limit).
             guard let path = args.first else { return usage() }
@@ -843,7 +869,7 @@ enum CLI {
             // --test-wheel-hints: every entry of every wheel (each kind of file, each mode, groups and what's inside them)
             // must have a line in the hub, short enough to show with the pizza shape (the smallest hub). Lists the others.
             let kinds: [(String, FileKind)] = [("immagini", .image), ("PDF", .pdf), ("video", .video), ("audio", .audio),
-                                               ("documenti", .document), ("fogli", .spreadsheet), ("sottotitoli", .subtitle),
+                                               ("documenti", .document), ("fogli", .spreadsheet), ("presentazioni", .presentation), ("sottotitoli", .subtitle),
                                                ("archivi", .archive), ("altro", .other)]
             var seen = Set<String>(), problems: [String] = []
             for (kindName, kind) in kinds {
@@ -864,6 +890,41 @@ enum CLI {
             problems.forEach { print($0) }
             print("\(seen.count) voci, \(problems.count) senza descrizione visibile")
             return problems.isEmpty ? 0 : 1
+
+        case "--test-wheel-labels":
+            // --test-wheel-labels: every name of every wheel (each kind of file, each mode, each shape) in the language of
+            // RONDELLE_LANG must be drawn inside its piece under the pointer: on two lines if it has more than one word,
+            // else smaller (down to 50%). The pill is only for a name that would still not fit: none must be left.
+            // Lists the names on two lines and any on the pill.
+            // One and two files of each kind (one PDF gets «Organizza e dividi», two get «Unisci e dividi»), and PDFs with images.
+            let sets: [(String, [String])] = [("immagine", ["a.jpg"]), ("immagini", ["a.jpg", "b.jpg"]), ("PDF", ["a.pdf"]),
+                                              ("PDF (2)", ["a.pdf", "b.pdf"]), ("PDF e immagini", ["a.pdf", "b.jpg"]),
+                                              ("video", ["a.mov"]), ("audio", ["a.wav"]), ("documento", ["a.docx"]),
+                                              ("foglio", ["a.xlsx"]), ("sottotitoli", ["a.srt"]), ("archivio", ["a.zip"]),
+                                              ("altro", ["a.bin"])]
+            let view = WheelView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
+            var twoLines = Set<String>(), pills: [String] = [], total = 0, multiWordPills = 0
+            for shape in WheelShape.allCases {
+                view.debugShape = shape
+                for (kindName, files) in sets {
+                    let urls = files.map { URL(fileURLWithPath: "/tmp/\($0)") }
+                    for (modeName, mode) in [("Converti", WheelMode.convert), ("Strumenti", .tools), ("Condividi", .share)] {
+                        let actions = WheelGroups.apply(ActionCatalog.allActions(for: urls, mode: mode), mode: mode)
+                        guard !actions.isEmpty else { continue }
+                        for item in view.labelReport(for: actions) {
+                            total += 1
+                            if item.pill {
+                                pills.append("\(shape) · \(modeName) · \(kindName) · \(item.title) (\(actions.count) voci)")
+                                if item.title.contains(" ") { multiWordPills += 1 }
+                            } else if item.lines == 2 { twoLines.insert("\(item.title)") }
+                        }
+                    }
+                }
+            }
+            twoLines.sorted().forEach { print("due righe: \($0)") }
+            pills.forEach { print("PILLOLA: \($0)") }
+            print("\(total) nomi, \(twoLines.count) su due righe, \(pills.count) con la pillola (\(multiWordPills) di più parole)")
+            return pills.isEmpty ? 0 : 1
 
         case "--test-dock-icon":
             // --test-dock-icon [SECONDS]: follows the appearance as Settings does, forcing light and dark for SECONDS

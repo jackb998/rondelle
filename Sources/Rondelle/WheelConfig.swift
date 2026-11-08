@@ -11,7 +11,7 @@ enum WheelConfig {
     /// The wheels you can customise, as shown in Settings.
     static let kinds: [(kind: FileKind, label: String)] = [
         (.image, L("Immagini")), (.pdf, "PDF"), (.video, L("Video")), (.audio, L("Audio")),
-        (.document, L("Documenti")), (.spreadsheet, L("Fogli di calcolo")), (.subtitle, L("Sottotitoli")), (.archive, L("Archivi")), (.other, L("Cartelle e altri file")),
+        (.document, L("Documenti")), (.spreadsheet, L("Fogli di calcolo")), (.presentation, L("Presentazioni")), (.subtitle, L("Sottotitoli")), (.archive, L("Archivi")), (.other, L("Cartelle e altri file")),
     ]
 
     static func key(_ kind: FileKind, _ mode: WheelMode) -> String {
@@ -23,6 +23,7 @@ enum WheelConfig {
         case .audio: k = "audio"
         case .document: k = "document"
         case .spreadsheet: k = "spreadsheet"
+        case .presentation: k = "presentation"
         case .subtitle: k = "subtitle"
         case .archive: k = "archive"
         case .folder, .other: k = "other"

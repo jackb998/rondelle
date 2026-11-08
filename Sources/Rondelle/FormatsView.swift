@@ -15,6 +15,7 @@ struct FormatsPane: View {
         Table(title: "PDF", symbol: "doc.richtext", rows: ["pdf"]),
         Table(title: "Documenti", symbol: "doc.text", rows: ["docx", "doc", "rtf", "rtfd", "odt", "html", "txt", "md", "webarchive", "pages"]),
         Table(title: "Fogli di calcolo", symbol: "tablecells", rows: ["xlsx", "ods", "csv", "tsv", "numbers"]),
+        Table(title: "Presentazioni", symbol: "rectangle.on.rectangle", rows: ["pptx"]),
         Table(title: "Video", symbol: "film", rows: ["mov", "mp4", "m4v"]),
         Table(title: "Audio", symbol: "waveform", rows: ["mp3", "m4a", "wav", "aiff", "flac", "caf"]),
         Table(title: "Sottotitoli", symbol: "captions.bubble", rows: ["srt", "vtt"]),

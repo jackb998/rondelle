@@ -23,6 +23,7 @@ enum FileHints {
         "RTFD": "Testo con immagini, Mac",
         "ODT": "LibreOffice, da modificare",
         "PAGES": "Pages, da modificare",
+        "PPTX": "PowerPoint, da modificare",
         "HTML": "Pagina web",
         "WEBARCHIVE": "Pagina web salvata da Safari",
         "TXT": "Solo testo",

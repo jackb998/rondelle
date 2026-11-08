@@ -58,8 +58,9 @@ enum ArchiveOps {
     }
 
     /// A package (DOCX) from the parts in `folder`: no owner, dates of files or other extras.
-    static func pack(_ folder: URL, to temp: URL) throws {
-        try run("/usr/bin/zip", ["-r", "-q", "-X", temp.path, "."], in: folder)
+    /// `entries: false` leaves out the entries of the folders themselves (an Office package lists files only).
+    static func pack(_ folder: URL, to temp: URL, folderEntries: Bool = true) throws {
+        try run("/usr/bin/zip", ["-r", "-q", "-X"] + (folderEntries ? [] : ["-D"]) + [temp.path, "."], in: folder)
     }
 
     /// «CocoaOOXMLWriter/2775.2» in a DOCX or ODT → «Rondelle», through zip's update of that one entry (which holds

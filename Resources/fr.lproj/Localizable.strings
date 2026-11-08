@@ -939,3 +939,10 @@
 "Per creare un file Pages serve Pages installato" = "Pour créer un fichier Pages, Pages doit être installé";
 "Creazione del file Pages non riuscita" = "La création du fichier Pages a échoué";
 "Pages, da modificare" = "Pages, à modifier";
+"Presentazioni" = "Présentations";
+"PowerPoint, da modificare" = "PowerPoint, à modifier";
+"Diapositiva %@" = "Diapositive %@";
+"Note" = "Notes";
+"«%@» non è una presentazione PowerPoint valida" = "« %@ » n’est pas une présentation PowerPoint valide";
+"«%@» ha troppe diapositive (massimo %@)" = "« %@ » a trop de diapositives (au plus %@)";
+"troppe immagini (massimo %@)" = "trop d’images (au plus %@)";

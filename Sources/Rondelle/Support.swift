@@ -69,10 +69,11 @@ enum OpError: LocalizedError {
 }
 
 enum FileKind: Hashable {
-    case image, pdf, video, audio, document, spreadsheet, subtitle, archive, folder, other
+    case image, pdf, video, audio, document, spreadsheet, presentation, subtitle, archive, folder, other
 
     static let documentExtensions: Set<String> = ["docx", "doc", "rtf", "rtfd", "odt", "html", "htm", "txt", "md", "webarchive", "pages"]
     static let spreadsheetExtensions: Set<String> = ["xlsx", "ods", "csv", "tsv", "numbers"]
+    static let presentationExtensions: Set<String> = ["pptx"]
     static let subtitleExtensions: Set<String> = ["srt", "vtt"]
     static let archiveExtensions: Set<String> = ["zip", "tar", "gz", "tgz", "bz2", "xz", "rar", "7z"]
 
@@ -86,6 +87,7 @@ enum FileKind: Hashable {
         }
         if Self.documentExtensions.contains(ext) { self = .document; return }
         if Self.spreadsheetExtensions.contains(ext) { self = .spreadsheet; return }
+        if Self.presentationExtensions.contains(ext) { self = .presentation; return }
         if Self.subtitleExtensions.contains(ext) { self = .subtitle; return }
         if Self.archiveExtensions.contains(ext) { self = .archive; return }
         guard let type = UTType(filenameExtension: ext) else {

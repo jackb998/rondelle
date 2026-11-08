@@ -203,6 +203,7 @@ enum ActionCatalog {
         case .audio: samples = ["a.wav"]
         case .document: samples = ["a.docx"]
         case .spreadsheet: samples = ["a.xlsx"]
+        case .presentation: samples = ["a.pptx"]
         case .subtitle: samples = ["a.srt"]
         case .archive: samples = ["a.zip"]
         case .folder, .other: samples = ["a.bin"]
@@ -242,7 +243,7 @@ enum ActionCatalog {
         return actions.filter { normalized($0.key) != ext }
     }
 
-    private static func allActions(for urls: [URL], mode: WheelMode) -> [WheelAction] {
+    static func allActions(for urls: [URL], mode: WheelMode) -> [WheelAction] {
         if mode == .share { return ShareOps.actions() }
         let zip = WheelAction.all("ZIP", "archivebox") { try ArchiveOps.zip($0) }
         let protectedZip = WheelAction.protectedZip
@@ -279,6 +280,7 @@ enum ActionCatalog {
                 }.withID(target.name == "JPG" ? "JPEG" : target.name)
             } + [
                 .all("PDF") { try PDFOps.fromImages($0) },
+                .all("PPTX") { try PptxOps.fromImages($0) },
                 .each("ICNS") { try IconMaker.icns($0) },
                 .each("ICO") { try IconMaker.ico($0) },
             ]
@@ -335,6 +337,7 @@ enum ActionCatalog {
                 .each("PNG") { try PDFOps.toImages($0, type: .png, dpi: FormatSettings.pdfImagesDPI) },
                 WheelAction.each("JPG") { try PDFOps.toImages($0, type: .jpeg, dpi: FormatSettings.pdfImagesDPI) }.withID("JPEG"),
                 .each("TXT") { try TextRecognition.pdfToText($0) },
+                .each("PPTX") { try PptxOps.fromPDF($0) },
                 WheelAction(title: "DOCX", symbol: nil, work: .group([
                     WheelAction.each("Con formattazione", "doc.richtext") { try await DocumentOps.fromPDF($0, to: .docx) }.withID("DOCX"),
                     .each("Senza formattazione", "doc.plaintext") { try await DocumentOps.fromPDF($0, to: .docx, plain: true) },
@@ -449,6 +452,17 @@ enum ActionCatalog {
                 .each("HTML") { try await SheetOps.convert($0, to: .html) },
                 .each("PDF") { try await SheetOps.convert($0, to: .pdf) },
             ] + iWork(.numbers, urls)
+
+        case (.presentation, .convert):
+            return [
+                .each("PDF") { try PptxOps.toPDF($0) },
+                WheelAction.each("PNG") { try PptxOps.toImages($0, type: .png, dpi: FormatSettings.pdfImagesDPI) },
+                WheelAction.each("JPG") { try PptxOps.toImages($0, type: .jpeg, dpi: FormatSettings.pdfImagesDPI) }.withID("JPEG"),
+                .each("TXT") { try PptxOps.toText($0) },
+            ]
+
+        case (.presentation, .tools):
+            return [.metadata(for: urls), zip, protectedZip]
 
         case (.subtitle, .convert):
             return [

@@ -19,7 +19,7 @@ enum ContentLimits {
     static func check(_ url: URL) throws {
         let tooComplex = OpError.unsupported(L("«%@» è troppo complesso da elaborare", url.lastPathComponent))
         switch url.pathExtension.lowercased() {
-        case "docx", "odt":
+        case "docx", "odt", "pptx":
             guard let data = mapped(url) else { return }
             if try packedXML(data) > maxPackedXML { throw tooComplex }
         case "html", "htm":

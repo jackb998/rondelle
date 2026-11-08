@@ -41,7 +41,7 @@ enum MetadataReader {
         case .image: rows += grouped(L("Immagine"), image(url))
         case .pdf: rows += grouped("PDF", pdf(url))
         case .video, .audio: rows += grouped(L("Audio e video"), await media(url))
-        case .document, .spreadsheet: rows += OfficeMetadata.read(url)
+        case .document, .spreadsheet, .presentation: rows += OfficeMetadata.read(url)
         case .archive: rows += grouped(L("Archivio"), archive(url))
         default: break
         }
@@ -49,7 +49,7 @@ enum MetadataReader {
         rows += grouped("Origine", origin(url))
         rows += grouped("Spotlight", spotlight(url))
         let symbol = [FileKind.image: "photo", .pdf: "doc.richtext", .video: "film", .audio: "waveform", .document: "doc.text",
-                      .spreadsheet: "tablecells", .subtitle: "captions.bubble", .archive: "archivebox", .folder: "folder"][kind] ?? "doc"
+                      .spreadsheet: "tablecells", .presentation: "rectangle.on.rectangle", .subtitle: "captions.bubble", .archive: "archivebox", .folder: "folder"][kind] ?? "doc"
         if rows.count > maxRows { rows = Array(rows.prefix(maxRows)) + [("…", L("altri valori non mostrati"))] }
         return Section(name: url.lastPathComponent, symbol: symbol, rows: rows.map { (clean($0.0, limit: 80), clean($0.1, limit: maxValue)) })
     }

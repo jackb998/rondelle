@@ -939,3 +939,10 @@
 "Per creare un file Pages serve Pages installato" = "Creating a Pages file needs Pages installed";
 "Creazione del file Pages non riuscita" = "Could not create the Pages file";
 "Pages, da modificare" = "Pages, to edit";
+"Presentazioni" = "Presentations";
+"PowerPoint, da modificare" = "PowerPoint, to edit";
+"Diapositiva %@" = "Slide %@";
+"Note" = "Notes";
+"«%@» non è una presentazione PowerPoint valida" = "“%@” is not a valid PowerPoint presentation";
+"«%@» ha troppe diapositive (massimo %@)" = "“%@” has too many slides (at most %@)";
+"troppe immagini (massimo %@)" = "too many images (at most %@)";

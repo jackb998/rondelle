@@ -452,7 +452,7 @@ final class WheelView: NSView {
             if !blank {
                 let labelOrigin = NSPoint(x: origin.x + d.x * labelRadius, y: origin.y + d.y * labelRadius)
                 if !chosen || labelFits(action) {
-                    drawLabel(action, at: labelOrigin, color: lit ? palette.onAccent : palette.text)
+                    drawLabel(action, at: labelOrigin, color: lit ? palette.onAccent : palette.text, hover: chosen)
                 }
             }
             NSGraphicsContext.restoreGraphicsState()
@@ -468,7 +468,8 @@ final class WheelView: NSView {
         if let g = openGroup, let c = highlightedChild, let members = members(of: g) {
             drawHub(title: members[c].title, hint: FileHints.line(for: members[c]), palette: palette)
         } else if let i = highlighted, actions.indices.contains(i) {
-            // Hovering: the hub spells out the full name; a label too long for its piece is redrawn on top, unclipped.
+            // Hovering: the hub spells out the full name; the piece's label shrinks or goes on two lines to stay inside it
+            // (the pill is only for a name that would not fit even then).
             drawHub(title: actions[i].title, hint: FileHints.line(for: actions[i]), palette: palette)
             if !labelFits(actions[i]) {
                 let d = direction(CGFloat(i) * segment), r = labelRadius + lift * (animates ? lifts[i] ?? 0 : 1)
@@ -553,10 +554,29 @@ final class WheelView: NSView {
         return .systemFont(ofSize: (Settings.showIcons ? 10 : 10.5) * unit, weight: .semibold)
     }
 
-    /// The name fits its piece as it is: no pill needed.
-    private func labelFits(_ action: WheelAction) -> Bool {
-        Self.width(of: action.title, font: labelFont(action)) <= labelWidth()
+    /// The font a piece's name is drawn with (under its icon, or alone when icons are off).
+    private func drawnFont(_ action: WheelAction) -> NSFont {
+        guard action.symbol != nil, Settings.showIcons else { return labelFont(action) }
+        return .systemFont(ofSize: 10 * unit, weight: .medium)
     }
+
+    /// Under the pointer the name can be drawn in its piece without cutting it (smaller, down to 50%, or on two lines):
+    /// no pill needed. Only a name that would still end in "…" gets the pill.
+    private func labelFits(_ action: WheelAction) -> Bool {
+        !Self.fit(action.title, font: drawnFont(action), width: labelWidth(), hover: true).cut
+    }
+
+    #if DEBUG
+    /// Tests (--test-wheel-labels): how each name is drawn on a wheel with these actions, in the current shape:
+    /// lines (1 or 2), or the pill when the name can't be drawn in its piece without cutting it.
+    func labelReport(for actions: [WheelAction]) -> [(title: String, lines: Int, pill: Bool)] {
+        self.actions = actions
+        return actions.map { action in
+            let fit = Self.fit(action.title, font: drawnFont(action), width: labelWidth(), hover: true)
+            return (action.title, fit.lines.count, fit.cut)
+        }
+    }
+    #endif
 
     /// A label too long for its piece, at full size on an accent-coloured pill with a shadow (never cut).
     private func drawPill(for action: WheelAction, at p: NSPoint, accent: NSColor) {
@@ -697,18 +717,17 @@ final class WheelView: NSView {
         path.stroke()
     }
 
-    private func drawLabel(_ action: WheelAction, at p: NSPoint, color: NSColor) {
+    private func drawLabel(_ action: WheelAction, at p: NSPoint, color: NSColor, hover: Bool = false) {
         guard let symbol = action.symbol, Settings.showIcons else {
             // Format names (no symbol) are short and drawn big; tool names are longer, so smaller.
-            drawFitted(action.title, font: labelFont(action), color: color, at: p)
+            drawFitted(action.title, font: labelFont(action), color: color, at: p, hover: hover)
             return
         }
         if let image = symbolImage(symbol, size: 18 * unit, color: color, title: action.title) {
             let size = image.size
             image.draw(in: NSRect(x: p.x - size.width / 2, y: p.y + 2 * unit, width: size.width, height: size.height))
         }
-        drawFitted(action.title, font: .systemFont(ofSize: 10 * unit, weight: .medium), color: color,
-                   at: NSPoint(x: p.x, y: p.y - 10 * unit))
+        drawFitted(action.title, font: drawnFont(action), color: color, at: NSPoint(x: p.x, y: p.y - 10 * unit), hover: hover)
     }
 
     /// Widths of the labels, measured once: every frame asks for the same ones many times.
@@ -737,31 +756,51 @@ final class WheelView: NSView {
         return image
     }
 
+    /// A name laid out for a width: its font, its lines, and whether it had to be cut with "…".
+    private struct FittedText { var lines: [String]; var font: NSFont; var cut: Bool }
+
     /// Shrinks the text (down to 75%) to fit its segment, then goes on two lines, and only then shortens it with "…".
-    private func drawFitted(_ text: String, font: NSFont, color: NSColor, at point: NSPoint, width: CGFloat? = nil) {
-        let width = width ?? labelWidth()
+    /// With `hover` (name under the pointer), a name that would still be cut may shrink further, down to 50%.
+    private static func fit(_ text: String, font: NSFont, width: CGFloat, hover: Bool = false) -> FittedText {
+        let normal = fit(text, font: font, width: width, floor: 0.75)
+        return hover && normal.cut ? fit(text, font: font, width: width, floor: 0.5) : normal
+    }
+
+    private static func fit(_ text: String, font: NSFont, width: CGFloat, floor: CGFloat) -> FittedText {
         var font = font
         func measure(_ s: String) -> CGFloat { Self.width(of: s, font: font) }
         let natural = measure(text)
         if natural > width {
-            font = NSFont.systemFont(ofSize: max(font.pointSize * width / natural, font.pointSize * 0.75),
-                                     weight: font.fontDescriptor.symbolicTraits.contains(.bold) ? .bold : .medium)
-        }
-        if measure(text) > width {
-            let words = text.split(separator: " ").map(String.init)
-            let splits = (1..<max(words.count, 1)).map { (words[..<$0].joined(separator: " "), words[$0...].joined(separator: " ")) }
-            if let best = splits.min(by: { max(measure($0.0), measure($0.1)) < max(measure($1.0), measure($1.1)) }),
-               max(measure(best.0), measure(best.1)) <= width {
-                drawCentered(best.0, font: font, color: color, at: point)
-                drawCentered(best.1, font: font, color: color, at: NSPoint(x: point.x, y: point.y - font.pointSize * 1.15))
-                return
+            let weight: NSFont.Weight = font.fontDescriptor.symbolicTraits.contains(.bold) ? .bold : .medium
+            let least = font.pointSize * floor
+            var size = max(font.pointSize * width / natural, least)
+            font = NSFont.systemFont(ofSize: size, weight: weight)
+            // Under the pointer: text width isn't exactly proportional to the size (hinting), so step down until it fits.
+            while floor < 0.75, measure(text) > width, size > least {
+                size = max(size * 0.97, least)
+                font = NSFont.systemFont(ofSize: size, weight: weight)
             }
+        }
+        if measure(text) <= width { return FittedText(lines: [text], font: font, cut: false) }
+        let words = text.split(separator: " ").map(String.init)
+        let splits = (1..<max(words.count, 1)).map { (words[..<$0].joined(separator: " "), words[$0...].joined(separator: " ")) }
+        if let best = splits.min(by: { max(measure($0.0), measure($0.1)) < max(measure($1.0), measure($1.1)) }),
+           max(measure(best.0), measure(best.1)) <= width {
+            return FittedText(lines: [best.0, best.1], font: font, cut: false)
         }
         var shown = text
         while measure(shown) > width, shown.count > 2 {
             shown = String(shown.dropLast(shown.hasSuffix("…") ? 2 : 1)) + "…"
         }
-        drawCentered(shown, font: font, color: color, at: point)
+        return FittedText(lines: [shown], font: font, cut: true)
+    }
+
+    private func drawFitted(_ text: String, font: NSFont, color: NSColor, at point: NSPoint, width: CGFloat? = nil, hover: Bool = false) {
+        let fitted = Self.fit(text, font: font, width: width ?? labelWidth(), hover: hover)
+        for (n, line) in fitted.lines.enumerated() {
+            drawCentered(line, font: fitted.font, color: color,
+                         at: NSPoint(x: point.x, y: point.y - CGFloat(n) * fitted.font.pointSize * 1.15))
+        }
     }
 
     private func drawCentered(_ text: String, font: NSFont, color: NSColor, at point: NSPoint) {

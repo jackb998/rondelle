@@ -126,6 +126,23 @@ if [[ -d /Applications/Pages.app || -d "/Applications/Pages Creator Studio.app" 
   r --run Pages lettera.docx; r --test-pages-text lettera.pages "Seconda riga"
   [[ $last == testo=si* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL DOCX -> Pages :: $last" }
 fi
+# PowerPoint: a made-up deck (master, layout, title and body that inherit, bullets, picture, table, group, notes) to PDF,
+# images and text; then a PDF and images into decks of one picture per slide, read back with the same reader.
+python3 -I $ROOT/Tests/functional/lib/mkpptx.py prova.pptx; python3 -I $ROOT/Tests/functional/lib/mkpptx.py archiviato.pptx stored
+print "== presentazioni"; for t in PDF PNG JPG TXT; do r --run $t prova.pptx; done
+r --test-pptx-text prova.pptx "Testo in un gruppo"
+[[ $last == 'diapositive=2 testo=si immagini=1 tabelle=1 larghezza=960 libere=2' ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL lettura PPTX :: $last" }
+# A hidden slide and a hidden shape are not read; a ZIP with stored (not deflated) parts reads the same.
+r --test-pptx-text prova.pptx "Nascosta"
+[[ $last == *'diapositive=2 testo=no'* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL PPTX nascosto :: $last" }
+r --test-pptx-text archiviato.pptx "Testo in un gruppo"
+[[ $last == 'diapositive=2 testo=si immagini=1 tabelle=1 larghezza=960 libere=2' ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL PPTX archiviato :: $last" }
+r --test-pdf-page prova.pdf "Titolo della prova"
+[[ $last == pagine=2* && $last == *testo=si* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL PPTX -> PDF :: $last" }
+mv prova.pptx originale.pptx; r --run PPTX prova.pdf; r --test-pptx-text prova.pptx "Titolo"
+[[ $last == 'diapositive=2 testo=no immagini=2 tabelle=0 larghezza=960 libere=0' ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL PDF -> PPTX :: $last" }
+r --run PPTX foto.heic; r --test-pptx-text foto.pptx "x"
+[[ $last == diapositive=1\ testo=no\ immagini=1* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL immagine -> PPTX :: $last" }
 print "== sottotitoli"; r --run VTT sub.srt; r --run SRT sub.vtt; r --run TXT sub.srt
 print "== archivi"; r --run TAR.GZ cartella; r --run Estrai cartella.tar.gz
 print "== immagini"; r --run --tools Ruota foto.heic; r --run --tools Specchio foto.heic; r --run --tools Sfondo foto.heic
@@ -135,7 +152,7 @@ RONDELLE_VALUE="0,5" r --run --tools "Peso…" sonoma.heic
 RONDELLE_VALUE="1" r --run --tools "Peso…" doc.pdf
 print "== video"; r --run GIF clip.mov; r --run --tools "2×" clip.mov; r --run --tools Unisci clip.mov "clip (2x).mp4"
 print "== fogli di calcolo"; r --run XLSX tabella.csv; r --run ODS tabella.xlsx; r --run CSV tabella.ods; r --run PDF tabella.xlsx
-print "== ruota"; r --test-wheel-hit; r --test-wheel-motion foto.heic; r --test-wheel-keys foto.heic; r --test-wheel-switch; r --test-wheel-behind foto.heic; r --test-tutorial; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=en r --test-tutorial; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-tutorial; r --test-sidebar-motion; RONDELLE_RESOURCES=$ROOT/Resources r --test-dock-icon; r --test-wheel-hints; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-wheel-hints; r --test-support-link; r --test-share-picker foto.heic
+print "== ruota"; r --test-wheel-hit; r --test-wheel-motion foto.heic; r --test-wheel-keys foto.heic; r --test-wheel-switch; r --test-wheel-behind foto.heic; r --test-tutorial; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=en r --test-tutorial; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-tutorial; r --test-sidebar-motion; RONDELLE_RESOURCES=$ROOT/Resources r --test-dock-icon; r --test-wheel-hints; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-wheel-hints; r --test-wheel-labels; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=en r --test-wheel-labels; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-wheel-labels; r --test-support-link; r --test-share-picker foto.heic
 print "== metadati"; r --test-metadata foto.heic doc.pdf clip.mov voce.aiff lungo.png
 r --test-metadata lettera.docx tabella.xlsx nota.txt sub.srt cartella cartella.tar.gz autore.docx autore.xlsx
 r --test-office-metadata autore.docx autore.xlsx; r --run --tools Metadati autore.docx; r --run --tools Metadati autore.xlsx

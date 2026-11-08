@@ -89,13 +89,14 @@ window, then Finder opens on the results.
 
 | File type | Convert (⇧) | Tools (⌥⇧) |
 |---|---|---|
-| Images (JPG, PNG, HEIC, TIFF, GIF, BMP, WebP, AVIF, SVG…) and **camera RAW** (DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2…; tools save RAW as JPG) | JPG, PNG, HEIC, **WebP**, TIFF, GIF, BMP, PDF, **ICNS, ICO** | Compress, target file size, 50%, custom pixel sizes, **rotate** (90° right or left, 180°, mirror horizontally or vertically), remove background, **text (OCR)**, **copy text** to the clipboard, read QR codes, read or strip metadata, **Edit** (adjust light/colour/detail, crop, draw, arrows, text, cover), **Layout** (2+ photos), PDF, ZIP, protected ZIP |
-| PDF | PNG, JPG (one per page), TXT (OCR when the PDF is a scan), DOCX, RTF | Compress, strong compress, target file size, **Merge** (2+ PDFs) / **Organize** (1 PDF), split, **OCR** (searchable PDF), read or strip metadata, **password** / **unlock**, page numbers, watermark, **rotate**, **redact** (really removes what it covers), **translate**, ZIP |
+| Images (JPG, PNG, HEIC, TIFF, GIF, BMP, WebP, AVIF, SVG…) and **camera RAW** (DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2…; tools save RAW as JPG) | JPG, PNG, HEIC, **WebP**, TIFF, GIF, BMP, PDF, **PPTX** (one slide per image), **ICNS, ICO** | Compress, target file size, 50%, custom pixel sizes, **rotate** (90° right or left, 180°, mirror horizontally or vertically), remove background, **text (OCR)**, **copy text** to the clipboard, read QR codes, read or strip metadata, **Edit** (adjust light/colour/detail, crop, draw, arrows, text, cover), **Layout** (2+ photos), PDF, ZIP, protected ZIP |
+| PDF | PNG, JPG (one per page), TXT (OCR when the PDF is a scan), DOCX, RTF, **PPTX** (one slide per page) | Compress, strong compress, target file size, **Merge** (2+ PDFs) / **Organize** (1 PDF), split, **OCR** (searchable PDF), read or strip metadata, **password** / **unlock**, page numbers, watermark, **rotate**, **redact** (really removes what it covers), **translate**, ZIP |
 | PDFs and images together | PDF (merge window) | Merge, ZIP |
 | Video (MP4, MOV, M4V…) | MP4, MOV, M4V, GIF, M4A | **Trim**, 1080p, 720p, **target file size**, HEVC, 2× / 0.5× speed, join, snapshot, mute, audio only, read or strip metadata, **subtitles from speech** (macOS 26+), ZIP |
 | Audio (M4A, WAV, AIFF, FLAC, MP3…) | M4A, WAV, AIFF, FLAC, **MP3** | **Trim**, normalize, mono, compress, read or strip metadata, **subtitles from speech** (macOS 26+), ZIP |
 | Documents (DOCX, DOC, RTF, ODT, HTML, TXT, MD) | PDF, DOCX, RTF, ODT, HTML, TXT | **Translate**, read metadata (and strip author, company and dates from DOCX), ZIP |
 | **Spreadsheets** (XLSX, ODS, CSV, TSV) | XLSX, ODS, CSV, TSV, HTML, PDF | Read metadata (and strip author, company and dates from XLSX), ZIP |
+| **Presentations** (PPTX) | PDF, PNG, JPG (one per slide), TXT (slides and speaker notes) | Read metadata (and strip author, company and dates from PPTX), ZIP |
 | Subtitles (SRT, VTT) | SRT, VTT, TXT | **Translate**, read metadata, ZIP |
 | Archives (ZIP, TAR, GZ, TGZ, BZ2, XZ, RAR, 7Z) | Extract | Extract (**Unlock and extract** for password-protected ZIPs: the password is asked once), read metadata, protected ZIP |
 | Folders and other files | ZIP, TAR.GZ | Read metadata, ZIP |
@@ -111,6 +112,19 @@ hides the file names inside; passwords under 12 characters ask for confirmation,
 origin, quarantine, tags) and the name of the source folder. Spreadsheets keep values only (formulas give their last result, no styles or charts);
 old XLS files aren't supported. **Open in Pages / Open in Numbers** (DOCX, DOC, RTF, TXT, .pages; XLSX, CSV, TSV, .numbers) opens the file in Apple's app through macOS, where you save or export it: their formats are Apple's own, so Rondelle doesn't write them, and it needs no permission to control other apps.
 
+**PowerPoint (PPTX)** is read by Rondelle itself (the ZIP's index and parts are read in memory, with a size cap on
+each part, and the system's XML parser) and drawn with Core Graphics: slide size, background, title and body text
+(size, bold, italic, colour, bullets and spacing, also when they come from the layout and the master), shapes with a
+fill, free-form panels, arrows, pictures (with cropping and rotation), tables and grouped objects. Position, shape and
+margins of a placeholder come from its layout and master, as in PowerPoint. Hidden shapes and hidden slides are left out,
+as in the PDF PowerPoint makes. Text stays text in the PDF, so it can be selected and searched. Left out: charts,
+SmartArt, animations and transitions, video and audio, shadows and gradients, table styles, EMF/WMF/SVG pictures (a
+logo in that format is missing); fonts that aren't installed (including fonts embedded in the file) are replaced, so
+the line breaks, and slides with complex layouts, will not match PowerPoint's exactly. **PDF → PPTX** and **images →
+PPTX** write one slide per page or image, with the page as a picture (it looks like the original, but is not editable
+text); the text of a PDF page goes in the picture's alternative text, and several images become one deck. PPTX files
+are limited to 50 MB, 1000 slides (a confirmation above 300) and the same limit on unpacked XML as Word files; old PPT
+files aren't supported.
 **Translate** (macOS 15 or later) makes a copy in Italian, English or French with Apple's Translation framework, which according to Apple works on the device: Rondelle still has no network access (a missing language is downloaded by macOS itself, after asking). The source language is recognized by itself; if there is too little text you are asked, and languages other than these three are refused. The format stays the same (DOC becomes DOCX; RTFD becomes RTF; web archives become HTML), subtitles keep their times, Markdown its marks and code blocks. Inside a paragraph, inline styles give way to the paragraph's main style. A **PDF comes back as plain text pages**, without its layout or images (scans go through OCR). Up to 2 million characters, about 3 KB per second on an Apple silicon Mac.
 
 **Hidden text in PDFs:** translation and conversion to text read hidden, white or covered text, and it appears in the result. To really black something out, turn the page into an image and use *Cover* in *Edit*.
@@ -312,6 +326,7 @@ and audio) and runs the 26 conversions of every kind of file; V1–V4 (links, de
 | `Encoders.swift` | WebP and MP3 output through the bundled libwebp and LAME |
 | `PhotoAdjust.swift` | Edit → Adjust: light, colour and detail with Core Image |
 | `ShareOps.swift` | The Share wheel, copies without metadata, apps and services added in Settings |
+| `PptxReader.swift` / `PptxRenderer.swift` / `PptxOps.swift` / `PptxWriter.swift` | PowerPoint: reading PPTX, drawing slides (PDF, PNG, JPG), text, and writing PPTX from PDFs and images |
 | `SheetOps.swift` | Spreadsheets: safe XLSX/ODS/CSV/TSV reading and XLSX/ODS/CSV/TSV/HTML/PDF writing |
 | `FormatSettings.swift` | Per-format conversion options |
 | `FormatsView.swift` | Settings → Formats, the interactive conversion table |
