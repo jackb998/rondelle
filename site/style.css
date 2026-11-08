@@ -188,3 +188,7 @@ body{padding-bottom:84px}
 .rail figure{flex:0 0 min(360px,78vw);margin:0;scroll-snap-align:start;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 14px 12px}
 .rail img{width:100%;height:auto;display:block}.rail figcaption{font-size:14px;color:var(--mut);margin-top:6px}.rail:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
 .rail figure.wide{flex-basis:min(640px,86vw);padding:12px}.rail figure.wide img{border-radius:10px;border:1px solid var(--line)}
+/* gallery wider than the text column */
+.gallery{position:relative;left:50%;transform:translateX(-50%);width:min(1180px,calc(100vw - 32px))}
+.gallery>h2,.gallery>p{max-width:640px;margin-left:auto;margin-right:auto;text-align:center}
+.rail figure{flex-basis:min(400px,78vw)}.rail figure.wide{flex-basis:min(860px,90vw)}
