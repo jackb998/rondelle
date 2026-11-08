@@ -264,18 +264,21 @@ const q = new URLSearchParams(location.search);
 let lang = ["it","fr"].includes(q.get("lang")) ? q.get("lang") : "en";
 let tab = "img";
 const LI = {en:0,it:1,fr:2};
-const t = k => (D[lang][k] ?? P[lang][k] ?? C[lang][k] ?? D.en[k] ?? P.en[k] ?? C.en[k] ?? "");
+const t = k => (D[lang][k] ?? P[lang][k] ?? C[lang][k] ?? G[lang]?.[k] ?? D.en[k] ?? P.en[k] ?? C.en[k] ?? G.en[k] ?? "");
 const chips = s => s.split(" ").map(x => `<span class="chip">${x}</span>`).join("");
 function render() {
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-i]").forEach(e => e.innerHTML = t(e.dataset.i));
   const home = !!document.getElementById("tabs");
-  document.title = home ? t("title_home") : t("title_press");
+  document.title = t("title_" + (document.body.dataset.page || (home ? "home" : "press")));
   const m = document.querySelector('meta[name=description]'); if (m) m.content = t("meta");
   document.querySelectorAll("[data-ph]").forEach(e => { e.placeholder = t(e.dataset.ph); e.setAttribute("aria-label", t(e.dataset.ph)); });
   const cs = document.getElementById("cs"); if (cs && cs.dataset.k) cs.textContent = t(cs.dataset.k);
   document.querySelectorAll("[data-lang]").forEach(a => a.classList.toggle("cur", a.dataset.lang === lang));
-  document.querySelectorAll("a[data-keep]").forEach(a => a.href = a.dataset.keep + (lang === "en" ? "" : "?lang=" + lang));
+  document.querySelectorAll("a[data-keep]").forEach(a => a.href = a.dataset.keep + (lang === "en" ? "" : "?lang=" + lang) + (a.dataset.hash || ""));
+  if (!home) document.querySelectorAll('a[href="#contact"]').forEach(a => a.href = "index.html" + (lang === "en" ? "" : "?lang=" + lang) + "#contact");
+  const gb = document.getElementById("gbody"); if (gb) gb.innerHTML = guideHTML();
+  const sb = document.getElementById("sbody"); if (sb) sb.innerHTML = storyHTML();
   if (home) {
     document.querySelectorAll("#tabs span").forEach(s => s.classList.toggle("on", s.dataset.tab === tab));
     const d = TABS[tab];

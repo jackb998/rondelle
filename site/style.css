@@ -173,3 +173,13 @@ html{-webkit-text-size-adjust:100%}
 
 html{scroll-padding-top:76px}
 .appbox{margin-bottom:50px}
+/* guide and story pages, space for the coffee widget */
+body{padding-bottom:84px}
+.doc h3.pane{font-size:20px;margin:34px 0 2px}.doc .where{display:block;font-size:13px;color:var(--acc);margin-bottom:6px;font-weight:600}
+.set{margin:6px 0 10px;border-top:1px solid var(--line)}.set dt{font-weight:600;margin-top:14px;font-size:16px}.set dd{margin:2px 0 0;color:var(--mut);font-size:15px}
+.cust{margin:40px 0 0}.cust h2{margin-top:0}.cust3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.cust3>div{background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:18px}
+.cust3 h3{font-size:17px;margin-bottom:4px}.cust3 p{font-size:14px;margin:6px 0 0}
+.doc kbd{font-size:14px}.doc .btn{margin-top:6px}
+@media (max-width:760px){.cust3{grid-template-columns:1fr}.menu a{white-space:nowrap}}
+@media (min-width:761px) and (max-width:1100px){nav{padding:14px 24px}.menu{gap:6px 16px}}
