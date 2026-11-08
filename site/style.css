@@ -187,3 +187,4 @@ body{padding-bottom:84px}
 .gallery{margin:50px 0 0}.gallery h2{margin-top:0}.rail{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 2px 14px;-webkit-overflow-scrolling:touch}
 .rail figure{flex:0 0 min(360px,78vw);margin:0;scroll-snap-align:start;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 14px 12px}
 .rail img{width:100%;height:auto;display:block}.rail figcaption{font-size:14px;color:var(--mut);margin-top:6px}.rail:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.rail figure.wide{flex-basis:min(640px,86vw);padding:12px}.rail figure.wide img{border-radius:10px;border:1px solid var(--line)}

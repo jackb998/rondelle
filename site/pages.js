@@ -1,7 +1,7 @@
 /* Rondelle site: texts of the guide and story pages (en, it, fr). Loaded before site.js; missing keys fall back to English. */
 const G = {
 en:{
- ga_h:"The app, up close", ga_l:"Swipe sideways to see the wheels. The wheel changes with the file you drag.", gc:["Convert · a photo", "Tools · the same photo", "Share · the same photo"], gal:["Rondelle’s Convert wheel for a photo", "Rondelle’s Tools wheel for the same photo", "Rondelle’s Share wheel for the same photo"], disc:"Discover the app", disc_l:"The wheels, the Settings and how to make the app yours.",
+ ga_h:"The app, up close", ga_l:"Swipe sideways to see the wheels. The wheel changes with the file you drag. The Settings screenshots are in English.", gs:["Settings · Appearance", "Settings · Behaviour", "Settings · Wheel", "Settings · Conversions"], gsa:["Rondelle’s Settings, Appearance section", "Rondelle’s Settings, Behaviour section", "Rondelle’s Settings, Wheel section", "Rondelle’s Settings, Conversions section"], gc:["Convert · a photo", "Tools · the same photo", "Share · the same photo"], gal:["Rondelle’s Convert wheel for a photo", "Rondelle’s Tools wheel for the same photo", "Rondelle’s Share wheel for the same photo"], disc:"Discover the app", disc_l:"The wheels, the Settings and how to make the app yours.",
  title_guide:"Rondelle · App guide", title_story:"Rondelle · The story",
  n_guide:"App guide", n_story:"Our story",
  gd_h:"App guide", gd_l:"A tour of Rondelle and its Settings, taken from the app itself. What is not confirmed yet is listed at the end.",
@@ -76,7 +76,7 @@ en:{
  st_c:"Closing", st_cp:"If you like the project, you can chip in with <a href=\"https://buymeacoffee.com/jackb998\" target=\"_blank\" rel=\"noopener noreferrer\">a coffee</a>. The Buy Me a Coffee button in the bottom right corner works too.", st_cb:"Buy me a coffee"
 },
 it:{
- ga_h:"L’app da vicino", ga_l:"Scorri di lato per vedere le ruote. La ruota cambia con il file che trascini.", gc:["Converti · una foto", "Strumenti · la stessa foto", "Condividi · la stessa foto"], gal:["La ruota Converti di Rondelle per una foto", "La ruota Strumenti di Rondelle per la stessa foto", "La ruota Condividi di Rondelle per la stessa foto"], disc:"Scopri l’app", disc_l:"Le ruote, le Impostazioni e come rendere l’app tua.",
+ ga_h:"L’app da vicino", ga_l:"Scorri di lato per vedere le ruote. La ruota cambia con il file che trascini. Le schermate delle Impostazioni sono in inglese.", gs:["Impostazioni · Aspetto", "Impostazioni · Comportamento", "Impostazioni · Ruota", "Impostazioni · Conversioni"], gsa:["Le Impostazioni di Rondelle, sezione Aspetto", "Le Impostazioni di Rondelle, sezione Comportamento", "Le Impostazioni di Rondelle, sezione Ruota", "Le Impostazioni di Rondelle, sezione Conversioni"], gc:["Converti · una foto", "Strumenti · la stessa foto", "Condividi · la stessa foto"], gal:["La ruota Converti di Rondelle per una foto", "La ruota Strumenti di Rondelle per la stessa foto", "La ruota Condividi di Rondelle per la stessa foto"], disc:"Scopri l’app", disc_l:"Le ruote, le Impostazioni e come rendere l’app tua.",
  title_guide:"Rondelle · Guida all’app", title_story:"Rondelle · La storia",
  n_guide:"Guida all’app", n_story:"La nostra storia",
  gd_h:"Guida all’app", gd_l:"Un giro di Rondelle e delle sue Impostazioni, ricavato dall’app stessa. Ciò che non è ancora confermato è elencato alla fine.",
@@ -151,7 +151,7 @@ it:{
  st_c:"Per chiudere", st_cp:"Se il progetto ti piace, puoi contribuire con <a href=\"https://buymeacoffee.com/jackb998\" target=\"_blank\" rel=\"noopener noreferrer\">un caffè</a>. Va bene anche il pulsante Buy Me a Coffee in basso a destra.", st_cb:"Offrimi un caffè"
 },
 fr:{
- ga_h:"L’app de près", ga_l:"Faites défiler sur le côté pour voir les roues. La roue change selon le fichier que vous faites glisser.", gc:["Convertir · une photo", "Outils · la même photo", "Partager · la même photo"], gal:["La roue Convertir de Rondelle pour une photo", "La roue Outils de Rondelle pour la même photo", "La roue Partager de Rondelle pour la même photo"], disc:"Découvrir l’app", disc_l:"Les roues, les Réglages et comment faire l’app vôtre.",
+ ga_h:"L’app de près", ga_l:"Faites défiler sur le côté pour voir les roues. La roue change selon le fichier que vous faites glisser. Les captures des Réglages sont en anglais.", gs:["Réglages · Apparence", "Réglages · Comportement", "Réglages · Roue", "Réglages · Conversions"], gsa:["Les Réglages de Rondelle, section Apparence", "Les Réglages de Rondelle, section Comportement", "Les Réglages de Rondelle, section Roue", "Les Réglages de Rondelle, section Conversions"], gc:["Convertir · une photo", "Outils · la même photo", "Partager · la même photo"], gal:["La roue Convertir de Rondelle pour une photo", "La roue Outils de Rondelle pour la même photo", "La roue Partager de Rondelle pour la même photo"], disc:"Découvrir l’app", disc_l:"Les roues, les Réglages et comment faire l’app vôtre.",
  title_guide:"Rondelle · Guide de l’app", title_story:"Rondelle · L’histoire",
  n_guide:"Guide de l’app", n_story:"Notre histoire",
  gd_h:"Guide de l’app", gd_l:"Un tour de Rondelle et de ses Réglages, tiré de l’app elle-même. Ce qui n’est pas encore confirmé figure à la fin.",
@@ -233,7 +233,7 @@ function guideHTML() {
 <section class="cust" id="personalise"><h2>${x("gd_c")}</h2><div class="cust3">${x("gd_cust").map(c => `<div><h3>${c[0]}</h3><span class="where">${c[1]}</span><p>${c[2]}</p></div>`).join("")}</div></section>
 <h2>${x("gd_s")}</h2>${x("gd_panes").map(p => `<h3 class="pane">${p.h}</h3><p class="where">${p.w}</p><dl class="set">${items(p.i)}</dl>`).join("")}
 <h2>${x("gd_t")}</h2><ul class="rules">${x("gd_todo").map(s => `<li>${s}</li>`).join("")}</ul>
-<section class="gallery" id="app"><h2>${x("ga_h")}</h2><p>${x("ga_l")}</p><div class="rail" tabindex="0" role="region" aria-label="${x("ga_h")}">${["wheel-convert-photo","wheel-tools-photo","wheel-share-photo"].map((n, i) => `<figure><img data-shot="${n}" width="480" height="480" alt="${x("gal")[i]}"><figcaption>${x("gc")[i]}</figcaption></figure>`).join("")}</div></section>`;
+<section class="gallery" id="app"><h2>${x("ga_h")}</h2><p>${x("ga_l")}</p><div class="rail" tabindex="0" role="region" aria-label="${x("ga_h")}">${["wheel-convert-photo","wheel-tools-photo","wheel-share-photo"].map((n, i) => `<figure><img data-shot="${n}" width="480" height="480" alt="${x("gal")[i]}"><figcaption>${x("gc")[i]}</figcaption></figure>`).join("")}${["appearance","behaviour","wheel","conversions"].map((n, i) => `<figure class="wide"><img src="shots/settings-${n}.jpg?v=1" width="940" height="620" loading="lazy" alt="${x("gsa")[i]}"><figcaption>${x("gs")[i]}</figcaption></figure>`).join("")}</div></section>`;
 }
 function storyHTML() {
   const g = G[lang], e = G.en, x = k => g[k] ?? e[k];
