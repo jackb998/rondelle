@@ -4,8 +4,9 @@
 #
 #   ./release.sh            →  dist/Rondelle-<version>.dmg
 #
-# Without an Apple Developer ID the app isn't notarized: the first time, the other Mac asks to confirm it in
-# System Settings → Privacy & Security → «Open Anyway» (explained in the notes inside the image).
+# Without an Apple Developer ID the app isn't notarized: macOS 15+ blocks the first opening. The image shows the
+# steps on its background and carries «Allow Opening», a script that clears the block for Rondelle only when it
+# is dragged into Terminal (the image also has an «Open Terminal» shortcut); System Settings → Privacy & Security → «Open Anyway» stays the alternative.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -69,6 +70,8 @@ codesign --verify --strict --deep "$APP"
 
 # Beside the app: Applications shortcut, reading notes, the licences.
 ln -s /Applications "$STAGE/Applications"
+# Shortcut to Terminal for the first opening (a link to the system app: nothing downloaded is run by it).
+ln -s /System/Applications/Utilities/Terminal.app "$STAGE/Open Terminal"
 cp distribution/README.txt "$STAGE/READ ME.txt"
 mkdir -p "$STAGE/Licenses"
 cp distribution/LICENSES.txt "$STAGE/Licenses/LICENSES.txt"
@@ -96,12 +99,20 @@ cp distribution/relink.sh Resources/Rondelle.entitlements "$STAGE/Licenses/LAME-
 cp -R "$APP" "$WORK/Prova.app"
 "$STAGE/Licenses/LAME-relink/relink.sh" "$STAGE/Licenses/LAME-source" "$WORK/Prova.app" >/dev/null
 [[ " $(lipo -archs "$WORK/Prova.app/Contents/MacOS/Rondelle") " == *" arm64 "* ]] || { echo "relinking failed" >&2; exit 1; }
+# First opening without System Settings: the script removes the download mark from Rondelle only (Rondelle is
+# not notarized). The window layout (background with the steps, icon positions) is a Finder .DS_Store made once
+# by tools/dmg_layout.sh; it points to the volume by name, so the volume is always called «Rondelle».
+cp "distribution/dmg/Allow Opening" "$STAGE/Allow Opening"
+chmod 755 "$STAGE/Allow Opening"
+mkdir -p "$STAGE/.background"
+cp distribution/dmg/background.tiff "$STAGE/.background/background.tiff"
+cp distribution/dmg/DS_Store "$STAGE/.DS_Store"
 xattr -cr "$STAGE"
 
 mkdir -p "$DIST"
 DMG="$DIST/Rondelle-$VERSION.dmg"
 rm -f "$DMG" "$DMG.sha256"
-hdiutil create -quiet -volname "Rondelle $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG"
+hdiutil create -quiet -volname "Rondelle" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG"
 HASH="$(shasum -a 256 "$DMG" | awk '{print $1}')"
 # The hash goes by another channel than the image (a message, not the same link): if the link were tampered
 # with, a hash beside it would be tampered with too.

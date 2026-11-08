@@ -1,0 +1,19 @@
+#!/bin/sh
+# Rondelle — first opening of a downloaded copy.
+# Rondelle is not notarized by Apple, so macOS 15 and later block it the first time. Dragging this file into a
+# Terminal window and pressing Return removes the download mark (quarantine) from Rondelle only, then opens it.
+# It changes nothing else, needs no password and sends nothing anywhere.
+APP="/Applications/Rondelle.app"
+if [ ! -d "$APP" ]; then
+    echo ""
+    echo "  Rondelle is not in Applications yet: drag it onto «Applications» first, then try again."
+    echo "  Rondelle non è ancora in Applicazioni: trascinala prima su «Applicazioni», poi riprova."
+    echo ""
+    exit 1
+fi
+/usr/bin/xattr -dr com.apple.quarantine "$APP" 2>/dev/null
+/usr/bin/open "$APP" || exit 1
+echo ""
+echo "  Done: Rondelle is open (ring icon in the menu bar). You can close this window."
+echo "  Fatto: Rondelle è aperta (icona ad anello nella barra dei menu). Puoi chiudere questa finestra."
+echo ""

@@ -28,18 +28,25 @@ Available in **Italian, English and French**
 
 ## Install
 
-**[⬇ Download the latest version](https://github.com/jackb998/rondelle/releases/latest)**: under *Assets*, the file
-`Rondelle-<version>.dmg`. It runs on macOS 13 or later, on Apple silicon and Intel Macs.
+**[⬇ Download the latest version](https://github.com/jackb998/rondelle/releases/latest)**, then under *Assets*
+click **`Rondelle-<version>.dmg`**. That is the only file you need: the two *Source code* archives are added by
+GitHub automatically and are not used to install. macOS 13 or later, Apple silicon and Intel Macs.
 
-1. **Open the disk image** (double-click `Rondelle-<version>.dmg`) and drag **Rondelle** onto the **Applicazioni**
-   (Applications) folder next to it. You can then eject the disk image.
-2. **Open Rondelle** from Applications. The first time, macOS says it can't check the app for malicious software:
-   Rondelle is free and isn't notarized by Apple. Click **Done** (not *Move to Trash*).
-3. **Allow it once:** open **System Settings → Privacy & Security**, scroll down to *Security* and, next to
-   *"Rondelle" was blocked…*, click **Open Anyway**, then confirm with your password or Touch ID.
-   On macOS 13 and 14 you can instead right-click Rondelle in Applications, choose **Open**, then **Open** again.
-4. **Done:** the ring icon appears in the menu bar and the tutorial opens. Drag a file in Finder, hold **⇧ Shift**
-   and drop it on a format.
+The disk image window shows the same three steps:
+
+1. **Drag Rondelle onto Applications** (both are in the window that opens with the disk image).
+2. **Open Terminal:** double-click **Open Terminal** in the disk image window, or press **⌘ Space** and type *Terminal*.
+3. **Drag *Allow Opening* from the disk image window into the Terminal window and press Return.** Rondelle opens
+   and its ring icon appears in the menu bar. This is needed only once; afterwards Rondelle opens like any app.
+
+Why step 3: Rondelle is free and not notarized by Apple (that needs a paid developer account), so macOS 15 and later
+block its first opening. *Allow Opening* is a short script, readable in the repository at
+[`distribution/dmg/Allow Opening`](distribution/dmg/Allow%20Opening): it removes the download mark (quarantine) from
+`/Applications/Rondelle.app` only and opens it. No password, no other change, nothing sent anywhere.
+
+**Without Terminal:** open Rondelle from Applications, click **Done** (not *Move to Trash*), then open **System
+Settings → Privacy & Security**, scroll to *"Rondelle" was blocked…* and click **Open Anyway**. On macOS 13 and 14
+you can instead right-click Rondelle, choose **Open**, then **Open** again.
 
 **Check the download (optional):** each release lists the SHA-256 of its disk image. In Terminal,
 `shasum -a 256 ~/Downloads/Rondelle-<version>.dmg` must print the same string.
@@ -215,10 +222,10 @@ so nothing could prove who built an update. You download it from the GitHub page
 
 ## Opening the app the first time
 
-Rondelle is ad-hoc signed, not notarized by Apple, so the first time macOS refuses to open it. Open it once, then go to
-**System Settings → Privacy & Security**, scroll to the message about Rondelle and click **Open Anyway** (you are asked
-for your password). From then on it opens normally. Check the download against its `.sha256` file first:
-`shasum -a 256 -c Rondelle-<version>.dmg.sha256`.
+Rondelle is ad-hoc signed, not notarized by Apple, so macOS 15 and later block its first opening. The disk image
+carries *Allow Opening* for this (see [Install](#install)); *Open Anyway* in System Settings → Privacy & Security
+works too. Each release lists the SHA-256 of its disk image to check the download:
+`shasum -a 256 ~/Downloads/Rondelle-<version>.dmg`.
 
 Found a security problem? See [SECURITY.md](SECURITY.md).
 
