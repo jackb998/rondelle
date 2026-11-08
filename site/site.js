@@ -286,7 +286,7 @@ function render() {
     document.getElementById("f-c").innerHTML = d.c ? chips(d.c) : `<span class="chip">${t("x_ext")}</span>`;
     document.getElementById("f-t").textContent = t("t_" + tab);
   }
-  document.querySelectorAll("img[data-shot]").forEach(i => { const u = "shots/" + i.dataset.shot + "." + lang + ".png"; if (i.getAttribute("src") !== u) { i.closest("figure").hidden = false; i.src = u; } i.alt = t(i.dataset.alt); });
+  document.querySelectorAll("img[data-shot]").forEach(i => { const u = "shots/" + i.dataset.shot + "." + lang + ".png?v=2"; if (i.getAttribute("src") !== u) { i.closest("figure").hidden = false; i.src = u; } if (i.dataset.alt) i.alt = t(i.dataset.alt); });
   const ls = document.getElementById("lang"); if (ls) ls.value = lang;
   if (typeof playRefresh === "function") playRefresh();
 }
@@ -409,7 +409,7 @@ if(cf){
 }
 render();
 /* top bar: menu button on phones, language list on every screen, collapsible app section */
-const navEl=document.querySelector("nav"), burger=document.getElementById("burger"), langSel=document.getElementById("lang"), appBox=document.getElementById("app");
+const navEl=document.querySelector("nav"), burger=document.getElementById("burger"), langSel=document.getElementById("lang");
 if(langSel) langSel.addEventListener("change",()=>{ lang=langSel.value; history.replaceState(null,"",lang==="en"?location.pathname+location.hash:"?lang="+lang+location.hash); render(); });
 if(burger){
   const setOpen=o=>{ navEl.classList.toggle("open",o); burger.setAttribute("aria-expanded",String(o)); };
@@ -417,10 +417,7 @@ if(burger){
   document.addEventListener("click",e=>{ if(!navEl.contains(e.target)||e.target.closest(".menu a")) setOpen(false); });
   document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&navEl.classList.contains("open")){ setOpen(false); burger.focus(); } });
 }
-if(appBox){
-  if(matchMedia("(max-width:760px)").matches&&location.hash!=="#app") appBox.open=false;
-  addEventListener("hashchange",()=>{ if(location.hash==="#app") appBox.open=true; });
-}
+if(location.hash&&document.getElementById("gbody")){ const g=document.getElementById(location.hash.slice(1)); if(g) g.scrollIntoView(); }
 if(q.get("demo")) document.querySelector('#pick button[data-k="'+q.get("demo")+'"]')?.click();
 /* versions: the list on the press page comes from GitHub Releases (bullet lines only), never typed by hand */
 const cl = document.getElementById("cl");

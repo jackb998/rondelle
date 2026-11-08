@@ -1,6 +1,7 @@
 /* Rondelle site: texts of the guide and story pages (en, it, fr). Loaded before site.js; missing keys fall back to English. */
 const G = {
 en:{
+ ga_h:"The app, up close", ga_l:"Swipe sideways to see the wheels. The wheel changes with the file you drag.", gc:["Convert · a photo", "Tools · the same photo", "Share · the same photo"], gal:["Rondelle’s Convert wheel for a photo", "Rondelle’s Tools wheel for the same photo", "Rondelle’s Share wheel for the same photo"], disc:"Discover the app", disc_l:"The wheels, the Settings and how to make the app yours.",
  title_guide:"Rondelle · App guide", title_story:"Rondelle · The story",
  n_guide:"App guide", n_story:"Our story",
  gd_h:"App guide", gd_l:"A tour of Rondelle and its Settings, taken from the app itself. What is not confirmed yet is listed at the end.",
@@ -72,9 +73,10 @@ en:{
  st_np:[
   "In Italian, <i>rondelle</i> is the plural of <i>rondella</i>: the small component used in manual work. A washer is a small disc with a hole that sits between the head of a screw (or a nut) and the surface being tightened.",
   "The idea fits the app. Rondelle sits between the person and the final result, and it is the part that lets you finish the job and be sure it holds. The word also echoes French, where <i>rondelle</i> means exactly the same thing, in the singular."],
- st_c:"Closing", st_cp:"If you like the project, you can chip in with a coffee.", st_cb:"Buy me a coffee"
+ st_c:"Closing", st_cp:"If you like the project, you can chip in with <a href=\"https://buymeacoffee.com/jackb998\" target=\"_blank\" rel=\"noopener noreferrer\">a coffee</a>. The Buy Me a Coffee button in the bottom right corner works too.", st_cb:"Buy me a coffee"
 },
 it:{
+ ga_h:"L’app da vicino", ga_l:"Scorri di lato per vedere le ruote. La ruota cambia con il file che trascini.", gc:["Converti · una foto", "Strumenti · la stessa foto", "Condividi · la stessa foto"], gal:["La ruota Converti di Rondelle per una foto", "La ruota Strumenti di Rondelle per la stessa foto", "La ruota Condividi di Rondelle per la stessa foto"], disc:"Scopri l’app", disc_l:"Le ruote, le Impostazioni e come rendere l’app tua.",
  title_guide:"Rondelle · Guida all’app", title_story:"Rondelle · La storia",
  n_guide:"Guida all’app", n_story:"La nostra storia",
  gd_h:"Guida all’app", gd_l:"Un giro di Rondelle e delle sue Impostazioni, ricavato dall’app stessa. Ciò che non è ancora confermato è elencato alla fine.",
@@ -146,9 +148,10 @@ it:{
  st_np:[
   "In italiano <i>rondelle</i> è il plurale di <i>rondella</i>: il piccolo componente che si usa nei lavori manuali. Una rondella è un piccolo disco forato che si inserisce tra la testa di una vite (o un dado) e la superficie da serrare.",
   "L’idea si adatta all’app. Rondelle sta in mezzo tra la persona e il risultato finale, ed è la parte che permette di concludere il lavoro e di essere sicuri che regga. La parola richiama anche il francese, dove <i>rondelle</i> significa esattamente la stessa cosa, al singolare."],
- st_c:"Per chiudere", st_cp:"Se il progetto ti piace, puoi contribuire con un caffè.", st_cb:"Offrimi un caffè"
+ st_c:"Per chiudere", st_cp:"Se il progetto ti piace, puoi contribuire con <a href=\"https://buymeacoffee.com/jackb998\" target=\"_blank\" rel=\"noopener noreferrer\">un caffè</a>. Va bene anche il pulsante Buy Me a Coffee in basso a destra.", st_cb:"Offrimi un caffè"
 },
 fr:{
+ ga_h:"L’app de près", ga_l:"Faites défiler sur le côté pour voir les roues. La roue change selon le fichier que vous faites glisser.", gc:["Convertir · une photo", "Outils · la même photo", "Partager · la même photo"], gal:["La roue Convertir de Rondelle pour une photo", "La roue Outils de Rondelle pour la même photo", "La roue Partager de Rondelle pour la même photo"], disc:"Découvrir l’app", disc_l:"Les roues, les Réglages et comment faire l’app vôtre.",
  title_guide:"Rondelle · Guide de l’app", title_story:"Rondelle · L’histoire",
  n_guide:"Guide de l’app", n_story:"Notre histoire",
  gd_h:"Guide de l’app", gd_l:"Un tour de Rondelle et de ses Réglages, tiré de l’app elle-même. Ce qui n’est pas encore confirmé figure à la fin.",
@@ -220,7 +223,7 @@ fr:{
  st_np:[
   "En italien, <i>rondelle</i> est le pluriel de <i>rondella</i> : le petit composant utilisé dans les travaux manuels. Une rondelle est un petit disque percé qui se glisse entre la tête d’une vis (ou un écrou) et la surface à serrer.",
   "L’idée convient à l’app. Rondelle se place entre la personne et le résultat final, et c’est la pièce qui permet de terminer le travail et d’être sûr qu’il tienne. Le mot rappelle aussi le français, où <i>rondelle</i> signifie exactement la même chose, au singulier."],
- st_c:"Pour finir", st_cp:"Si le projet vous plaît, vous pouvez contribuer avec un café.", st_cb:"Offrez-moi un café"
+ st_c:"Pour finir", st_cp:"Si le projet vous plaît, vous pouvez contribuer avec <a href=\"https://buymeacoffee.com/jackb998\" target=\"_blank\" rel=\"noopener noreferrer\">un café</a>. Le bouton Buy Me a Coffee en bas à droite convient aussi.", st_cb:"Offrez-moi un café"
 }};
 function guideHTML() {
   const g = G[lang], e = G.en, x = k => g[k] ?? e[k];
@@ -229,9 +232,10 @@ function guideHTML() {
 <p>${x("gd_open")}</p>
 <section class="cust" id="personalise"><h2>${x("gd_c")}</h2><div class="cust3">${x("gd_cust").map(c => `<div><h3>${c[0]}</h3><span class="where">${c[1]}</span><p>${c[2]}</p></div>`).join("")}</div></section>
 <h2>${x("gd_s")}</h2>${x("gd_panes").map(p => `<h3 class="pane">${p.h}</h3><p class="where">${p.w}</p><dl class="set">${items(p.i)}</dl>`).join("")}
-<h2>${x("gd_t")}</h2><ul class="rules">${x("gd_todo").map(s => `<li>${s}</li>`).join("")}</ul>`;
+<h2>${x("gd_t")}</h2><ul class="rules">${x("gd_todo").map(s => `<li>${s}</li>`).join("")}</ul>
+<section class="gallery" id="app"><h2>${x("ga_h")}</h2><p>${x("ga_l")}</p><div class="rail" tabindex="0" role="region" aria-label="${x("ga_h")}">${["wheel-convert-photo","wheel-tools-photo","wheel-share-photo"].map((n, i) => `<figure><img data-shot="${n}" width="480" height="480" alt="${x("gal")[i]}"><figcaption>${x("gc")[i]}</figcaption></figure>`).join("")}</div></section>`;
 }
 function storyHTML() {
   const g = G[lang], e = G.en, x = k => g[k] ?? e[k];
-  return `${x("st_p").map(s => `<p>${s}</p>`).join("")}<h2>${x("st_n")}</h2>${x("st_np").map(s => `<p>${s}</p>`).join("")}<h2>${x("st_c")}</h2><p>${x("st_cp")}</p><p><a class="btn" href="https://buymeacoffee.com/jackb998" target="_blank" rel="noopener noreferrer">${x("st_cb")}</a></p>`;
+  return `${x("st_p").map(s => `<p>${s}</p>`).join("")}<h2>${x("st_n")}</h2>${x("st_np").map(s => `<p>${s}</p>`).join("")}<h2>${x("st_c")}</h2><p>${x("st_cp")}</p>`;
 }
