@@ -32,14 +32,26 @@ enum WheelConfig {
         return "wheel.\(k).\(mode == .convert ? "convert" : "tools")"
     }
 
+    /// What a wheel starts with, before Settings → Ruota changes it. «Apri in Pages / Numbers» start hidden:
+    /// Rondelle writes Pages files itself now (the «Pages» format), so opening the file there is the extra,
+    /// and Settings → Ruota can bring it back.
+    static func defaultEntry(_ kind: FileKind, _ mode: WheelMode) -> Entry {
+        guard mode == .convert else { return Entry() }
+        switch kind {
+        case .document: return Entry(hidden: [IWorkOps.App.pages.title])
+        case .spreadsheet: return Entry(hidden: [IWorkOps.App.numbers.title])
+        default: return Entry()
+        }
+    }
+
     static func entry(_ kind: FileKind, _ mode: WheelMode) -> Entry {
         guard let data = UserDefaults.standard.data(forKey: key(kind, mode)),
-              let entry = try? JSONDecoder().decode(Entry.self, from: data) else { return Entry() }
+              let entry = try? JSONDecoder().decode(Entry.self, from: data) else { return defaultEntry(kind, mode) }
         return entry
     }
 
     static func save(_ entry: Entry, _ kind: FileKind, _ mode: WheelMode) {
-        if entry == Entry() {
+        if entry == defaultEntry(kind, mode) {
             UserDefaults.standard.removeObject(forKey: key(kind, mode))
         } else {
             UserDefaults.standard.set(try? JSONEncoder().encode(entry), forKey: key(kind, mode))
@@ -55,7 +67,7 @@ enum WheelConfig {
     /// Hides and reorders `actions`; never returns an empty wheel.
     static func apply(_ actions: [WheelAction], kind: FileKind, mode: WheelMode) -> [WheelAction] {
         let entry = entry(kind, mode)
-        guard entry != Entry() else { return actions }
+        guard entry != Entry() else { return actions }   // nothing hidden or moved
         let visible = actions.filter { !entry.hidden.contains($0.id) }
         let sorted = visible.enumerated().sorted { a, b in
             let ia = entry.order.firstIndex(of: a.element.id) ?? Int.max

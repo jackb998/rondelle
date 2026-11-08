@@ -82,16 +82,16 @@ window, then Finder opens on the results.
 
 | File type | Convert (⇧) | Tools (⌥⇧) |
 |---|---|---|
-| Images (JPG, PNG, HEIC, TIFF, GIF, BMP, WebP, AVIF, SVG…) and **camera RAW** (DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2…; tools save RAW as JPG) | JPG, PNG, HEIC, **WebP**, TIFF, GIF, BMP, PDF, **ICNS, ICO** | Compress, target file size, 50%, custom pixel sizes, rotate, mirror, remove background, **text (OCR)**, **copy text** to the clipboard, read QR codes, strip metadata, **Edit** (adjust light/colour/detail, crop, draw, arrows, text, cover), **Layout** (2+ photos), PDF, ZIP, protected ZIP |
-| PDF | PNG, JPG (one per page), TXT (OCR when the PDF is a scan), DOCX, RTF | Compress, strong compress, target file size, **Merge** (2+ PDFs) / **Organize** (1 PDF), split, **OCR** (searchable PDF), strip metadata, **password** / **unlock**, page numbers, watermark, **rotate**, **redact** (really removes what it covers), **translate**, ZIP |
+| Images (JPG, PNG, HEIC, TIFF, GIF, BMP, WebP, AVIF, SVG…) and **camera RAW** (DNG, CR2, CR3, NEF, ARW, RAF, ORF, RW2…; tools save RAW as JPG) | JPG, PNG, HEIC, **WebP**, TIFF, GIF, BMP, PDF, **ICNS, ICO** | Compress, target file size, 50%, custom pixel sizes, **rotate** (90° right or left, 180°, mirror horizontally or vertically), remove background, **text (OCR)**, **copy text** to the clipboard, read QR codes, read or strip metadata, **Edit** (adjust light/colour/detail, crop, draw, arrows, text, cover), **Layout** (2+ photos), PDF, ZIP, protected ZIP |
+| PDF | PNG, JPG (one per page), TXT (OCR when the PDF is a scan), DOCX, RTF | Compress, strong compress, target file size, **Merge** (2+ PDFs) / **Organize** (1 PDF), split, **OCR** (searchable PDF), read or strip metadata, **password** / **unlock**, page numbers, watermark, **rotate**, **redact** (really removes what it covers), **translate**, ZIP |
 | PDFs and images together | PDF (merge window) | Merge, ZIP |
-| Video (MP4, MOV, M4V…) | MP4, MOV, M4V, GIF, M4A | **Trim**, 1080p, 720p, **target file size**, HEVC, 2× / 0.5× speed, join, snapshot, mute, audio only, strip metadata, **subtitles from speech** (macOS 26+), ZIP |
-| Audio (M4A, WAV, AIFF, FLAC, MP3…) | M4A, WAV, AIFF, FLAC, **MP3** | **Trim**, normalize, mono, compress, strip metadata, **subtitles from speech** (macOS 26+), ZIP |
-| Documents (DOCX, DOC, RTF, ODT, HTML, TXT, MD) | PDF, DOCX, RTF, ODT, HTML, TXT | **Translate**, ZIP |
-| **Spreadsheets** (XLSX, ODS, CSV, TSV) | XLSX, ODS, CSV, TSV, HTML, PDF | ZIP |
-| Subtitles (SRT, VTT) | SRT, VTT, TXT | **Translate**, ZIP |
-| Archives (ZIP, TAR, GZ, TGZ, BZ2, XZ, RAR, 7Z) | Extract | Extract (**Unlock and extract** for password-protected ZIPs: the password is asked once), protected ZIP |
-| Folders and other files | ZIP, TAR.GZ | ZIP |
+| Video (MP4, MOV, M4V…) | MP4, MOV, M4V, GIF, M4A | **Trim**, 1080p, 720p, **target file size**, HEVC, 2× / 0.5× speed, join, snapshot, mute, audio only, read or strip metadata, **subtitles from speech** (macOS 26+), ZIP |
+| Audio (M4A, WAV, AIFF, FLAC, MP3…) | M4A, WAV, AIFF, FLAC, **MP3** | **Trim**, normalize, mono, compress, read or strip metadata, **subtitles from speech** (macOS 26+), ZIP |
+| Documents (DOCX, DOC, RTF, ODT, HTML, TXT, MD) | PDF, DOCX, RTF, ODT, HTML, TXT | **Translate**, read metadata (and strip author, company and dates from DOCX), ZIP |
+| **Spreadsheets** (XLSX, ODS, CSV, TSV) | XLSX, ODS, CSV, TSV, HTML, PDF | Read metadata (and strip author, company and dates from XLSX), ZIP |
+| Subtitles (SRT, VTT) | SRT, VTT, TXT | **Translate**, read metadata, ZIP |
+| Archives (ZIP, TAR, GZ, TGZ, BZ2, XZ, RAR, 7Z) | Extract | Extract (**Unlock and extract** for password-protected ZIPs: the password is asked once), read metadata, protected ZIP |
+| Folders and other files | ZIP, TAR.GZ | Read metadata, ZIP |
 
 Built on Apple frameworks (ImageIO, PDFKit, AVFoundation, Vision, AppKit, SwiftUI) plus two open-source encoders
 compiled into the app: **libwebp 1.6.0** (BSD) for WebP and **LAME 4.0** (LGPL) for MP3. Only their encoders are
@@ -309,6 +309,7 @@ and audio) and runs the 26 conversions of every kind of file; V1–V4 (links, de
 | `FormatSettings.swift` | Per-format conversion options |
 | `FormatsView.swift` | Settings → Formats, the interactive conversion table |
 | `WheelGroups.swift` / `OptionsPanel.swift` | Groups of similar tools, wheel styles and the options panel |
+| `MetadataWindow.swift` / `OfficeMetadata.swift` | *Metadata → Read* window (any file, with a ⌘F search field) and the DOCX/XLSX/PPTX properties it reads and strips |
 | `CLI.swift` | Command-line mode for testing |
 
 The interface is in Italian, English and French (`Resources/<language>.lproj`; Italian text is the key).

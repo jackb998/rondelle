@@ -107,6 +107,15 @@ struct WheelAction {
         ]), id: "group.metadati")
     }
 
+    /// «Metadati» where the file has nothing inside to remove (or Rondelle can't remove it): only the window.
+    static let readMetadata = WheelAction.window("Metadati", "info.circle") { MetadataWindow.open($0) }.withID("Leggi")
+
+    /// The «Metadati» entry for documents, spreadsheets and any other file: the group where «Rimuovi» can work
+    /// (DOCX, XLSX, PPTX), the window alone elsewhere.
+    static func metadata(for urls: [URL]) -> WheelAction {
+        OfficeMetadata.canStrip(urls) ? .metadata { try OfficeMetadata.strip($0) } : readMetadata
+    }
+
     /// "Dimensione…": asks for a size in MB, then calls `fit` with the byte count.
     static func targetSize(_ fit: @escaping @Sendable (URL, Int) async throws -> [URL]) -> WheelAction {
         WheelAction(title: "Peso…", symbol: "scalemass", work: .asking(
@@ -213,6 +222,11 @@ enum ActionCatalog {
     }
 
     /// «Apri in Pages / Numbers» when every file is one the app opens and the app is installed.
+    /// A Pages file made by Rondelle (it needs the installed Pages for its empty template, see PagesWriter).
+    private static var pagesFile: [WheelAction] {
+        IWorkOps.App.pages.installed == nil ? [] : [.each("Pages") { try await DocumentOps.convert($0, to: .pages) }]
+    }
+
     private static func iWork(_ app: IWorkOps.App, _ urls: [URL]) -> [WheelAction] {
         let inputs = app == .pages ? IWorkOps.pagesInputs : IWorkOps.numbersInputs
         guard urls.allSatisfy({ inputs.contains($0.pathExtension.lowercased()) }), let action = IWorkOps.action(app) else { return [] }
@@ -288,10 +302,18 @@ enum ActionCatalog {
                 }
                 return try ImageOps.process(url, maxPixel: px, quality: Settings.imageQuality, suffix: "\(px)px")
             })
-            tools += [
-                .each("Ruota", "rotate.right") { try ImageTools.rotateRight($0) },
-                .each("Specchio", "arrow.left.and.right.righttriangle.left.righttriangle.right") { try ImageTools.mirror($0) },
-            ]
+            // «Ruota»: the ids «Ruota» and «Specchio» stay those of 1.0.3, for Shortcuts, scripts and Settings → Ruota.
+            tools.append(WheelAction(title: "Ruota", symbol: "rotate.right", work: .group([
+                WheelAction.each("A destra", "rotate.right") { try ImageTools.turn($0, .right) }.withID("Ruota"),
+                WheelAction.each("A sinistra", "rotate.left") { try ImageTools.turn($0, .left) }.withID("Ruota sinistra"),
+                WheelAction.each("180°", "arrow.clockwise") { try ImageTools.turn($0, .half) }.withID("Ruota 180"),
+                WheelAction.each("Specchio orizzontale", "arrow.left.and.right.righttriangle.left.righttriangle.right") {
+                    try ImageTools.turn($0, .mirrorHorizontal)
+                }.withID("Specchio"),
+                WheelAction.each("Specchio verticale", "arrow.up.and.down.righttriangle.up.righttriangle.down") {
+                    try ImageTools.turn($0, .mirrorVertical)
+                }.withID("Specchio verticale"),
+            ]), id: "group.rotate"))
             if #available(macOS 14.0, *) {
                 tools.append(.each("Sfondo", "person.crop.square") { try ImageTools.removeBackground($0) })
             }
@@ -416,7 +438,7 @@ enum ActionCatalog {
                 .each("ODT") { try await DocumentOps.convert($0, to: .odt) },
                 .each("HTML") { try await DocumentOps.convert($0, to: .html) },
                 .each("TXT") { try await DocumentOps.convert($0, to: .txt) },
-            ] + iWork(.pages, urls)
+            ] + pagesFile + iWork(.pages, urls)
 
         case (.spreadsheet, .convert):
             return [
@@ -437,19 +459,25 @@ enum ActionCatalog {
 
         case (.document, .tools) where urls.allSatisfy({ $0.pathExtension.lowercased() != "pages" }),
              (.subtitle, .tools):
-            return translations + [zip, protectedZip]
+            return translations + [.metadata(for: urls), zip, protectedZip]
 
         case (.archive, _):
+            // Metadata on the tools wheel only: the archive's own, not its contents' (nothing is extracted to read them).
+            let metadata: [WheelAction] = mode == .tools ? [.readMetadata] : []
             // A protected ZIP asks for its password once; ZIP-ing an archive again gains nothing, protecting it does.
             if urls.contains(where: ArchiveOps.isEncryptedZip) {
                 return [WheelAction.asking("Sblocca ed estrai", "lock.open", question: L("Password dello ZIP protetto:"), answer: .password) {
                     try ArchiveOps.extract($0, password: $1)
-                }.readingHint { PasswordHint.fromZip($0) }, protectedZip]
+                }.readingHint { PasswordHint.fromZip($0) }] + metadata + [protectedZip]
             }
-            return [.each("Estrai", "shippingbox") { try ArchiveOps.extract($0) }, protectedZip]
+            return [.each("Estrai", "shippingbox") { try ArchiveOps.extract($0) }] + metadata + [protectedZip]
 
         case (.folder, .convert), (.other, .convert):
             return [zip, protectedZip, .all("TAR.GZ", "archivebox.fill") { try ArchiveOps.tarGz($0) }]
+
+        case (_, .tools):
+            // Pages documents, spreadsheets, folders and anything else (also a mix of kinds).
+            return [.metadata(for: urls), zip, protectedZip]
 
         default:
             return [zip, protectedZip]

@@ -359,6 +359,18 @@ enum CLI {
             print("pagine=\(pdf.numberOfPages) testo=\(found ? "si" : "no") colore=\(Int(color.redComponent * 255)),\(Int(color.greenComponent * 255)),\(Int(color.blueComponent * 255))")
             return 0
 
+        case "--test-pages-text":
+            // --test-pages-text FILE.pages TEXT: the body of the Pages file contains TEXT (si/no) and its length.
+            guard args.count >= 2 else { return usage() }
+            do {
+                let body = try PagesWriter.bodyText(of: URL(fileURLWithPath: args[0]))
+                print("testo=\(body.contains(args[1]) ? "si" : "no") lunghezza=\(body.utf16.count)")
+                return 0
+            } catch {
+                fputs("\(error.localizedDescription)\n", stderr)
+                return 1
+            }
+
         case "--test-archive-size":
             // --test-archive-size ARCHIVE: the declared expanded size as Rondelle reads it (no limit).
             guard let path = args.first else { return usage() }
@@ -924,6 +936,8 @@ enum CLI {
             Task.detached { var all: [MetadataReader.Section] = []; for url in files { all.append(await MetadataReader.read(url)) }; read = all }
             while read == nil { RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05)) }
             model.sections = read
+            // RONDELLE_QUERY: the window with that text in the search field.
+            model.query = ProcessInfo.processInfo.environment["RONDELLE_QUERY"] ?? ""
             return snapshot(MetadataView(model: model).background(Color(nsColor: .windowBackgroundColor)),
                             size: NSSize(width: 520, height: 900), to: args[0], wait: 0.5)
         case "--test-metadata":
@@ -946,6 +960,158 @@ enum CLI {
             }
             problems.forEach { print("problema: \($0)") }
             return problems.isEmpty ? 0 : 1
+        case "--test-rotations":
+            // --test-rotations: the five turns of «Ruota» on a 6×4 picture of all different pixels, pixel by pixel:
+            // TIFF in each of the 8 EXIF orientations (only the orientation changes, nothing re-encoded) and PNG (the
+            // pixels are redrawn). The result, shown upright, must be the source shown upright turned as expected.
+            let dir = FileManager.default.temporaryDirectory.appendingPathComponent("rotazioni-" + UUID().uuidString, isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: dir) }
+            let (w, h) = (6, 4)
+            func pixels(_ image: CGImage) -> (Int, Int, [UInt8]) {
+                var data = [UInt8](repeating: 0, count: image.width * image.height * 4)
+                let ctx = CGContext(data: &data, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                                    space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+                ctx.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                return (image.width, image.height, data)
+            }
+            var raw = [UInt8](repeating: 255, count: w * h * 4)
+            for y in 0..<h { for x in 0..<w { let i = (y * w + x) * 4; raw[i] = UInt8(x * 40 + 10); raw[i + 1] = UInt8(y * 60 + 10); raw[i + 2] = UInt8((x * 7 + y * 31) % 256) } }
+            let source = CGContext(data: &raw, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                   space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!.makeImage()!
+            func expected(_ turn: ImageTools.Turn, _ u: (Int, Int, [UInt8])) -> (Int, Int, [UInt8]) {
+                let (uw, uh, up) = u
+                let (ew, eh) = turn.swapsSides ? (uh, uw) : (uw, uh)
+                var out = [UInt8](repeating: 0, count: ew * eh * 4)
+                for y in 0..<eh { for x in 0..<ew {
+                    let (sx, sy): (Int, Int)
+                    switch turn {
+                    case .right: (sx, sy) = (y, uh - 1 - x)
+                    case .left: (sx, sy) = (uw - 1 - y, x)
+                    case .half: (sx, sy) = (uw - 1 - x, uh - 1 - y)
+                    case .mirrorHorizontal: (sx, sy) = (uw - 1 - x, y)
+                    case .mirrorVertical: (sx, sy) = (x, uh - 1 - y)
+                    }
+                    for c in 0..<4 { out[(y * ew + x) * 4 + c] = up[(sy * uw + sx) * 4 + c] }
+                } }
+                return (ew, eh, out)
+            }
+            var problems: [String] = [], checked = 0
+            let cases: [(String, UTType, Int)] = (1...8).map { ("tiff", UTType.tiff, $0) } + [("png", .png, 1)]
+            for (ext, type, orientation) in cases {
+                let file = dir.appendingPathComponent("o\(orientation).\(ext)")
+                guard let dest = CGImageDestinationCreateWithURL(file as CFURL, type.identifier as CFString, 1, nil) else { return 1 }
+                CGImageDestinationAddImage(dest, source, [kCGImagePropertyOrientation: orientation] as CFDictionary)
+                guard CGImageDestinationFinalize(dest), let upright = try? ImageTools.load(file).image else { problems.append("\(file.lastPathComponent): non scritto"); continue }
+                let u = pixels(upright)
+                for turn in ImageTools.Turn.allCases {
+                    guard let out = try? ImageTools.turn(file, turn).first, let result = try? ImageTools.load(out).image else {
+                        problems.append("\(file.lastPathComponent) \(turn): non riuscita"); continue
+                    }
+                    let got = pixels(result), want = expected(turn, u)
+                    let diff = got.0 == want.0 && got.1 == want.1 ? zip(got.2, want.2).map { abs(Int($0) - Int($1)) }.max() ?? 0 : 999
+                    // TIFF: the copy must keep the pixels as they are, only the orientation changes.
+                    if ext == "tiff", let src = CGImageSourceCreateWithURL(out as CFURL, nil),
+                       let stored = CGImageSourceCreateImageAtIndex(src, 0, nil), pixels(stored).2 != pixels(source).2 {
+                        problems.append("\(file.lastPathComponent) \(turn): pixel ridisegnati invece della sola orientazione")
+                    }
+                    if diff > 2 { problems.append("\(file.lastPathComponent) \(turn): differenza \(diff)") }
+                    checked += 1
+                    try? FileManager.default.removeItem(at: out)
+                }
+            }
+            problems.forEach { print("problema: \($0)") }
+            print("\(checked) rotazioni controllate pixel per pixel, \(problems.count) problemi")
+            return problems.isEmpty && checked == 45 ? 0 : 1
+
+        case "--test-office-metadata":
+            // --test-office-metadata FILE…(DOCX, XLSX, PPTX): «Leggi» shows author, company, custom properties and the
+            // download origin; «Rimuovi» writes a copy where none of them is left (also not the Spotlight attributes),
+            // whose text, sheets or slides are byte for byte the original's and that still opens.
+            var problems: [String] = []
+            for url in args.map({ URL(fileURLWithPath: $0) }) {
+                nonisolated(unsafe) var read: MetadataReader.Section?
+                Task.detached { read = await MetadataReader.read(url) }
+                while read == nil { RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05)) }
+                let before = read!.rows
+                let office = before.filter { $0.key.hasPrefix("Office · ") }
+                let name = url.lastPathComponent
+                for wanted in ["Office · creator", "Office · lastModifiedBy", "Office · Company"] where !office.contains(where: { $0.key == wanted }) {
+                    problems.append("\(name): manca \(wanted)")
+                }
+                if !before.contains(where: { $0.key.hasPrefix("Origine · ") }) { problems.append("\(name): manca la provenienza") }
+                guard let out = try? OfficeMetadata.strip(url).first else { problems.append("\(name): Rimuovi non riuscito"); continue }
+                defer { try? FileManager.default.removeItem(at: out) }
+                let after = OfficeMetadata.read(out)
+                if !after.isEmpty { problems.append("\(out.lastPathComponent): restano \(after.map(\.0).joined(separator: ", "))") }
+                if ExtendedAttributes.names(out).contains(where: { $0.hasPrefix("com.apple.metadata:") }) { problems.append("\(out.lastPathComponent): restano attributi Spotlight") }
+                let main = ["docx": "word/document.xml", "xlsx": "xl/worksheets/sheet1.xml", "pptx": "ppt/presentation.xml"][url.pathExtension.lowercased()] ?? ""
+                let a = try? ArchiveOps.entryData(in: url, entry: main, maxBytes: 10_000_000), b = try? ArchiveOps.entryData(in: out, entry: main, maxBytes: 10_000_000)
+                if a == nil || a != b { problems.append("\(out.lastPathComponent): \(main) cambiato") }
+                switch url.pathExtension.lowercased() {
+                case "docx":
+                    let text = try? NSAttributedString(url: out, options: [.documentType: NSAttributedString.DocumentType.officeOpenXML], documentAttributes: nil).string
+                    if text?.contains("Testo di prova") != true { problems.append("\(out.lastPathComponent): non si apre") }
+                case "xlsx":
+                    if (try? SheetOps.read(out))?.first?.rows.first?.contains("prova") != true { problems.append("\(out.lastPathComponent): non si apre") }
+                default: break
+                }
+                print("\(name): \(office.count) valori Office prima, \(after.count) dopo")
+            }
+            if let other = args.first.map({ URL(fileURLWithPath: $0).deletingPathExtension().appendingPathExtension("txt") }) {
+                FileManager.default.createFile(atPath: other.path, contents: Data("x".utf8))
+                if (try? OfficeMetadata.strip(other)) != nil { problems.append("Rimuovi accetta un TXT") }
+                try? FileManager.default.removeItem(at: other)
+            }
+            problems.forEach { print("problema: \($0)") }
+            return problems.isEmpty && !args.isEmpty ? 0 : 1
+
+        case "--test-metadata-search":
+            // --test-metadata-search FILE…: the window's search field filters by name or value (case and accents
+            // ignored), shows the message when nothing matches, and ⌘F puts the cursor in it.
+            guard !args.isEmpty else { return usage() }
+            NSApplication.shared.setActivationPolicy(.accessory)
+            let model = MetadataModel(more: 0)
+            nonisolated(unsafe) var read: [MetadataReader.Section]?
+            let files = args.map { URL(fileURLWithPath: $0) }
+            Task.detached { var all: [MetadataReader.Section] = []; for url in files { all.append(await MetadataReader.read(url)) }; read = all }
+            while read == nil { RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05)) }
+            model.sections = read
+            var problems: [String] = []
+            let groups = read!.map { MetadataView.groups($0.rows) }
+            func count(_ gs: [[MetadataView.Group]]) -> Int { gs.reduce(0) { $0 + $1.reduce(0) { $0 + $1.rows.count } } }
+            let all = count(groups)
+            for query in [L("Dimensione"), L("Dimensione").uppercased(), L("Modificato").lowercased(), "zzqqxx-nessuno"] {
+                let shown = groups.map { MetadataView.filter($0, query) }
+                let n = count(shown)
+                let wrong = shown.flatMap { $0 }.filter { g in !MetadataView.contains(g.name, query) && g.rows.contains { !MetadataView.contains($0.key, query) && !MetadataView.contains($0.value, query) } }
+                print("«\(query)»: \(n) di \(all) righe")
+                if !wrong.isEmpty { problems.append("«\(query)»: righe che non corrispondono") }
+                if query.hasPrefix("zzqq") ? n != 0 : n < files.count { problems.append("«\(query)»: \(n) righe") }
+            }
+            if count(groups.map { MetadataView.filter($0, "  ") }) != all { problems.append("una ricerca vuota nasconde righe") }
+            let host = NSHostingController(rootView: MetadataView(model: model))
+            let window = NSWindow(contentViewController: host)
+            window.setContentSize(NSSize(width: 520, height: 600))
+            window.orderFrontRegardless()
+            window.makeKey()
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.6))
+            guard let field = model.searchField else { print("problema: campo di ricerca assente"); return 1 }
+            window.makeFirstResponder(nil)
+            let press = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command, timestamp: 0, windowNumber: window.windowNumber,
+                                         context: nil, characters: "f", charactersIgnoringModifiers: "f", isARepeat: false, keyCode: 3)!
+            _ = window.performKeyEquivalent(with: press)
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
+            let focused = (window.firstResponder as? NSText)?.delegate as? NSSearchField === field
+            print(focused ? "⌘F: cursore nel campo di ricerca" : "⌘F: il campo non ha il cursore")
+            if !focused { problems.append("⌘F non attiva la ricerca") }
+            field.currentEditor()?.insertText("zzqqxx")
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
+            if model.query != "zzqqxx" { problems.append("il testo scritto non arriva al filtro («\(model.query)»)") }
+            window.close()
+            problems.forEach { print("problema: \($0)") }
+            return problems.isEmpty ? 0 : 1
+
         case "--test-wheel-behind":
             // --test-wheel-behind FILE: Settings open behind another app (Finder), then a drag's wheel opens and switches
             // with ⌥ and ⌃. PASS when Rondelle never becomes active, Settings never comes in front of the other apps' windows, and

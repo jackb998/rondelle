@@ -66,6 +66,41 @@ z.writestr('_rels/.rels', '<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?><Re
 z.writestr('word/_rels/document.xml.rels', '<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?><Relationships xmlns=\\\"http://schemas.openxmlformats.org/package/2006/relationships\\\">'
   '<Relationship Id=\\\"rId1\\\" Type=\\\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\\\" Target=\\\"media/sfondo.png\\\"/></Relationships>')
 z.writestr('word/document.xml', doc); z.writestr('word/media/sfondo.png', png); z.close()"   # a page-sized picture behind the text, as letterheads have
+  python3 -I -c "
+import zipfile, plistlib
+CT = 'http://schemas.openxmlformats.org/package/2006/content-types'; PR = 'http://schemas.openxmlformats.org/package/2006/relationships'
+OD = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+core = ('<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" '
+  'xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">'
+  '<dc:title>Titolo di prova</dc:title><dc:creator>Autore di prova</dc:creator><cp:lastModifiedBy>Revisore di prova</cp:lastModifiedBy>'
+  '<dcterms:created xsi:type=\"dcterms:W3CDTF\">2020-01-02T03:04:05Z</dcterms:created><dcterms:modified xsi:type=\"dcterms:W3CDTF\">2021-01-02T03:04:05Z</dcterms:modified></cp:coreProperties>')
+app = ('<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\">'
+  '<Application>Programma di prova</Application><Company>Ditta di prova</Company><Manager>Capo di prova</Manager><Template>Modello.dotm</Template><TotalTime>42</TotalTime></Properties>')
+custom = ('<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/custom-properties\" '
+  'xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><property fmtid=\"{D5CDD505-2E9C-101B-9397-08002B2CF9AE}\" pid=\"2\" name=\"Cliente\"><vt:lpwstr>Cliente di prova</vt:lpwstr></property></Properties>')
+props = ('<Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/>'
+  '<Override PartName=\"/docProps/app.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.extended-properties+xml\"/>'
+  '<Override PartName=\"/docProps/custom.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.custom-properties+xml\"/>')
+def rels(main):
+  return ('<?xml version=\"1.0\" encoding=\"UTF-8\"?><Relationships xmlns=\"%s\"><Relationship Id=\"rId1\" Type=\"%s/officeDocument\" Target=\"%s\"/>'
+    '<Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/>'
+    '<Relationship Id=\"rId3\" Type=\"%s/extended-properties\" Target=\"docProps/app.xml\"/><Relationship Id=\"rId4\" Type=\"%s/custom-properties\" Target=\"docProps/custom.xml\"/></Relationships>') % (PR, OD, main, OD, OD)
+def package(name, main, overrides, parts):
+  z = zipfile.ZipFile(name, 'w', zipfile.ZIP_DEFLATED)
+  z.writestr('[Content_Types].xml', '<?xml version=\"1.0\" encoding=\"UTF-8\"?><Types xmlns=\"%s\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>'
+    '<Default Extension=\"xml\" ContentType=\"application/xml\"/>%s%s</Types>' % (CT, overrides, props))
+  z.writestr('_rels/.rels', rels(main))
+  for k, v in parts.items(): z.writestr(k, v)
+  z.writestr('docProps/core.xml', core); z.writestr('docProps/app.xml', app); z.writestr('docProps/custom.xml', custom); z.close()
+package('autore.docx', 'word/document.xml', '<Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/>',
+  {'word/document.xml': '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body><w:p><w:r><w:t>Testo di prova.</w:t></w:r></w:p></w:body></w:document>'})
+package('autore.xlsx', 'xl/workbook.xml', '<Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>'
+  '<Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>',
+  {'xl/workbook.xml': '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"%s\"><sheets><sheet name=\"Foglio1\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>' % OD,
+   'xl/_rels/workbook.xml.rels': '<?xml version=\"1.0\" encoding=\"UTF-8\"?><Relationships xmlns=\"%s\"><Relationship Id=\"rId1\" Type=\"%s/worksheet\" Target=\"worksheets/sheet1.xml\"/></Relationships>' % (PR, OD),
+   'xl/worksheets/sheet1.xml': '<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>prova</t></is></c><c r=\"B1\"><v>3</v></c></row></sheetData></worksheet>'})
+open('provenienza.hex', 'w').write(plistlib.dumps(['https://example.com/autore.docx', 'https://example.com/'], fmt=plistlib.FMT_BINARY).hex())"
+  for f in autore.docx autore.xlsx; do xattr -wx com.apple.metadata:kMDItemWhereFroms $(<provenienza.hex) $f; xattr -w com.apple.quarantine "0083;65000000;Safari;" $f; done; rm provenienza.hex   # downloaded from a site
   swiftc -O $ROOT/Tests/security/lib/genvid.swift -o $W/genvid 2>/dev/null && $W/genvid clip.mov >/dev/null
   touch done
 fi
@@ -86,9 +121,15 @@ print "== documenti"; for t in PDF RTF ODT HTML TXT; do r --run $t lettera.docx;
 # A picture behind the text (letterhead, page background) stays behind it: one page, text on it, the picture under it.
 r --run PDF sfondo.docx; r --test-pdf-page sfondo.pdf "Testo sopra lo sfondo"
 [[ $last =~ '^pagine=1 testo=si colore=(2[0-9][0-9]),([0-9]+),' ]] && (( match[2] < 120 )) || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL sfondo DOCX -> PDF :: $last" }
+# A Pages file made by Rondelle from the empty template of the installed Pages: the document's text is in its body.
+if [[ -d /Applications/Pages.app || -d "/Applications/Pages Creator Studio.app" ]]; then
+  r --run Pages lettera.docx; r --test-pages-text lettera.pages "Seconda riga"
+  [[ $last == testo=si* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL DOCX -> Pages :: $last" }
+fi
 print "== sottotitoli"; r --run VTT sub.srt; r --run SRT sub.vtt; r --run TXT sub.srt
 print "== archivi"; r --run TAR.GZ cartella; r --run Estrai cartella.tar.gz
 print "== immagini"; r --run --tools Ruota foto.heic; r --run --tools Specchio foto.heic; r --run --tools Sfondo foto.heic
+r --run --tools "A sinistra" foto.heic; r --run --tools "180°" foto.heic; r --run --tools "Specchio verticale" foto.heic; r --test-rotations
 mkdir -p lay; r --layouts lay 4:5 foto.heic sonoma.heic qr.png
 RONDELLE_VALUE="0,5" r --run --tools "Peso…" sonoma.heic
 RONDELLE_VALUE="1" r --run --tools "Peso…" doc.pdf
@@ -96,6 +137,9 @@ print "== video"; r --run GIF clip.mov; r --run --tools "2×" clip.mov; r --run 
 print "== fogli di calcolo"; r --run XLSX tabella.csv; r --run ODS tabella.xlsx; r --run CSV tabella.ods; r --run PDF tabella.xlsx
 print "== ruota"; r --test-wheel-hit; r --test-wheel-motion foto.heic; r --test-wheel-keys foto.heic; r --test-wheel-switch; r --test-wheel-behind foto.heic; r --test-tutorial; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=en r --test-tutorial; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-tutorial; r --test-sidebar-motion; RONDELLE_RESOURCES=$ROOT/Resources r --test-dock-icon; r --test-wheel-hints; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-wheel-hints; r --test-support-link; r --test-share-picker foto.heic
 print "== metadati"; r --test-metadata foto.heic doc.pdf clip.mov voce.aiff lungo.png
+r --test-metadata lettera.docx tabella.xlsx nota.txt sub.srt cartella cartella.tar.gz autore.docx autore.xlsx
+r --test-office-metadata autore.docx autore.xlsx; r --run --tools Metadati autore.docx; r --run --tools Metadati autore.xlsx
+r --test-metadata-search foto.heic autore.docx nota.txt
 # RAW: read like any photo; what keeps the source format comes out as JPG (a RAW can't be written).
 rx() { local ext=$1; shift; local before=$ko; r "$@"; (( ko == before )) && [[ ${last:e} != $ext ]] && { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL $* :: ${last:t} non è .$ext" } }
 print "== RAW"; rx jpg --run JPG foto.dng; rx jpg --run --tools Ruota foto.dng; rx jpg --run --tools Metadati foto.dng; rx jpg --run --tools 1920px foto.dng

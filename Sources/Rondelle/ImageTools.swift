@@ -60,22 +60,55 @@ enum ImageTools {
 
     // MARK: Geometry
 
-    static func rotateRight(_ url: URL) throws -> [URL] {
-        if let out = try reorient(url, suffix: "ruotata", table: [6, 7, 8, 5, 2, 3, 4, 1]) { return out }
-        return try redraw(url, suffix: "ruotata", swapSides: true) { ctx, size in
-            // Clockwise: translate up by the new height, then rotate −90°.
-            ctx.translateBy(x: 0, y: size.width)
-            ctx.rotate(by: -.pi / 2)
+    /// The five ways «Ruota» turns or flips a photo (the group of the image wheel).
+    enum Turn: CaseIterable {
+        case right, left, half, mirrorHorizontal, mirrorVertical
+
+        /// New EXIF orientation = table[old − 1]. `right` and `mirrorHorizontal` checked pixel by pixel against ImageIO
+        /// for all 8 orientations (0.7); the others are their compositions (left = right³, half = right², vertical =
+        /// half ∘ horizontal), checked the same way by --test-rotations.
+        var table: [Int] {
+            switch self {
+            case .right: return [6, 7, 8, 5, 2, 3, 4, 1]
+            case .left: return [8, 5, 6, 7, 4, 1, 2, 3]
+            case .half: return [3, 4, 1, 2, 7, 8, 5, 6]
+            case .mirrorHorizontal: return [2, 1, 4, 3, 6, 5, 8, 7]
+            case .mirrorVertical: return [4, 3, 2, 1, 8, 7, 6, 5]
+            }
+        }
+
+        var suffix: String { self == .mirrorHorizontal || self == .mirrorVertical ? "specchiata" : "ruotata" }
+        var swapsSides: Bool { self == .right || self == .left }
+
+        /// The same turn on the pixels, in Core Graphics coordinates (origin bottom left), for the upright size.
+        func apply(_ ctx: CGContext, _ size: CGSize) {
+            switch self {
+            case .right:   // clockwise: up by the new height, then −90°
+                ctx.translateBy(x: 0, y: size.width)
+                ctx.rotate(by: -.pi / 2)
+            case .left:    // counterclockwise: right by the new width, then +90°
+                ctx.translateBy(x: size.height, y: 0)
+                ctx.rotate(by: .pi / 2)
+            case .half:
+                ctx.translateBy(x: size.width, y: size.height)
+                ctx.rotate(by: .pi)
+            case .mirrorHorizontal:
+                ctx.translateBy(x: size.width, y: 0)
+                ctx.scaleBy(x: -1, y: 1)
+            case .mirrorVertical:
+                ctx.translateBy(x: 0, y: size.height)
+                ctx.scaleBy(x: 1, y: -1)
+            }
         }
     }
 
-    static func mirror(_ url: URL) throws -> [URL] {
-        if let out = try reorient(url, suffix: "specchiata", table: [2, 1, 4, 3, 6, 5, 8, 7]) { return out }
-        return try redraw(url, suffix: "specchiata", swapSides: false) { ctx, size in
-            ctx.translateBy(x: size.width, y: 0)
-            ctx.scaleBy(x: -1, y: 1)
-        }
+    static func turn(_ url: URL, _ turn: Turn) throws -> [URL] {
+        if let out = try reorient(url, suffix: turn.suffix, table: turn.table) { return out }
+        return try redraw(url, suffix: turn.suffix, swapSides: turn.swapsSides, transform: turn.apply)
     }
+
+    static func rotateRight(_ url: URL) throws -> [URL] { try turn(url, .right) }
+    static func mirror(_ url: URL) throws -> [URL] { try turn(url, .mirrorHorizontal) }
 
     /// JPEG, HEIC and TIFF with one image: only the EXIF orientation changes (new = table[old − 1]) and the
     /// image data is copied as it is — no re-encoding, next to no memory. Tables checked pixel by pixel against

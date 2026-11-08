@@ -3,7 +3,7 @@ import PDFKit
 
 enum DocumentOps {
     enum Target: String {
-        case pdf, txt, docx, rtf, odt, html
+        case pdf, txt, docx, rtf, odt, html, pages
 
         var documentType: NSAttributedString.DocumentType? {
             switch self {
@@ -11,7 +11,7 @@ enum DocumentOps {
             case .rtf: return .rtf
             case .odt: return .openDocument
             case .html: return .html
-            case .pdf, .txt: return nil
+            case .pdf, .txt, .pages: return nil
             }
         }
     }
@@ -127,6 +127,8 @@ enum DocumentOps {
             try text.string.write(to: out, atomically: true, encoding: .utf8)
         case .pdf:
             try renderPDF(text, to: out, page: page)
+        case .pages:
+            try PagesWriter.write(text, to: out)
         default:
             let data = try text.data(from: NSRange(location: 0, length: text.length),
                                      documentAttributes: [.documentType: target.documentType!])

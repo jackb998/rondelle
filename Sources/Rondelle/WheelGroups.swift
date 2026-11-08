@@ -54,7 +54,6 @@ enum WheelGroups {
              members: keys(["Comprimi", "Comprimi +", "Peso…", "1080p", "720p", "HEVC"])),
         Spec(id: "group.resize", title: "Ridimensiona", symbol: "arrow.up.left.and.arrow.down.right",
              members: { $0.key == "50%" || $0.key == "Misura…" || ($0.key.hasSuffix("px") && $0.symbol != nil) }),
-        Spec(id: "group.edit", title: "Modifica", symbol: "pencil.tip.crop.circle", members: keys(["Modifica", "Ruota", "Specchio"]), first: ["Modifica"]),
         Spec(id: "group.text", title: "Testo e QR", symbol: "text.viewfinder", members: keys(["Testo", "Copia testo", "QR"])),
         Spec(id: "group.subtitles", title: "Sottotitoli", symbol: "captions.bubble", members: keys(["SRT italiano", "SRT inglese", "SRT francese"])),
         Spec(id: "group.compose", title: "PDF e layout", symbol: "doc.on.doc", members: { $0.key == "Layout" || ($0.key == "PDF" && $0.symbol != nil) }),
