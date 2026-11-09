@@ -20,13 +20,14 @@ en: {
  ge2h:"Tools", ge2:"Compress, resize, merge, split, edit…",
  ge3h:"Share", ge3:"AirDrop, Messages, Mail, Telegram, WhatsApp, Copy, Terminal and the apps you add.",
  fm_h:"What you can transform", fm_s:"Supported files", fm_c:"Convert to (⇧)", fm_t:"Tools (⌥⇧)",
- tab_img:"Images", tab_pdf:"PDF", tab_vid:"Video", tab_aud:"Audio", tab_doc:"Documents", tab_xls:"Spreadsheets", tab_sub:"Subtitles", tab_arc:"Archives",
+ tab_img:"Images", tab_pdf:"PDF", tab_vid:"Video", tab_aud:"Audio", tab_doc:"Documents", tab_xls:"Spreadsheets", tab_pres:"Presentations", tab_sub:"Subtitles", tab_arc:"Archives",
  t_img:"Compress · target file size · 50% or pixel sizes · rotate · mirror · remove background (macOS 14+) · text with OCR · QR codes · strip metadata · edit (light and colour, crop, draw, arrows, text, cover) · lay out 2 or more photos · PDF · ZIP, also protected",
  t_pdf:"Compress · target file size · merge · organize pages · split · OCR (searchable PDF) · password and unlock · page numbers · watermark",
  t_vid:"Trim · 1080p · 720p · target file size · HEVC · 2× / 0.5× speed · join · snapshot · mute · audio only · strip metadata · subtitles from speech (macOS 26+)",
  t_aud:"Trim · normalize · mono · compress · strip metadata · subtitles from speech (macOS 26+) · ZIP",
  t_doc:"Translate into Italian, English and French (macOS 15+) · ZIP",
  t_xls:"ZIP",
+ t_pres:"Read or strip metadata · ZIP",
  t_sub:"Translate into Italian, English and French (macOS 15+) · ZIP",
  t_arc:"Extract · unlock and extract password-protected ZIPs · protected ZIP",
  x_ext:"Extract",
@@ -89,13 +90,14 @@ it: {
  ge2h:"Strumenti", ge2:"Comprimi, ridimensiona, unisci, dividi, modifica…",
  ge3h:"Condividi", ge3:"AirDrop, Messaggi, Mail, Telegram, WhatsApp, Copia, Terminale e le app che aggiungi.",
  fm_h:"Cosa puoi trasformare", fm_s:"File supportati", fm_c:"Converti in (⇧)", fm_t:"Strumenti (⌥⇧)",
- tab_img:"Immagini", tab_pdf:"PDF", tab_vid:"Video", tab_aud:"Audio", tab_doc:"Documenti", tab_xls:"Fogli di calcolo", tab_sub:"Sottotitoli", tab_arc:"Archivi",
+ tab_img:"Immagini", tab_pdf:"PDF", tab_vid:"Video", tab_aud:"Audio", tab_doc:"Documenti", tab_xls:"Fogli di calcolo", tab_pres:"Presentazioni", tab_sub:"Sottotitoli", tab_arc:"Archivi",
  t_img:"Comprimi · peso target · 50% o misure in pixel · ruota · specchia · rimuovi sfondo (macOS 14+) · testo con OCR · codici QR · togli metadati · modifica (luce e colore, ritaglio, disegno, frecce, testo, copri) · impagina 2 o più foto · PDF · ZIP, anche protetto",
  t_pdf:"Comprimi · peso target · unisci · organizza le pagine · dividi · OCR (PDF ricercabile) · password e sblocco · numeri di pagina · filigrana",
  t_vid:"Taglia · 1080p · 720p · peso target · HEVC · velocità 2× / 0,5× · unisci · fotogramma · muto · solo audio · togli metadati · sottotitoli dalla voce (macOS 26+)",
  t_aud:"Taglia · normalizza · mono · comprimi · togli metadati · sottotitoli dalla voce (macOS 26+) · ZIP",
  t_doc:"Traduci in italiano, inglese e francese (macOS 15+) · ZIP",
  t_xls:"ZIP",
+ t_pres:"Leggi o rimuovi i metadati · ZIP",
  t_sub:"Traduci in italiano, inglese e francese (macOS 15+) · ZIP",
  t_arc:"Estrai · sblocca ed estrai gli ZIP con password · ZIP protetto",
  x_ext:"Estrai",
@@ -157,13 +159,14 @@ fr: { /* TODO: to be reviewed by a native speaker; the site addresses the reader
  ge2h:"Outils", ge2:"Compresser, redimensionner, fusionner, diviser, modifier…",
  ge3h:"Partager", ge3:"AirDrop, Messages, Mail, Telegram, WhatsApp, Copier, Terminal et les apps que vous ajoutez.",
  fm_h:"Ce que vous pouvez transformer", fm_s:"Fichiers pris en charge", fm_c:"Convertir en (⇧)", fm_t:"Outils (⌥⇧)",
- tab_img:"Images", tab_pdf:"PDF", tab_vid:"Vidéo", tab_aud:"Audio", tab_doc:"Documents", tab_xls:"Tableurs", tab_sub:"Sous-titres", tab_arc:"Archives",
+ tab_img:"Images", tab_pdf:"PDF", tab_vid:"Vidéo", tab_aud:"Audio", tab_doc:"Documents", tab_xls:"Tableurs", tab_pres:"Présentations", tab_sub:"Sous-titres", tab_arc:"Archives",
  t_img:"Compresser · poids cible · 50 % ou tailles en pixels · pivoter · miroir · supprimer l’arrière-plan (macOS 14+) · texte par OCR · codes QR · retirer les métadonnées · modifier (lumière et couleur, recadrage, dessin, flèches, texte, masquer) · mettre en page 2 photos ou plus · PDF · ZIP, même protégé",
  t_pdf:"Compresser · poids cible · fusionner · organiser les pages · diviser · OCR (PDF interrogeable) · mot de passe et déverrouillage · numéros de page · filigrane",
  t_vid:"Couper · 1080p · 720p · poids cible · HEVC · vitesse 2× / 0,5× · assembler · image fixe · muet · audio seul · retirer les métadonnées · sous-titres depuis la voix (macOS 26+)",
  t_aud:"Couper · normaliser · mono · compresser · retirer les métadonnées · sous-titres depuis la voix (macOS 26+) · ZIP",
  t_doc:"Traduire en italien, anglais et français (macOS 15+) · ZIP",
  t_xls:"ZIP",
+ t_pres:"Lire ou supprimer les métadonnées · ZIP",
  t_sub:"Traduire en italien, anglais et français (macOS 15+) · ZIP",
  t_arc:"Extraire · déverrouiller et extraire les ZIP protégés · ZIP protégé",
  x_ext:"Extraire",
@@ -235,10 +238,10 @@ const LAB = {compress:["Compress","Comprimi","Compresser"],half:["50%","50%","50
  extract:["Extract","Estrai","Extraire"],unlockx:["Unlock","Sblocca","Débloquer"],zipprot:["Protected ZIP","ZIP protetto","ZIP protégé"],
  airdrop:["AirDrop","AirDrop","AirDrop"],messages:["Messages","Messaggi","Messages"],mail:["Mail","Mail","Mail"],telegram:["Telegram","Telegram","Telegram"],whatsapp:["WhatsApp","WhatsApp","WhatsApp"],copy:["Copy","Copia","Copier"]};
 const TOOLS = {img:["compress","half","rotate","mirror","ocr","edit"],pdf:["compress","merge","split","ocr","password","watermark"],vid:["trim","p1080","p720","speed2","mute","audioonly"],
- aud:["trim","normalize","mono","compress","nometa","zip"],doc:["translate","zip"],xls:["zip"],sub:["translate","zip"],arc:["extract","unlockx","zipprot"]};
+ aud:["trim","normalize","mono","compress","nometa","zip"],doc:["translate","zip"],xls:["zip"],pres:["nometa","zip"],sub:["translate","zip"],arc:["extract","unlockx","zipprot"]};
 const SHARE = ["airdrop","messages","mail","telegram","whatsapp","copy"];
 const KIND = {heic:"img",jpg:"img",png:"img",webp:"img",tiff:"img",gif:"img",bmp:"img",ico:"img",icns:"img",pdf:"pdf",mp4:"vid",mov:"vid",m4v:"vid",m4a:"aud",wav:"aud",aiff:"aud",flac:"aud",mp3:"aud",
- docx:"doc",rtf:"doc",odt:"doc",html:"doc",txt:"doc",xlsx:"xls",ods:"xls",csv:"xls",tsv:"xls",srt:"sub",vtt:"sub",zip:"arc"};
+ docx:"doc",rtf:"doc",odt:"doc",html:"doc",txt:"doc",pages:"doc",pptx:"pres",xlsx:"xls",ods:"xls",csv:"xls",tsv:"xls",srt:"sub",vtt:"sub",zip:"arc"};
 const C = {
 en:{ct_h:"Say hi, or tell us what broke", ct_l:"Found a problem, or have an idea? Write it here. It is read by a person.",
  k_problema:"Problem", k_idea:"Idea", k_altro:"Other", ct_msg:"Your message", ct_mail:"Email (optional, only if you want a reply)", ct_send:"Send",
@@ -254,12 +257,13 @@ fr:{ct_h:"Dites bonjour, ou ce qui ne va pas", ct_l:"Un problème, une idée ? �
  ct_bad:"Vérifiez le message (il ne peut pas être vide) et l’adresse e-mail.", ct_busy:"Trop de messages en ce moment. Réessayez plus tard.", ct_err:"Ça n’est pas parti. Réessayez, ou ouvrez un ticket sur GitHub."}};
 /* missing keys fall back to English */
 const TABS = {
- img:{s:"JPG PNG HEIC TIFF GIF BMP WebP AVIF SVG",c:"JPG PNG HEIC WebP TIFF GIF BMP PDF ICNS ICO"},
- pdf:{s:"PDF",c:"PNG JPG TXT DOCX RTF"},
+ img:{s:"JPG PNG HEIC TIFF GIF BMP WebP AVIF SVG",c:"JPG PNG HEIC WebP TIFF GIF BMP PDF PPTX ICNS ICO"},
+ pdf:{s:"PDF",c:"PNG JPG TXT DOCX RTF PPTX"},
  vid:{s:"MP4 MOV M4V",c:"MP4 MOV M4V GIF M4A"},
  aud:{s:"M4A WAV AIFF FLAC MP3",c:"M4A WAV AIFF FLAC MP3"},
- doc:{s:"DOCX DOC RTF ODT HTML TXT MD",c:"PDF DOCX RTF ODT HTML TXT"},
+ doc:{s:"DOCX DOC RTF ODT HTML TXT MD PAGES",c:"PDF DOCX RTF ODT HTML TXT PAGES"},
  xls:{s:"XLSX ODS CSV TSV",c:"XLSX ODS CSV TSV HTML PDF"},
+ pres:{s:"PPTX",c:"PDF PNG JPG TXT"},
  sub:{s:"SRT VTT",c:"SRT VTT TXT"},
  arc:{s:"ZIP TAR GZ TGZ BZ2 XZ RAR 7Z",c:null}
 };
@@ -299,7 +303,7 @@ document.addEventListener("click", e => {
   const s = e.target.closest("#tabs span"); if (s) { tab = s.dataset.tab; render(); }
 });
 /* playground: drag a file onto the wheel (Convert / Tools / Share) */
-const SAMPLE={img:"photo.heic",pdf:"report.pdf",vid:"clip.mov",aud:"song.mp3",doc:"notes.docx",xls:"budget.xlsx",sub:"subtitles.srt",arc:"archive.zip"};
+const SAMPLE={img:"photo.heic",pdf:"report.pdf",vid:"clip.mov",aud:"song.mp3",doc:"notes.docx",xls:"budget.xlsx",pres:"slides.pptx",sub:"subtitles.srt",arc:"archive.zip"};
 const $=id=>document.getElementById(id);
 const stage=$("stage"); let mode="conv", cur=null, items=[], sel=-1, pos={x:0,y:0}, wpx=300;
 const kindOf=n=>KIND[n.split(".").pop().toLowerCase()]||"doc";
