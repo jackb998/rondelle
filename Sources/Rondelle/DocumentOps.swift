@@ -40,6 +40,7 @@ enum DocumentOps {
         if isWebContent(url) {
             return try await MainActor.run { Handover(text: try NSAttributedString(url: url, options: [:], documentAttributes: nil)) }.text
         }
+        if url.pathExtension.lowercased() == "pages" { return try PagesReader.read(url) }
         var attributes: NSDictionary?
         let text = try NSAttributedString(url: url, options: [:], documentAttributes: &attributes)
         // A file that isn't what its name says comes back as plain text (bytes included): a wrong result, not a document.
@@ -59,6 +60,8 @@ enum DocumentOps {
 
     /// Size on disk; an .rtfd is a folder, so its contents (images) are added up.
     private static func byteSize(_ url: URL) -> Int {
+        // A Pages file is mostly pictures, which Rondelle doesn't read: what counts is its text and styles (Index).
+        if url.pathExtension.lowercased() == "pages" { return PagesReader.indexBytes(url) }
         guard (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { return FileNaming.fileSize(url) }
         let items = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.fileSizeKey])
         return (items?.allObjects as? [URL] ?? []).reduce(0) { $0 + ((try? $1.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) }
@@ -70,7 +73,7 @@ enum DocumentOps {
     /// The largest file of this kind that is accepted (also used by Shortcuts).
     static func sizeLimit(for url: URL) -> Int {
         if isWebContent(url) { return Limits.maxHTMLBytes }
-        if ["docx", "odt"].contains(url.pathExtension.lowercased()) { return Limits.maxPackedDocumentBytes }
+        if ["docx", "odt", "pages"].contains(url.pathExtension.lowercased()) { return Limits.maxPackedDocumentBytes }
         return Limits.maxDocumentBytes
     }
 

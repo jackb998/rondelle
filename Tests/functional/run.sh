@@ -125,6 +125,10 @@ r --run PDF sfondo.docx; r --test-pdf-page sfondo.pdf "Testo sopra lo sfondo"
 if [[ -d /Applications/Pages.app || -d "/Applications/Pages Creator Studio.app" ]]; then
   r --run Pages lettera.docx; r --test-pages-text lettera.pages "Seconda riga"
   [[ $last == testo=si* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL DOCX -> Pages :: $last" }
+  # And back: the Pages file made above is read by Rondelle (text, styles), and converted to every document format.
+  r --test-pages-read lettera.pages "Seconda riga"
+  [[ $last == testo=si* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL leggi Pages :: $last" }
+  for t in PDF DOCX RTF ODT HTML TXT; do r --run $t lettera.pages; done
 fi
 # PowerPoint: a made-up deck (master, layout, title and body that inherit, bullets, picture, table, group, notes) to PDF,
 # images and text; then a PDF and images into decks of one picture per slide, read back with the same reader.

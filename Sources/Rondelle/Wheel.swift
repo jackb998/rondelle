@@ -985,13 +985,23 @@ final class WheelController {
     /// Opened by a drag while another app was in front: that app, and the windows that were in the Dock.
     private var dragOwner: NSRunningApplication?
     private var minimised: [NSWindow] = []
+    /// Rondelle's windows the user couldn't see when the drag began, taken off screen until Rondelle is opened again.
+    private var parked: [NSWindow] = []
     #if DEBUG
     var debugGaveBack = 0
+    /// --test-wheel-behind: Settings counts as out of sight even where the test can't hide it behind other windows.
+    var debugParkAll = false
     #endif
 
     /// macOS activates the app under a drag after a few seconds; with Stage Manager that brought back Rondelle's
     /// stage, Settings included. While a drag's wheel is open, the app in front stays in front.
     private func giveBackFocus() {
+        if !panel.isVisible, !parked.isEmpty {
+            // Rondelle opened again (Dock, ⌘Tab, menu): its windows come back as they were.
+            parked.forEach { $0.orderFront(nil) }
+            parked = []
+            return
+        }
         guard panel.isVisible, view.clickURLs == nil, let owner = dragOwner, !owner.isTerminated else { return }
         owner.activate(options: [])
         for window in minimised where !window.isMiniaturized { window.miniaturize(nil) }
@@ -1020,6 +1030,7 @@ final class WheelController {
         view.clickURLs = clickMode ? urls : nil
         dragOwner = clickMode || NSApp.isActive ? nil : NSWorkspace.shared.frontmostApplication
         minimised = dragOwner == nil ? [] : NSApp.windows.filter(\.isMiniaturized)
+        if dragOwner != nil { parkHiddenWindows() }
         panel.allowsKey = clickMode
         if Settings.animate { view.playOpening() }   // before place(): the first frame drawn is the empty wheel
         place()
@@ -1086,6 +1097,19 @@ final class WheelController {
             self.cardLabel.stringValue = text
             self.placeCard()
         }
+    }
+
+    /// macOS activates the app under a drag after a few seconds, and Stage Manager then brings back Rondelle's stage:
+    /// Settings popped up behind the wheel even though giveBackFocus() put the other app back in front. Windows the
+    /// user can't see (another stage, covered) leave the screen for the drag, so there is nothing to bring back.
+    private func parkHiddenWindows() {
+        var hidden = NSApp.windows.filter { $0.isVisible && !$0.isMiniaturized && $0.styleMask.contains(.titled)
+                                            && !$0.occlusionState.contains(.visible) }
+        #if DEBUG
+        if debugParkAll { hidden = NSApp.windows.filter { $0.isVisible && $0.styleMask.contains(.titled) } }
+        #endif
+        hidden.forEach { $0.orderOut(nil) }
+        parked += hidden.filter { !parked.contains($0) }
     }
 
     func hide() {

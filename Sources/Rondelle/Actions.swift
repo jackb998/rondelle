@@ -427,9 +427,6 @@ enum ActionCatalog {
                 protectedZip,
             ]
 
-        case (.document, .convert) where urls.allSatisfy({ $0.pathExtension.lowercased() == "pages" }):
-            return iWork(.pages, urls)
-
         case (.spreadsheet, .convert) where urls.allSatisfy({ $0.pathExtension.lowercased() == "numbers" }):
             return iWork(.numbers, urls)
 
@@ -470,6 +467,10 @@ enum ActionCatalog {
                 .each("VTT") { try SubtitleOps.convert($0, to: "vtt") },
                 .each("TXT") { try SubtitleOps.convert($0, to: "txt") },
             ]
+
+        case (.document, .tools) where urls.allSatisfy({ $0.pathExtension.lowercased() == "pages" }):
+            // Pages files are read by Rondelle (the body's text); what reads other properties of Word files stays out.
+            return translations + [zip, protectedZip]
 
         case (.document, .tools) where urls.allSatisfy({ $0.pathExtension.lowercased() != "pages" }),
              (.subtitle, .tools):

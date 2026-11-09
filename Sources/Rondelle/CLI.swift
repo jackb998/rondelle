@@ -371,6 +371,28 @@ enum CLI {
                 return 1
             }
 
+        case "--test-pages-read":
+            // --test-pages-read FILE.pages [TEXT]: paragraphs, bold runs, italic runs and bullets of what Rondelle reads from
+            // the Pages file, and whether TEXT is in it.
+            guard args.count >= 1 else { return usage() }
+            do {
+                let text = try PagesReader.read(URL(fileURLWithPath: args[0]))
+                var bold = 0, italic = 0
+                text.enumerateAttribute(.font, in: NSRange(location: 0, length: text.length)) { value, _, _ in
+                    let traits = (value as? NSFont)?.fontDescriptor.symbolicTraits ?? []
+                    if traits.contains(.bold) { bold += 1 }
+                    if traits.contains(.italic) { italic += 1 }
+                }
+                let paragraphs = text.string.split(separator: "\n", omittingEmptySubsequences: false).count - 1
+                let bullets = text.string.components(separatedBy: "•\t").count - 1
+                let found = args.count > 1 ? (text.string.contains(args[1]) ? "si" : "no") : "-"
+                print("testo=\(found) paragrafi=\(paragraphs) grassetti=\(bold) corsivi=\(italic) puntini=\(bullets) lunghezza=\(text.length)")
+                return 0
+            } catch {
+                fputs("\(error.localizedDescription)\n", stderr)
+                return 1
+            }
+
         case "--test-pptx-text":
             // --test-pptx-text FILE.pptx TEXT: how many slides Rondelle reads, whether TEXT is in their text, and how many
             // pictures, tables and free-form outlines they hold (the slide's own, with the master's and the layout's).
@@ -1202,9 +1224,11 @@ enum CLI {
             let before = state()
             UserDefaults.standard.set(false, forKey: Settings.Key.animate)
             let wheel = WheelController()
+            wheel.debugParkAll = true
             var steps = [("prima", before)]
             wheel.show(urls: args.map { URL(fileURLWithPath: $0) }, mode: .convert)
             wait(0.5); steps.append(("ruota aperta", state()))
+            let parkedOnOpen = !settings.isVisible
             wheel.setMode(.tools)
             wait(0.5); steps.append(("⌥ Strumenti", state()))
             wheel.setMode(.share)
@@ -1213,11 +1237,18 @@ enum CLI {
             NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: app)
             wait(0.5)
             let gaveBack = wheel.debugGaveBack == 1
+            let stillParked = !settings.isVisible
             wheel.hide()
+            wait(0.3)
+            let parkedAfterDrag = !settings.isVisible
             NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: app)
+            wait(0.3)
             let leftAlone = wheel.debugGaveBack == 1   // closed: an activation is the user's own
+            let restored = settings.isVisible && !settings.isMiniaturized
+            settings.orderOut(nil)
             print("attivata durante il trascinamento: primo piano restituito \(gaveBack ? "sì → PASS" : "no → FAIL"); a ruota chiusa lasciata \(leftAlone ? "sì → PASS" : "no → FAIL")")
-            var ok = !before.active && before.above > 0 && gaveBack && leftAlone
+            print("Impostazioni non visibili tolte dallo schermo: all'apertura \(parkedOnOpen ? "sì" : "no"), all'attivazione \(stillParked ? "sì" : "no"), dopo la ruota \(parkedAfterDrag ? "sì" : "no"), di nuovo al ritorno su Rondelle \(restored ? "sì" : "no") → \(parkedOnOpen && stillParked && parkedAfterDrag && restored ? "PASS" : "FAIL")")
+            var ok = !before.active && before.above > 0 && gaveBack && leftAlone && parkedOnOpen && stillParked && parkedAfterDrag && restored
             for (name, now) in steps {
                 let pass = !now.active && now.above > 0   // other apps open and close windows: only "not in front" is stable
                 ok = ok && pass

@@ -390,7 +390,7 @@
 "Impostazioni %@" = "%@ settings";
 "Ripristina i valori predefiniti" = "Restore defaults";
 "Vale per la conversione verso %@ dalla ruota «Converti»." = "Applies to conversion to %@ from the “Convert” wheel.";
-"Ogni pagina del PDF diventa un'immagine PNG o JPG: più dpi, più nitidezza e file più grandi." = "Each PDF page becomes a PNG or JPG image: more dpi, sharper and larger files.";
+"Ogni pagina del PDF, e ogni diapositiva di una presentazione PPTX, diventa un'immagine PNG o JPG: più dpi, più nitidezza e file più grandi." = "Each PDF page, and each slide of a PPTX presentation, becomes a PNG or JPG image: more dpi, sharper and larger files.";
 "GIF dai video: al massimo i primi 20 secondi." = "GIFs from videos: the first 20 seconds at most.";
 "Vale per audio e video convertiti in M4A e per «Solo audio»." = "Applies to audio and video converted to M4A and to “Audio only”.";
 "⌥ Option" = "⌥ Option";
@@ -946,3 +946,4 @@
 "«%@» non è una presentazione PowerPoint valida" = "“%@” is not a valid PowerPoint presentation";
 "«%@» ha troppe diapositive (massimo %@)" = "“%@” has too many slides (at most %@)";
 "troppe immagini (massimo %@)" = "too many images (at most %@)";
+"Rondelle non riesce a leggere questo file di Pages: aprilo in Pages ed esportalo in Word o PDF" = "Rondelle can't read this Pages file: open it in Pages and export it to Word or PDF";

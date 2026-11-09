@@ -94,7 +94,7 @@ window, then Finder opens on the results.
 | PDFs and images together | PDF (merge window) | Merge, ZIP |
 | Video (MP4, MOV, M4V…) | MP4, MOV, M4V, GIF, M4A | **Trim**, 1080p, 720p, **target file size**, HEVC, 2× / 0.5× speed, join, snapshot, mute, audio only, read or strip metadata, **subtitles from speech** (macOS 26+), ZIP |
 | Audio (M4A, WAV, AIFF, FLAC, MP3…) | M4A, WAV, AIFF, FLAC, **MP3** | **Trim**, normalize, mono, compress, read or strip metadata, **subtitles from speech** (macOS 26+), ZIP |
-| Documents (DOCX, DOC, RTF, ODT, HTML, TXT, MD) | PDF, DOCX, RTF, ODT, HTML, TXT | **Translate**, read metadata (and strip author, company and dates from DOCX), ZIP |
+| Documents (DOCX, DOC, RTF, ODT, HTML, TXT, MD, **Pages**) | PDF, DOCX, RTF, ODT, HTML, TXT, **Pages** (only with Pages installed; not from a Pages file) | **Translate**, read metadata (and strip author, company and dates from DOCX), ZIP |
 | **Spreadsheets** (XLSX, ODS, CSV, TSV) | XLSX, ODS, CSV, TSV, HTML, PDF | Read metadata (and strip author, company and dates from XLSX), ZIP |
 | **Presentations** (PPTX) | PDF, PNG, JPG (one per slide), TXT (slides and speaker notes) | Read metadata (and strip author, company and dates from PPTX), ZIP |
 | Subtitles (SRT, VTT) | SRT, VTT, TXT | **Translate**, read metadata, ZIP |
@@ -110,7 +110,10 @@ Origin, checksums and update steps: `Sources/CWebP/PROVENANCE.md`, `Sources/CLam
 hides the file names inside; passwords under 12 characters ask for confirmation, and under 8 characters a warning says the ZIP is weakly protected, with a *More* disclosure that explains why (brute force). It opens with Keka, The Unarchiver or
 7-Zip (also on Windows), not with the Finder or Archive Utility. ZIP and TAR.GZ leave out extended attributes (download
 origin, quarantine, tags) and the name of the source folder. Spreadsheets keep values only (formulas give their last result, no styles or charts);
-old XLS files aren't supported. **Open in Pages / Open in Numbers** (DOCX, DOC, RTF, TXT, .pages; XLSX, CSV, TSV, .numbers) opens the file in Apple's app through macOS, where you save or export it: their formats are Apple's own, so Rondelle doesn't write them, and it needs no permission to control other apps.
+old XLS files aren't supported. **Pages** files are read and written by Rondelle itself, with no permission to control other apps. Reading (*.pages* → PDF, DOCX, RTF, ODT, HTML, TXT, and Translate) takes the body text with its sizes, bold, italic, bullets and numbers, and
+only counts the text and styles toward the size limit, not the pictures. Left out: tables, pictures, text boxes, headers and footers, and files of Pages '09 and earlier. Writing (DOCX, RTF, TXT… → *.pages*) fills the empty
+document that the installed Pages ships, read from the app each time and never copied into Rondelle: without Pages the entry isn't offered. It keeps text, titles and headings, bold, italic, and one level of bullets and numbers (no tables, pictures or nested lists).
+**Numbers** files (.numbers) are not read or written: **Open in Pages / Open in Numbers** (hidden by default, one click in Settings → Wheel to show) opens a file in Apple's app through macOS, where you save or export it.
 
 **PowerPoint (PPTX)** is read by Rondelle itself (the ZIP's index and parts are read in memory, with a size cap on
 each part, and the system's XML parser) and drawn with Core Graphics: slide size, background, title and body text
@@ -309,6 +312,7 @@ and audio) and runs the 26 conversions of every kind of file; V1–V4 (links, de
 | `Wheel.swift` | The wheel: drawing, theming, drop target, panel |
 | `Actions.swift` | Which actions appear for each kind of file |
 | `ImageOps` / `ImageTools` / `PDFOps` / `MediaOps` / `DocumentOps` / `ArchiveOps` | The actual conversions |
+| `PagesReader.swift` / `PagesWriter.swift` | Pages: reading a `.pages` file's body text and styles, and writing one from the installed Pages' empty template (they share the IWA/protobuf/Snappy code) |
 | `JobRunner.swift` | Progress window, folder permissions, Finder, errors |
 | `LayoutRenderer.swift` / `LayoutView.swift` | Layout templates, smart crop, rendering and the Layout window |
 | `MergeView.swift` | The Merge / Organize window for PDFs and images |

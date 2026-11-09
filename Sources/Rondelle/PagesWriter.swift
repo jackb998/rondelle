@@ -260,7 +260,7 @@ enum PagesWriter {
 
     /// The archives of an `.iwa` file: an ArchiveInfo (protobuf: id, message infos) and the messages' bytes.
     /// Every field of the info that Rondelle doesn't change is kept as it was.
-    private enum Archive {
+    enum Archive {
         struct Object {
             var id: UInt64
             /// Fields of the ArchiveInfo other than the id and the message infos.
@@ -333,7 +333,7 @@ enum PagesWriter {
 
     // MARK: Protobuf (just what the archives need)
 
-    private enum PB {
+    enum PB {
         struct Field {
             var num: Int
             var wire: Int
@@ -400,7 +400,7 @@ enum PagesWriter {
 
     // MARK: IWA (blocks of Snappy)
 
-    private enum IWA {
+    enum IWA {
         static func decode(_ raw: [UInt8]) throws -> [UInt8] {
             var out: [UInt8] = [], i = 0
             while i < raw.count {

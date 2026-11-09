@@ -57,9 +57,6 @@ enum TranslateOps {
         case "srt", "vtt":
             return [try await SubtitleOps.translate(url, to: target.name) { try await translated($0, of: url, to: target) }]
 
-        case "pages":
-            throw OpError.unsupported(L("i file di Pages non si possono tradurre: esportali prima in Word o PDF"))
-
         default:
             try DocumentOps.checkSize(url)
             return [try await attributedDocument(url, to: target)]
