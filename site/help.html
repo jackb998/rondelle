@@ -18,12 +18,13 @@
 <section class="grid3 info"><div><span class="dot"></span><h3 data-i="rq_h"></h3><span data-i="rq"></span></div>
 <div><span class="dot"></span><h3 data-i="f2h"></h3><span data-i="f2"></span><br><span data-i="f2l"></span></div>
 <div><span class="dot"></span><h3 data-i="f3h"></h3><span data-i="f3"></span></div></section></div></section>
-<section class="band"><div class="wrap contact" id="contact"><h2 data-i="ct_h"></h2><p class="lead" data-i="ct_l"></p>
+<section class="band"><div class="wrap contact" id="contact"><h2 data-i="ct_h"></h2><p class="lead" data-i="ct_l"></p><p class="note" data-i="ct_gh"></p>
 <form id="cf" novalidate>
 <div class="kinds"><label><input type="radio" name="kind" value="problema" checked><span data-i="k_problema"></span></label><label><input type="radio" name="kind" value="idea"><span data-i="k_idea"></span></label><label><input type="radio" name="kind" value="altro"><span data-i="k_altro"></span></label></div>
 <textarea name="message" rows="5" maxlength="5000" required data-ph="ct_msg"></textarea>
 <input type="email" name="email" maxlength="254" autocomplete="email" data-ph="ct_mail">
-<input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+<input type="text" name="_url" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+<altcha-widget challenge="https://api.formdall.de/api/v1/altcha/challenge" name="altcha" auto="onfocus"></altcha-widget>
 <button class="btn" id="cb" type="submit" data-i="ct_send"></button>
 <p class="note" data-i="ct_note"></p><p class="status" id="cs" role="status"></p>
 </form></div></section>
@@ -36,5 +37,5 @@
 <div><h4 data-i="cf_h"></h4><a class="coffee" href="support-us.html" data-keep="support-us.html" data-i="n_coffee"></a></div>
 </section>
 <footer data-i="foot"></footer>
-<script src="site.js"></script>
+<script src="altcha.js" type="module"></script><script src="site.js"></script>
 </body></html>

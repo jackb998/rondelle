@@ -273,16 +273,19 @@ const LAB = {compress:["Compress","Comprimi","Compresser"],half:["50%","50%","50
 const C = {
 en:{ct_h:"Say hi, or tell us what broke", ct_l:"Found a problem, or have an idea? Write it here. It is read by a person.",
  k_problema:"Problem", k_idea:"Idea", k_altro:"Other", ct_msg:"Your message", ct_mail:"Email (optional, only if you want a reply)", ct_send:"Send",
- ct_note:"Sent only when you press Send. Nothing is kept in your browser.", ct_ok:"Sent. Thank you!", ct_wait:"Sending…",
- ct_bad:"Check the message (it can't be empty) and the email address.", ct_busy:"Too many messages right now. Try again later.", ct_err:"It didn't go through. Try again, or open an issue on GitHub."},
+ ct_note:"Sent only when you press Send, through formdall.de, which keeps it for 14 days. If you add an email, you get an automatic confirmation. Nothing is kept in your browser.", ct_ok:"Sent. Thank you!", ct_wait:"Sending…",
+ ct_bad:"Check the message (it can't be empty) and the email address.", ct_busy:"Too many messages right now. Try again later.", ct_err:"It didn't go through. Try again, or open an issue on GitHub.", ct_cap:"The check isn't finished yet. Wait a moment and press Send again.",
+ ct_gh:"Prefer GitHub? <a href='https://github.com/jackb998/rondelle/issues' rel='noopener'>Open an issue</a>: it is public, so others can see the answer too. The form below stays available."},
 it:{ct_h:"Dicci ciao, o cosa non va", ct_l:"Hai trovato un problema o hai un’idea? Scrivila qui. La legge una persona.",
  k_problema:"Problema", k_idea:"Idea", k_altro:"Altro", ct_msg:"Il tuo messaggio", ct_mail:"Email (facoltativa, solo se vuoi una risposta)", ct_send:"Invia",
- ct_note:"Inviato solo quando premi Invia. Nel browser non resta nulla.", ct_ok:"Inviato. Grazie!", ct_wait:"Invio in corso…",
- ct_bad:"Controlla il messaggio (non può essere vuoto) e l’indirizzo email.", ct_busy:"Troppi messaggi in questo momento. Riprova più tardi.", ct_err:"Non è partito. Riprova, oppure apri una segnalazione su GitHub."},
+ ct_note:"Inviato solo quando premi Invia, tramite formdall.de, che lo conserva per 14 giorni. Se aggiungi un’email, ricevi una conferma automatica. Nel browser non resta nulla.", ct_ok:"Inviato. Grazie!", ct_wait:"Invio in corso…",
+ ct_bad:"Controlla il messaggio (non può essere vuoto) e l’indirizzo email.", ct_busy:"Troppi messaggi in questo momento. Riprova più tardi.", ct_err:"Non è partito. Riprova, oppure apri una segnalazione su GitHub.", ct_cap:"La verifica non è ancora finita. Aspetta un attimo e premi di nuovo Invia.",
+ ct_gh:"Preferisci GitHub? <a href='https://github.com/jackb998/rondelle/issues' rel='noopener'>Apri una segnalazione</a>: è pubblica, così anche altri vedono la risposta. Il modulo qui sotto resta disponibile."},
 fr:{ct_h:"Dites bonjour, ou ce qui ne va pas", ct_l:"Un problème, une idée ? Écrivez-le ici. C’est une personne qui vous lit.",
  k_problema:"Problème", k_idea:"Idée", k_altro:"Autre", ct_msg:"Votre message", ct_mail:"E-mail (facultatif, seulement si vous voulez une réponse)", ct_send:"Envoyer",
- ct_note:"Envoyé uniquement quand vous appuyez sur Envoyer. Rien n’est conservé dans votre navigateur.", ct_ok:"Envoyé. Merci !", ct_wait:"Envoi en cours…",
- ct_bad:"Vérifiez le message (il ne peut pas être vide) et l’adresse e-mail.", ct_busy:"Trop de messages en ce moment. Réessayez plus tard.", ct_err:"Ça n’est pas parti. Réessayez, ou ouvrez un ticket sur GitHub."}};
+ ct_note:"Envoyé uniquement quand vous appuyez sur Envoyer, via formdall.de, qui le conserve 14 jours. Si vous ajoutez un e-mail, vous recevez une confirmation automatique. Rien n’est conservé dans votre navigateur.", ct_ok:"Envoyé. Merci !", ct_wait:"Envoi en cours…",
+ ct_bad:"Vérifiez le message (il ne peut pas être vide) et l’adresse e-mail.", ct_busy:"Trop de messages en ce moment. Réessayez plus tard.", ct_err:"Ça n’est pas parti. Réessayez, ou ouvrez un ticket sur GitHub.", ct_cap:"La vérification n’est pas encore terminée. Patientez un instant et appuyez de nouveau sur Envoyer.",
+ ct_gh:"Vous préférez GitHub ? <a href='https://github.com/jackb998/rondelle/issues' rel='noopener'>Ouvrez un ticket</a> : il est public, donc d’autres voient aussi la réponse. Le formulaire ci-dessous reste disponible."}};
 const TOOLS = {img:["compress","half","rotate","mirror","ocr","edit"],pdf:["compress","merge","split","ocr","password","watermark"],vid:["trim","p1080","p720","speed2","mute","audioonly"],
  aud:["trim","normalize","mono","compress","nometa","zip"],doc:["translate","zip"],xls:["zip"],pres:["nometa","zip"],sub:["translate","zip"],arc:["extract","unlockx","zipprot"]};
 const SHARE = ["airdrop","messages","mail","telegram","whatsapp","copy"];
@@ -428,19 +431,22 @@ if(stage){
 /* contact form: same address and checks as the app's «Report a problem» */
 const cf=$("cf");
 if(cf){
- const URL_="https://api.formdall.de/api/v1/f/oilh96W60cv9iwq3g5wuMoFxNc7o8rUzoQQ7HCgG"; let busy=false; const st=$("cs");
+ const URL_="https://api.formdall.de/api/v1/f/fHrqr4Qb9qelTLwqkIXFHyEQ9LBOiSz7gnOTfE4c"; let busy=false; const st=$("cs");
  const say2=(k,err)=>{st.textContent=t(k); st.dataset.k=k; st.dataset.s=err?"err":"ok";};
  cf.addEventListener("submit",async e=>{
   e.preventDefault(); if(busy) return;
-  const f=new FormData(cf); if(f.get("website")){ say2("ct_ok"); cf.reset(); return; }
+  const f=new FormData(cf); if(f.get("_url")){ say2("ct_ok"); cf.reset(); return; }
   const kind=f.get("kind"), msg=(f.get("message")||"").trim(), mail=(f.get("email")||"").trim();
   const okMail=!mail||(mail.length<=254&&/^[^\s@<>"]{1,64}@[^\s@<>"]{1,185}\.[^\s@<>".]{2,}$/.test(mail));
   if(!msg||msg.length>5000||new TextEncoder().encode(msg).length>20000||!okMail||!["problema","idea","altro"].includes(kind)) return say2("ct_bad",1);
+  const cap=f.get("altcha")||""; if(!cap) return say2("ct_cap",1);
   busy=true; $("cb").disabled=true; say2("ct_wait");
   try{
-   const r=await fetch(URL_,{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({tipo:kind,messaggio:"[Sito web] "+msg,...(mail?{email:mail}:{})})});
+   const b=new FormData(); b.set("tipo",kind); b.set("messaggio","[Sito web] "+msg); if(mail) b.set("email",mail); b.set("altcha",cap); b.set("_url","");
+   const r=await fetch(URL_,{method:"POST",headers:{Accept:"application/json"},body:b});
    let j={}; try{ j=await r.json(); }catch{}
-   if(r.status===200&&j.success===true){ say2("ct_ok"); cf.reset(); } else if(r.status===429) say2("ct_busy",1); else say2("ct_err",1);
+   const w=cf.querySelector("altcha-widget");
+   if(r.status===200&&j.success===true){ say2("ct_ok"); cf.reset(); w?.reset?.(); } else if(r.status===429) say2("ct_busy",1); else if(r.status===403){ say2("ct_cap",1); w?.reset?.(); } else say2("ct_err",1);
   }catch{ say2("ct_err",1); }
   busy=false; $("cb").disabled=false;
  });
