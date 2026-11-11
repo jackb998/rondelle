@@ -446,7 +446,8 @@ if(cf){
  });
 }
 render();
-if(q.get("demo")) document.querySelector('#pick button[data-k="'+q.get("demo")+'"]')?.click();
+/* ?demo=<kind>: only a button that exists is clicked; the value is compared, never put in a selector */
+if(q.get("demo")) [...document.querySelectorAll("#pick button")].find(b=>b.dataset.k===q.get("demo"))?.click();
 /* version and date come from the latest GitHub release, never typed by hand */
 const v = document.getElementById("ver");
 if (v) fetch("https://api.github.com/repos/jackb998/rondelle/releases/latest").then(r => r.ok ? r.json() : Promise.reject())
