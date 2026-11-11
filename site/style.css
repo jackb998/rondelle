@@ -99,7 +99,7 @@ kbd{border:1px solid var(--line);border-radius:8px;padding:2px 9px;font:inherit}
 .fi.drag{opacity:.35}.fi:focus-visible{outline-offset:2px}
 .fi.pop{animation:pop .5s var(--ease)}
 .fi:not(.drag):not(.pop){animation:nudge 3s ease-in-out 1.5s infinite}
-.fi:hover,.fi:focus-visible{animation:none}
+.fi:not(.pop):hover,.fi:not(.pop):focus-visible{animation:none}
 @keyframes pop{from{transform:scale(.6);opacity:0}}
 @keyframes nudge{0%,70%,100%{transform:translateX(0)}80%{transform:translateX(7px)}90%{transform:translateX(-3px)}}
 .ghost{display:none;position:absolute;left:0;top:0;width:56px;pointer-events:none;z-index:5;cursor:grabbing}
@@ -183,9 +183,9 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:17px}ul.rules li{margin-bo
 .gallery{margin:50px 0 0;min-width:0}.gallery h2{margin-top:0}
 .gallery>h2,.gallery>p{max-width:640px;margin-left:auto;margin-right:auto;text-align:center}.gallery>p{color:var(--mut)}
 .rail{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 2px 14px;-webkit-overflow-scrolling:touch}
-.rail figure{flex:0 0 min(400px,78vw);margin:0;scroll-snap-align:start;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 14px 12px}
+.rail figure{flex:0 0 min(260px,70vw);margin:0;scroll-snap-align:start;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 14px 12px}
 .rail img{width:100%;height:auto;display:block}.rail figcaption{font-size:14px;color:var(--mut);margin-top:6px}.rail:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
-.rail figure.wide{flex-basis:min(860px,90vw);padding:12px}.rail figure.wide img{border-radius:10px;border:1px solid var(--line)}
+.rail figure.wide{flex-basis:min(540px,86vw);padding:12px}.rail figure.wide img{border-radius:10px;border:1px solid var(--line)}
 .note{font-size:14px;max-width:760px;margin:24px auto 0}
 @media (max-width:760px){.cust3{grid-template-columns:1fr}}
 /* contact form (Help page) */
@@ -221,3 +221,5 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:17px}ul.rules li{margin-bo
 .stage2{background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--acc) 22%,transparent) 0,color-mix(in srgb,var(--acc) 8%,transparent) 42%,transparent 68%);border-radius:50%;overflow:visible}
 /* wheel demo: the round drop zone is back (fill, thin edge, soft green glow); the wheel's own shadow stays off */
 .stage2{background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--acc) 18%,transparent),transparent 62%),var(--card);border:1px solid var(--line);border-radius:50%;overflow:hidden}
+.rail img{max-height:440px;object-fit:contain}
+.rail{align-items:flex-start}

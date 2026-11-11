@@ -380,13 +380,16 @@ function place(){
 function modeFrom(e){return e.shiftKey&&e.ctrlKey?"share":e.shiftKey&&e.altKey?"tools":e.shiftKey?"conv":$("modes").dataset.base;}
 function down(e){
   if(e.button>0) return; e.preventDefault();
+  cancelDrag(); if(kb) kclose();
   const R=stage.getBoundingClientRect(); cur=e.currentTarget; cur.setPointerCapture(e.pointerId);
   pos={x:e.clientX-R.left,y:e.clientY-R.top}; mode=modeFrom(e); items=itemsFor(cur.dataset.name);
   const gh=$("ghost"); gh.innerHTML=cur.innerHTML; gh.style.display="block"; cur.classList.add("drag");
   place(); build(); $("wh").style.display="block"; $("toast").style.opacity=0; playRefresh(); move(e);
-  cur.onpointermove=move; cur.onpointerup=cur.onpointercancel=up;
+  cur.onpointermove=move; cur.onpointerup=cur.onpointercancel=up; cur.onlostpointercapture=cancelDrag;
 }
 function move(e){
+  if(!cur) return;
+  if(e.pointerType==="mouse"&&e.buttons===0) return cancelDrag();
   const R=stage.getBoundingClientRect(), x=e.clientX-R.left, y=e.clientY-R.top, gh=$("ghost");
   gh.style.transform=`translate(${x-28}px,${y-34}px)`;
   const m=modeFrom(e); if(m!==mode){mode=m; items=itemsFor(cur.dataset.name); build(); playRefresh();}
@@ -396,8 +399,15 @@ function move(e){
   if(i!==sel) setSel(i);
 }
 function up(){
-  const el=cur, it=sel>=0?items[sel]:null; cur=null; el.onpointermove=el.onpointerup=el.onpointercancel=null;
+  if(!cur) return;
+  const el=cur, it=sel>=0?items[sel]:null; cur=null; el.onpointermove=el.onpointerup=el.onpointercancel=el.onlostpointercapture=null;
   finish(el,it);
+}
+/* a drag can lose its release (context menu on ⌃-click, window switch, touch cancel): always clean up so the file never stays faded */
+function cancelDrag(){
+  if(!cur) return;
+  const el=cur; cur=null; el.onpointermove=el.onpointerup=el.onpointercancel=el.onlostpointercapture=null;
+  finish(el,null);
 }
 let kb=null;
 function kclose(){ if(!kb) return; const el=kb; kb=null; finish(el,null); }
@@ -423,7 +433,10 @@ function finish(el,it){
 }
 var tt; function say(s){const e=$("toast"); e.textContent="✓ "+s; e.style.opacity=1; clearTimeout(tt); tt=setTimeout(()=>e.style.opacity=0,3000);}
 if(stage){
-  $("pick").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; document.querySelectorAll("#pick button").forEach(x=>{x.classList.toggle("on",x===b);x.setAttribute("aria-pressed",x===b);}); $("files").innerHTML=""; const f=fileEl(SAMPLE[b.dataset.k]); f.classList.add("pop"); $("files").appendChild(f); $("empty").style.display="none";});
+  stage.addEventListener("contextmenu",e=>e.preventDefault());
+  addEventListener("blur",cancelDrag); document.addEventListener("visibilitychange",()=>{ if(document.hidden) cancelDrag(); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") cancelDrag(); });
+  $("pick").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; document.querySelectorAll("#pick button").forEach(x=>{x.classList.toggle("on",x===b);x.setAttribute("aria-pressed",x===b);}); $("files").innerHTML=""; const f=fileEl(SAMPLE[b.dataset.k]); f.classList.add("pop"); const done=()=>f.classList.remove("pop"); f.addEventListener("animationend",done,{once:true}); f.addEventListener("animationcancel",done,{once:true}); setTimeout(done,900); $("files").appendChild(f); $("empty").style.display="none";});
   $("modes").dataset.base="conv";
   $("modes").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; mode=b.dataset.mode; $("modes").dataset.base=mode; playRefresh();});
   playRefresh();
