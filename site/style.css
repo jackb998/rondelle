@@ -217,3 +217,5 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:17px}ul.rules li{margin-bo
 /* wheel demo: no box behind the wheel */
 .stage2{background:none;border:0;border-radius:0;overflow:visible}
 .wheel .disc{filter:none}
+/* wheel demo: only the soft green glow, fading out, no card and no edge */
+.stage2{background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--acc) 22%,transparent) 0,color-mix(in srgb,var(--acc) 8%,transparent) 42%,transparent 68%);border-radius:50%;overflow:visible}
