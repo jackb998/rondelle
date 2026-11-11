@@ -10,14 +10,15 @@ import AppKit
 /// Not read: tables, pictures, text boxes, headers and footers (the body is what a conversion needs first).
 /// Files of Pages '09 and earlier (`Index.zip`) are not read either: the message says to open them in Pages.
 enum PagesReader {
-    private typealias PB = PagesWriter.PB
-    private typealias Archive = PagesWriter.Archive
-    private typealias IWA = PagesWriter.IWA
-    private typealias Objects = [UInt64: (type: UInt64, payload: [UInt8])]
+    typealias PB = PagesWriter.PB
+    typealias Archive = PagesWriter.Archive
+    typealias IWA = PagesWriter.IWA
+    typealias Objects = [UInt64: (type: UInt64, payload: [UInt8])]
 
     static func read(_ file: URL) throws -> NSAttributedString {
-        var objects = try load("Index/Document.iwa", in: file, required: true)
-        if let sheet = try? load("Index/DocumentStylesheet.iwa", in: file, required: false) {
+        var budget = IWA.Budget()
+        var objects = try load("Index/Document.iwa", in: file, required: true, budget: &budget)
+        if let sheet = try? load("Index/DocumentStylesheet.iwa", in: file, required: false, budget: &budget) {
             objects.merge(sheet) { current, _ in current }
         }
         // The body: the text storage (type 2001) that holds the most text.
@@ -28,7 +29,15 @@ enum PagesReader {
             if body == nil || text.utf16.count > body!.text.utf16.count { body = (text, fields) }
         }
         guard let body, !body.text.isEmpty else { throw unreadable }
+        let result = try render(text: body.text, fields: body.fields, objects: objects)
+        guard result.length > 0 else { throw unreadable }
+        return result
+    }
 
+    /// One text storage → its text with the look its paragraph, list and character tables give it. Shared with the
+    /// Keynote reader (text boxes of a slide use the same storage). «Annulla» is checked at every paragraph.
+    static func render(text: String, fields: [PB.Field], objects: Objects) throws -> NSAttributedString {
+        let body = (text: text, fields: fields)
         func table(_ number: Int) -> [(index: Int, ref: UInt64?)] {
             var entries: [(Int, UInt64?)] = []
             for field in body.fields where field.num == number {
@@ -36,19 +45,36 @@ enum PagesReader {
                     let parts = (try? PB.parse(entry.data)) ?? []
                     guard let index = parts.first(where: { $0.num == 1 })?.value else { continue }
                     let ref = parts.first(where: { $0.num == 2 }).flatMap { (try? PB.parse($0.data))?.first(where: { $0.num == 1 })?.value }
-                    entries.append((Int(index), ref))
+                    entries.append((Int(clamping: index), ref))
                 }
             }
             return entries.sorted { $0.0 < $1.0 }.map { (index: $0.0, ref: $0.1) }
         }
-        let paragraphTable = table(5), listTable = table(7), characterTable = table(8)
-        /// The style in force at `location`; a paragraph or list entry without a reference changes nothing.
-        func style(_ entries: [(index: Int, ref: UInt64?)], at location: Int, reset: Bool) -> UInt64? {
+        /// Each entry with the style in force from it on: a paragraph or list entry without a reference changes nothing,
+        /// a character entry without one goes back to no style.
+        func inForce(_ entries: [(index: Int, ref: UInt64?)], reset: Bool) -> [(index: Int, ref: UInt64?)] {
             var found: UInt64?
-            for entry in entries where entry.index <= location {
+            return entries.map { entry in
                 if let ref = entry.ref { found = ref } else if reset { found = nil }
+                return (entry.index, found)
             }
-            return found
+        }
+        let paragraphTable = inForce(table(5), reset: false), listTable = inForce(table(7), reset: false)
+        let characterTable = inForce(table(8), reset: true)
+        /// The first entry after `location` (the tables are sorted): a binary search, not a pass over the whole table
+        /// at every paragraph and run.
+        func after(_ entries: [(index: Int, ref: UInt64?)], _ location: Int) -> Int {
+            var low = 0, high = entries.count
+            while low < high {
+                let middle = (low + high) / 2
+                if entries[middle].index <= location { low = middle + 1 } else { high = middle }
+            }
+            return low
+        }
+        /// The style in force at `location`.
+        func style(_ entries: [(index: Int, ref: UInt64?)], at location: Int, reset: Bool) -> UInt64? {
+            let next = after(entries, location)
+            return next > 0 ? entries[next - 1].ref : nil
         }
 
         var cache: [UInt64: Style] = [:]
@@ -70,6 +96,7 @@ enum PagesReader {
         var number = 0
         var location = 0
         while location < whole.length {
+            try PDFOps.checkCancelled()
             let range = whole.paragraphRange(for: NSRange(location: location, length: 0))
             location = NSMaxRange(range)
             var content = range
@@ -81,7 +108,8 @@ enum PagesReader {
 
             // The runs: from each change of character style to the next.
             var cuts = Set([content.location, NSMaxRange(content)])
-            for entry in characterTable where entry.index > content.location && entry.index < NSMaxRange(content) { cuts.insert(entry.index) }
+            var cut = after(characterTable, content.location)
+            while cut < characterTable.count, characterTable[cut].index < NSMaxRange(content) { cuts.insert(characterTable[cut].index); cut += 1 }
             let points = cuts.sorted()
 
             let layout = NSMutableParagraphStyle()
@@ -117,7 +145,6 @@ enum PagesReader {
             }
             result.append(NSAttributedString(string: "\n", attributes: attributes(at: content.location)))
         }
-        guard result.length > 0 else { throw unreadable }
         return result
     }
 
@@ -162,6 +189,7 @@ enum PagesReader {
         process.arguments = ["-l", file.path]
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
+        process.standardInput = FileHandle.nullDevice
         guard (try? process.run()) != nil else { return FileNaming.fileSize(file) }
         let listing = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
         process.waitUntilExit()
@@ -175,35 +203,41 @@ enum PagesReader {
 
     // MARK: Containers
 
-    private static var unreadable: OpError {
+    static var unreadable: OpError {
         .unsupported(L("Rondelle non riesce a leggere questo file di Pages: aprilo in Pages ed esportalo in Word o PDF"))
     }
 
     /// The objects of one `.iwa` of the file (a ZIP, or a folder the way iCloud sometimes keeps it).
-    private static func load(_ name: String, in file: URL, required: Bool) throws -> Objects {
-        let fm = FileManager.default
+    static func load(_ name: String, in file: URL, required: Bool, budget: inout IWA.Budget) throws -> Objects {
+        // Into memory and capped on the bytes really read (a ZIP can declare 1 KB and hold gigabytes); in a folder,
+        // regular files only.
         var raw: Data?
-        if (try? file.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
-            raw = fm.contents(atPath: file.appendingPathComponent(name).path)
+        if IWorkFile.isFolder(file) {
+            let url = file.appendingPathComponent(name)
+            if (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false, let handle = try? SafeFile.openForReading(url) {
+                defer { try? handle.close() }
+                raw = try handle.read(upToCount: IWorkFile.maxIndexBytes + 1)
+            }
         } else {
-            let work = fm.temporaryDirectory.appendingPathComponent("rondelle-pagesread-\(UUID().uuidString).iwa")
-            defer { try? fm.removeItem(at: work) }
-            _ = fm.createFile(atPath: work.path, contents: nil)
-            let handle = try FileHandle(forWritingTo: work)
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-            process.arguments = ["-p", file.path, name]
-            process.standardOutput = handle
-            process.standardError = FileHandle.nullDevice
-            try process.run(); process.waitUntilExit(); try handle.close()
-            if process.terminationStatus == 0 { raw = fm.contents(atPath: work.path) }
+            switch Result(catching: { try IWorkFile.entry(name, in: file, max: IWorkFile.maxIndexBytes) }) {
+            case .success(let data?): raw = data
+            case .success(nil): throw IWorkFile.tooLarge(file)
+            case .failure(let error as CancellationError): throw error
+            case .failure: raw = nil   // a missing entry: the stylesheet is optional
+            }
         }
+        if let raw, raw.count > IWorkFile.maxIndexBytes { throw IWorkFile.tooLarge(file) }
         guard let raw, !raw.isEmpty else {
             if required { throw unreadable }
             return [:]
         }
+        return try IWorkFile.objects(in: raw, of: file, unreadable: unreadable, budget: &budget)
+    }
+
+    /// The objects of one `.iwa`: its Snappy blocks, then its archives, by identifier.
+    static func parse(_ raw: Data, budget: inout IWA.Budget) throws -> Objects {
         var objects: Objects = [:]
-        for object in try Archive.parse(try IWA.decode([UInt8](raw))) {
+        for object in try Archive.parse(try IWA.decode([UInt8](raw), budget: &budget), budget: &budget) {
             guard let message = object.messages.first,
                   let type = message.info.first(where: { $0.num == 1 })?.value else { continue }
             objects[object.id] = (type, message.payload)

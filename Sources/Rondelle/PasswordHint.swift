@@ -49,14 +49,19 @@ enum PasswordHint {
         return exposed ? L("Il suggerimento non può contenere la password.") : nil
     }
 
+    /// Whether a character can be shown as it is in a line of text written by someone else: not a control, invisible
+    /// formatting (such as a right-to-left override, which could disguise the text), a line break, private or unassigned.
+    /// Shared with what «Metadati → Leggi» shows.
+    nonisolated static func isShown(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.properties.generalCategory {
+        case .control, .format, .lineSeparator, .paragraphSeparator, .surrogate, .privateUse, .unassigned: return false
+        default: return true
+        }
+    }
+
     /// One short line: no control or invisible formatting characters (which could disguise the text), limited length.
     static func clean(_ text: String) -> String {
-        let scalars = text.unicodeScalars.filter { scalar in
-            switch scalar.properties.generalCategory {
-            case .control, .format, .lineSeparator, .paragraphSeparator, .surrogate, .privateUse, .unassigned: return false
-            default: return true
-            }
-        }
+        let scalars = text.unicodeScalars.filter(isShown)
         var line = String(String.UnicodeScalarView(scalars)).trimmingCharacters(in: .whitespaces)
         if line.count > maxCharacters { line = String(line.prefix(maxCharacters)) }
         while line.utf8.count > maxBytes { line.removeLast() }

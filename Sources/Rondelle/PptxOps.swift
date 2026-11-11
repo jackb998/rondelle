@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import ImageIO
 import PDFKit
 import UniformTypeIdentifiers
@@ -9,6 +10,9 @@ import UniformTypeIdentifiers
 enum PptxOps {
     // MARK: Limits
 
+    /// Bytes of distinct pictures that go into a Keynote file made from a PPTX (cropped pictures are new PNGs).
+    static let maxPictureBytes = 400_000_000
+
     /// A PPTX is a ZIP: 50 MB of it is accepted, the XML parts are bounded as for Word (`ContentLimits`).
     static func check(_ url: URL) throws {
         guard FileNaming.fileSize(url) <= Limits.maxDocumentBytes else {
@@ -18,8 +22,9 @@ enum PptxOps {
     }
 
     private static func open(_ url: URL) throws -> PptxReader.Deck {
-        try check(url)
-        let deck = try PptxReader.read(url)
+        let isKeynote = url.pathExtension.lowercased() == "key"
+        if !isKeynote { try check(url) }
+        let deck = isKeynote ? try KeynoteReader.read(url) : try PptxReader.read(url)
         try PDFOps.confirmPages(deck.slides.count, of: url)
         return deck
     }
@@ -81,7 +86,9 @@ enum PptxOps {
             var lines: [String] = [L("Diapositiva %@", i + 1)]
             for item in slide.items where item.layer == 2 {
                 switch item.content {
-                case .shape(_, _, _, _, let text?): lines.append(text.plain)
+                case .shape(_, _, _, _, let text?):
+                    // A list's bullet or number stays in the text.
+                    lines.append(text.paragraphs.map { p in (p.bullet.map { $0 + " " } ?? "") + p.runs.map(\.text).joined() }.joined(separator: "\n"))
                 case .table(_, let rows): lines += rows.map { $0.cells.map { $0.text.plain.replacingOccurrences(of: "\n", with: " ") }.joined(separator: "\t") }
                 default: break
                 }
@@ -100,7 +107,128 @@ enum PptxOps {
         return [out]
     }
 
+    // MARK: To Keynote
+
+    /// The text of the slides as Keynote slides: the biggest text of a slide is its title, the other texts (top to bottom,
+    /// left to right) are the body, a table's rows are body lines, the notes are the notes. Pictures and looks stay out.
+    static func keynoteSlides(_ deck: PptxReader.Deck) -> [KeynoteWriter.Slide] {
+        // Every picture is read once (by its path in the package and its crop), and the same bytes (by digest) are
+        // one Data shared by all the slides that use them; past `maxPictureBytes` of distinct pictures the others stay out.
+        var read: [String: KeynoteWriter.Picture?] = [:]
+        var byDigest: [SHA256.Digest: Data] = [:]
+        var distinct = 0
+        return deck.slides.map { slide in
+            var boxes: [(frame: PptxReader.Frame, size: Double, lines: [String])] = []
+            for item in slide.items where item.layer == 2 {
+                switch item.content {
+                case .shape(_, _, _, _, let text?) where !text.isEmpty:
+                    let lines = text.paragraphs.map { $0.runs.map(\.text).joined().trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                    let size = text.paragraphs.first { !$0.runs.isEmpty }?.runs.first?.size ?? 0
+                    if !lines.isEmpty { boxes.append((item.frame, size, lines)) }
+                case .table(_, let rows):
+                    let lines = rows.map { $0.cells.map { $0.text.plain.replacingOccurrences(of: "\n", with: " ") }.joined(separator: " | ") }
+                    boxes.append((item.frame, 0, lines))
+                default: break
+                }
+            }
+            var title: [String] = []
+            if let at = boxes.indices.filter({ boxes[$0].size > 0 }).max(by: { (boxes[$0].size, -boxes[$0].frame.y) < (boxes[$1].size, -boxes[$1].frame.y) }) {
+                title = boxes.remove(at: at).lines
+            }
+            boxes.sort { ($0.frame.y, $0.frame.x) < ($1.frame.y, $1.frame.x) }
+            var pictures: [KeynoteWriter.Picture] = []
+            for item in slide.items where item.layer == 2 {
+                guard case .picture(let path, let crop, _) = item.content, item.frame.w > 0, item.frame.h > 0 else { continue }
+                let key = "\(path)|\(crop.l),\(crop.t),\(crop.r),\(crop.b)"
+                if read[key] == nil {
+                    var picture = keynotePicture(deck, path: path, crop: crop, frame: item.frame)
+                    if let p = picture {
+                        let digest = SHA256.hash(data: p.data)
+                        if let known = byDigest[digest] {
+                            picture?.data = known
+                        } else if distinct + p.data.count <= maxPictureBytes {
+                            byDigest[digest] = p.data
+                            distinct += p.data.count
+                        } else {
+                            picture = nil
+                        }
+                    }
+                    read[key] = .some(picture)
+                }
+                if var picture = read[key] ?? nil {
+                    picture.frame = CGRect(x: item.frame.x, y: item.frame.y, width: item.frame.w, height: item.frame.h)
+                    pictures.append(picture)
+                }
+            }
+            return KeynoteWriter.Slide(title: title.joined(separator: " "), body: boxes.flatMap(\.lines),
+                                       notes: slide.notes.trimmingCharacters(in: .whitespacesAndNewlines), pictures: pictures)
+        }
+    }
+
+    /// A slide's picture as a file Keynote reads: JPEG and PNG as they are, anything else (and a cropped picture) as PNG.
+    /// Pictures that the system can't decode (EMF, WMF, SVG) are left out.
+    private static func keynotePicture(_ deck: PptxReader.Deck, path: String, crop: PptxReader.Crop, frame: PptxReader.Frame) -> KeynoteWriter.Picture? {
+        guard let data = deck.imageData(path), let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let w = props[kCGImagePropertyPixelWidth] as? Int, let h = props[kCGImagePropertyPixelHeight] as? Int, w > 0, h > 0,
+              w * h <= PptxRenderer.Pictures.maxPixels, let type = CGImageSourceGetType(source) as String? else { return nil }
+        let cropped = crop.l + crop.t + crop.r + crop.b > 0 && crop.l + crop.r < 1 && crop.t + crop.b < 1
+        var bytes = data, ext = type == "public.jpeg" ? "jpg" : (type == "public.png" ? "png" : "")
+        var pixels = CGSize(width: w, height: h)
+        if cropped || ext.isEmpty {
+            guard var image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+            if cropped {
+                let part = CGRect(x: crop.l * Double(w), y: crop.t * Double(h), width: (1 - crop.l - crop.r) * Double(w), height: (1 - crop.t - crop.b) * Double(h)).integral
+                guard let piece = image.cropping(to: part) else { return nil }
+                image = piece
+            }
+            let out = NSMutableData()
+            guard let destination = CGImageDestinationCreateWithData(out, UTType.png.identifier as CFString, 1, nil) else { return nil }
+            CGImageDestinationAddImage(destination, image, nil)
+            guard CGImageDestinationFinalize(destination) else { return nil }
+            bytes = out as Data
+            ext = "png"
+            pixels = CGSize(width: image.width, height: image.height)
+        }
+        return KeynoteWriter.Picture(data: bytes, ext: ext, pixels: pixels, frame: CGRect(x: frame.x, y: frame.y, width: frame.w, height: frame.h))
+    }
+
+    /// A PowerPoint file as a Keynote file: one slide per slide, with its text and notes.
+    static func toKeynote(_ url: URL) throws -> [URL] {
+        let deck = try open(url)
+        let out = FileNaming.output(for: url, ext: "key")
+        try KeynoteWriter.write(keynoteSlides(deck), sourceSize: deck.size, to: out)
+        return [out]
+    }
+
     // MARK: To PowerPoint
+
+    /// A Keynote file as a PowerPoint one: every slide drawn as a picture, with the slide's text as its alternative text.
+    static func fromKeynote(_ url: URL) throws -> [URL] {
+        let deck = try open(url)
+        let scale = min(2.0, Limits.maxRenderSide / max(deck.size.width, deck.size.height))
+        let width = max(Int(deck.size.width * scale), 1), height = max(Int(deck.size.height * scale), 1)
+        let pictures = PptxRenderer.Pictures()
+        return try build(from: url, name: url.deletingPathExtension().lastPathComponent) { builder in
+            for slide in deck.slides {
+                try PDFOps.checkCancelled()
+                var failure: Error?
+                autoreleasepool {
+                    guard let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                              space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                              bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { failure = OpError.failed(L("creazione dell'immagine")); return }
+                    ctx.scaleBy(x: scale, y: scale)
+                    PptxRenderer.draw(slide, of: deck, in: ctx, pictures: pictures)
+                    guard let image = ctx.makeImage() else { failure = OpError.failed(L("creazione dell'immagine")); return }
+                    var lines: [String] = []
+                    for item in slide.items { if case .shape(_, _, _, _, let text?) = item.content { lines.append(text.plain) } }
+                    do { try builder.add(image, alt: lines.joined(separator: "\n")) } catch { failure = error }
+                }
+                if let failure { throw failure }
+            }
+        }
+    }
+
 
     /// One slide per page of the PDF: the page as a picture, with the page's text as alternative text.
     static func fromPDF(_ url: URL) throws -> [URL] {

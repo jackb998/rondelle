@@ -290,19 +290,30 @@ enum PagesWriter {
         }
 
         static func parse(_ data: [UInt8]) throws -> [Object] {
+            var unlimited = IWA.Budget.unlimited
+            return try parse(data, budget: &unlimited)
+        }
+
+        /// The archives, counted against what is left of the file's `budget`: archives, and fields of their infos
+        /// (all of them kept in memory) at most `PB.maxFields` for one `.iwa`.
+        static func parse(_ data: [UInt8], budget: inout IWA.Budget) throws -> [Object] {
             var objects: [Object] = []
-            var i = 0
+            var i = 0, infoFields = 0
             while i < data.count {
-                let length = Int(try PB.readVarint(data, &i))
-                guard length >= 0, i + length <= data.count else { throw bad() }
+                guard budget.archives > 0 else { throw IWA.Over.archives }
+                budget.archives -= 1
+                let length = try PB.length(try PB.readVarint(data, &i), within: data.count - i)
                 let info = try PB.parse(Array(data[i..<(i + length)])); i += length
+                infoFields += info.count
+                guard infoFields <= PB.maxFields else { throw IWA.Over.fields }
                 var object = Object(id: 0)
                 for field in info {
                     if field.num == 1 { object.id = field.value; continue }
                     guard field.num == 2 else { object.extra.append(field); continue }
                     let inner = try PB.parse(field.data)
-                    let size = Int(inner.first(where: { $0.num == 3 })?.value ?? 0)
-                    guard i + size <= data.count else { throw bad() }
+                    infoFields += inner.count
+                    guard infoFields <= PB.maxFields else { throw IWA.Over.fields }
+                    let size = try PB.length(inner.first(where: { $0.num == 3 })?.value ?? 0, within: data.count - i)
                     object.messages.append((inner, Array(data[i..<(i + size)]))); i += size
                 }
                 objects.append(object)
@@ -362,16 +373,30 @@ enum PagesWriter {
             }
         }
 
+        /// A length read from the file, as an `Int` no larger than the `available` bytes: `Int(_:)` would stop the
+        /// app on a value over `Int.max`, and `i + length` could overflow.
+        static func length(_ value: UInt64, within available: Int) throws -> Int {
+            guard let length = Int(exactly: value), length <= max(available, 0) else {
+                throw OpError.unsupported(L("Il modello di Pages installato non è riconosciuto: aggiorna Rondelle"))
+            }
+            return length
+        }
+
+        /// Fields of one message at most: 22 times the most in a real file (4 509, a Numbers tile). A field takes up to
+        /// 80 bytes (32 of `Field`, 48 of a small array), so one parse stays under 8 MB whatever the bytes.
+        static let maxFields = 100_000
+
         static func parse(_ b: [UInt8]) throws -> [Field] {
             var i = 0, fields: [Field] = []
             while i < b.count {
+                guard fields.count < maxFields else { throw OpError.unsupported(L("Il modello di Pages installato non è riconosciuto: aggiorna Rondelle")) }
+                if fields.count & 4095 == 4095 { try PDFOps.checkCancelled() }
                 let key = try readVarint(b, &i)
                 var field = Field(num: Int(key >> 3), wire: Int(key & 7))
                 switch field.wire {
                 case 0: field.value = try readVarint(b, &i)
                 case 2:
-                    let length = Int(try readVarint(b, &i))
-                    guard length >= 0, i + length <= b.count else { throw OpError.unsupported(L("Il modello di Pages installato non è riconosciuto: aggiorna Rondelle")) }
+                    let length = try Self.length(try readVarint(b, &i), within: b.count - i)
                     field.data = Array(b[i..<(i + length)]); i += length
                 case 1, 5:
                     let size = field.wire == 1 ? 8 : 4
@@ -401,15 +426,50 @@ enum PagesWriter {
     // MARK: IWA (blocks of Snappy)
 
     enum IWA {
+        /// What a reader lets a file cost, at least 10 times the most measured on real files (Pages, Keynote, Numbers
+        /// up to 426 `.iwa`): 1.7 MB decoded in one `.iwa` and 2.1 MB in a file, 26 blocks in one and 442 in a file,
+        /// 1 486 archives in a file. The writers read Apple's own templates and pass no caps.
+        static let maxEntryBytes = 32_000_000, maxFileBytes = 64_000_000
+        static let maxEntryChunks = 1024, maxFileChunks = 8192
+        static let maxFileArchives = 20_000
+
+        /// What is left of a file's caps while its `.iwa` files are decoded one after the other.
+        struct Budget {
+            var entryBytes = maxEntryBytes, bytes = maxFileBytes
+            var entryChunks = maxEntryChunks, chunks = maxFileChunks
+            var archives = maxFileArchives
+            static let unlimited = Budget(entryBytes: .max, bytes: .max, entryChunks: .max, chunks: .max, archives: .max)
+        }
+
+        /// A cap passed: `bytes` carries the cap in bytes (one `.iwa` or the whole file).
+        enum Over: Error { case bytes(Int), chunks, archives, fields }
+
         static func decode(_ raw: [UInt8]) throws -> [UInt8] {
-            var out: [UInt8] = [], i = 0
+            var unlimited = Budget.unlimited
+            return try decode(raw, budget: &unlimited)
+        }
+
+        /// The blocks of one `.iwa`, decoded within what is left of `budget`: the size each block announces is checked
+        /// against the cap before anything is allocated, and a block never grows past what it announced.
+        /// «Annulla» is checked at every block.
+        static func decode(_ raw: [UInt8], budget: inout Budget) throws -> [UInt8] {
+            var out: [UInt8] = [], i = 0, chunks = 0
+            let limit = min(budget.entryBytes, budget.bytes)
             while i < raw.count {
+                try PDFOps.checkCancelled()
+                chunks += 1
+                guard chunks <= budget.entryChunks, chunks <= budget.chunks else { throw Over.chunks }
                 guard i + 4 <= raw.count, raw[i] == 0 else { throw OpError.unsupported(L("Il modello di Pages installato non è riconosciuto: aggiorna Rondelle")) }
                 let length = Int(raw[i + 1]) | Int(raw[i + 2]) << 8 | Int(raw[i + 3]) << 16
                 i += 4
                 guard i + length <= raw.count else { throw OpError.unsupported(L("Il modello di Pages installato non è riconosciuto: aggiorna Rondelle")) }
-                out += try snappyDecode(Array(raw[i..<(i + length)])); i += length
+                guard let block = try snappyDecode(Array(raw[i..<(i + length)]), limit: limit - out.count) else {
+                    throw Over.bytes(budget.bytes < budget.entryBytes ? maxFileBytes : budget.entryBytes)
+                }
+                out += block; i += length
             }
+            if budget.bytes != .max { budget.bytes -= out.count }
+            if budget.chunks != .max { budget.chunks -= chunks }
             return out
         }
 
@@ -425,10 +485,18 @@ enum PagesWriter {
         }
 
         static func snappyDecode(_ d: [UInt8]) throws -> [UInt8] {
+            guard let out = try snappyDecode(d, limit: .max) else { throw OpError.unsupported(L("Il modello di Pages installato non è riconosciuto: aggiorna Rondelle")) }
+            return out
+        }
+
+        /// One block, or nil if the size it announces passes `limit` (checked before decoding).
+        static func snappyDecode(_ d: [UInt8], limit: Int) throws -> [UInt8]? {
             var i = 0
-            let expected = Int(try PB.readVarint(d, &i))
+            // The header's size is only a hint for the buffer: never trusted beyond a 16 MiB reservation.
+            let expected = try PB.readVarint(d, &i)
+            guard expected <= UInt64(max(limit, 0)) else { return nil }
             var out: [UInt8] = []
-            out.reserveCapacity(expected)
+            out.reserveCapacity(Int(min(expected, 1 << 24)))
             func bad() -> OpError { .unsupported(L("Il modello di Pages installato non è riconosciuto: aggiorna Rondelle")) }
             while i < d.count {
                 let tag = d[i]; i += 1
@@ -442,7 +510,7 @@ enum PagesWriter {
                         i += count
                     }
                     length += 1
-                    guard i + length <= d.count else { throw bad() }
+                    guard i + length <= d.count, out.count + length <= expected else { throw bad() }
                     out += d[i..<(i + length)]; i += length
                 } else {
                     var length: Int, offset: Int
@@ -457,7 +525,7 @@ enum PagesWriter {
                         guard i + 4 <= d.count else { throw bad() }
                         length = Int(tag >> 2) + 1; offset = Int(d[i]) | Int(d[i + 1]) << 8 | Int(d[i + 2]) << 16 | Int(d[i + 3]) << 24; i += 4
                     }
-                    guard offset > 0, offset <= out.count else { throw bad() }
+                    guard offset > 0, offset <= out.count, out.count + length <= expected else { throw bad() }
                     for _ in 0..<length { out.append(out[out.count - offset]) }
                 }
             }

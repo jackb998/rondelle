@@ -157,6 +157,7 @@ enum TranslateOps {
         guard !doc.isLocked else { throw OpError.unsupported(L("PDF protetto da password")) }
         try PDFOps.confirmPages(doc.pageCount, of: url)
         try PDFTextScan.check(url)
+        try PDFTextScan.warnHiddenTextOnce()
         var paragraphs: [String] = []
         for i in 0..<doc.pageCount {
             try PDFOps.checkCancelled()

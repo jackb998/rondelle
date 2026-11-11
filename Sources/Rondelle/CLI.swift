@@ -161,12 +161,13 @@ enum CLI {
             return TutorialGIF.write(to: URL(fileURLWithPath: path))
 
         case "--show-tutorial":
-            // --show-tutorial OUT.png [PAGE] [STEP] [dark]: the tutorial's real round window, stopped on that step of that
+            // --show-tutorial OUT.png [PAGE] [STEP] [dark|light]: the tutorial's real round window, stopped on that step of that
             // page; transparent outside the circle.
             guard let path = args.first else { return usage() }
             _ = NSApplication.shared
             NSApp.setActivationPolicy(.regular)
             if args.contains("dark") { NSApp.appearance = NSAppearance(named: .darkAqua) }
+            if args.contains("light") { NSApp.appearance = NSAppearance(named: .aqua) }
             let numbers = args.dropFirst().compactMap { Int($0) }
             TutorialWindow.shared.show(page: numbers.first ?? 0, frozenStep: numbers.count > 1 ? numbers[1] : 3)
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.5))
@@ -387,6 +388,81 @@ enum CLI {
                 let bullets = text.string.components(separatedBy: "•\t").count - 1
                 let found = args.count > 1 ? (text.string.contains(args[1]) ? "si" : "no") : "-"
                 print("testo=\(found) paragrafi=\(paragraphs) grassetti=\(bold) corsivi=\(italic) puntini=\(bullets) lunghezza=\(text.length)")
+                return 0
+            } catch {
+                fputs("\(error.localizedDescription)\n", stderr)
+                return 1
+            }
+
+        case "--test-keynote-read":
+            // --test-keynote-read FILE.key [TEXT]: slides, text boxes, pictures and notes Rondelle reads from the Keynote file,
+            // whether TEXT is in the slides' text, and the first line of the text.
+            guard args.count >= 1 else { return usage() }
+            do {
+                let deck = try KeynoteReader.read(URL(fileURLWithPath: args[0]))
+                var boxes = 0, pictures = 0, notes = 0
+                for slide in deck.slides {
+                    if !slide.notes.isEmpty { notes += 1 }
+                    for item in slide.items {
+                        switch item.content {
+                        case .picture: pictures += 1
+                        case .shape: boxes += 1
+                        default: break
+                        }
+                    }
+                }
+                if args.contains("-v") {   // per slide and box: frame, paragraphs, runs (size) – without the text itself
+                    for (i, slide) in deck.slides.enumerated() {
+                        for item in slide.items {
+                            switch item.content {
+                            case .shape(_, _, _, _, let text?):
+                                let f = item.frame
+                                print("s\(i + 1) casella x=\(Int(f.x)) y=\(Int(f.y)) w=\(Int(f.w)) h=\(Int(f.h)) paragrafi=\(text.paragraphs.count) corse=\(text.paragraphs.map { $0.runs.map { "\(Int($0.size))/\($0.text.count)" }.joined(separator: ",") })")
+                            case .picture(let path, _, _): print("s\(i + 1) immagine \(path) x=\(Int(item.frame.x)) y=\(Int(item.frame.y)) w=\(Int(item.frame.w)) h=\(Int(item.frame.h))")
+                            default: break
+                            }
+                        }
+                    }
+                }
+                let text = PptxOps.text(deck)
+                let found = args.count > 1 ? (text.contains(args[1]) ? "si" : "no") : "-"
+                print("diapositive=\(deck.slides.count) testo=\(found) caselle=\(boxes) immagini=\(pictures) note=\(notes) larghezza=\(Int(deck.size.width))")
+                return 0
+            } catch {
+                fputs("\(error.localizedDescription)\n", stderr)
+                return 1
+            }
+
+        case "--test-keynote-slides":
+            // --test-keynote-slides FILE.key: per slide, as the archives of a Keynote file written by Rondelle hold it:
+            // the title, the body lines and the notes.
+            guard args.count >= 1 else { return usage() }
+            do {
+                let slides = try KeynoteWriter.summary(of: URL(fileURLWithPath: args[0]))
+                print("diapositive=\(slides.count)")
+                for (i, slide) in slides.enumerated() {
+                    print("\(i + 1): titolo=\(slide.title) | corpo=\(slide.body.joined(separator: " / ")) | note=\(slide.notes)")
+                }
+                return 0
+            } catch {
+                fputs("\(error.localizedDescription)\n", stderr)
+                return 1
+            }
+
+        case "--test-numbers-read":
+            // --test-numbers-read FILE.numbers [TEXT]: tables, rows and columns Rondelle reads from the Numbers file, whether TEXT
+            // is in a cell, and with `-v` every row as a line.
+            guard args.count >= 1 else { return usage() }
+            do {
+                let sheets = try SheetOps.read(URL(fileURLWithPath: args[0]))
+                let rows = sheets.reduce(0) { $0 + $1.rows.count }
+                let columns = sheets.map { $0.rows.map(\.count).max() ?? 0 }.max() ?? 0
+                let want = args.dropFirst().first { $0 != "-v" }
+                let found = want.map { w in sheets.contains { $0.rows.contains { $0.contains { $0.contains(w) } } } ? "si" : "no" } ?? "-"
+                print("tabelle=\(sheets.count) righe=\(rows) colonne=\(columns) testo=\(found)")
+                if args.contains("-v") {
+                    for sheet in sheets { print("# \(sheet.name)"); for row in sheet.rows { print(row.joined(separator: " | ")) } }
+                }
                 return 0
             } catch {
                 fputs("\(error.localizedDescription)\n", stderr)
@@ -624,6 +700,23 @@ enum CLI {
                 fputs("\(error.localizedDescription)\n", stderr)
                 return 1
             }
+
+        case "--test-terminal-text":
+            // --test-terminal-text FILE…: what «Terminale» puts on the clipboard, or «rifiutato» (nothing is opened).
+            print(ShareOps.terminalText(args.map { URL(fileURLWithPath: $0) }) ?? "rifiutato")
+            return 0
+
+        case "--test-metadata-rows":
+            // --test-metadata-rows FILE: the rows «Metadati → Leggi» shows, one per line as JSON strings (every character visible).
+            guard let path = args.first else { return usage() }
+            nonisolated(unsafe) var read: MetadataReader.Section?
+            Task.detached { read = await MetadataReader.read(URL(fileURLWithPath: path)) }
+            while read == nil { RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05)) }
+            for row in read!.rows {
+                let data = (try? JSONSerialization.data(withJSONObject: [row.key, row.value], options: [])) ?? Data()
+                print(String(decoding: data, as: UTF8.self))
+            }
+            return 0
 
         case "--test-terminal-check":
             // --test-terminal-check DIR…: what would make «Terminale» ask first (nothing is opened or run).
@@ -1037,7 +1130,7 @@ enum CLI {
                 if section.rows.count < 2 { problems.append("\(section.name): niente metadati") }
                 if longest > MetadataReader.maxValue + 1 { problems.append("\(section.name): valore troppo lungo") }
                 if section.rows.count > MetadataReader.maxRows + 1 { problems.append("\(section.name): troppe righe") }
-                if section.rows.contains(where: { ($0.key + $0.value).unicodeScalars.contains { CharacterSet.controlCharacters.contains($0) } }) {
+                if section.rows.contains(where: { ($0.key + $0.value).unicodeScalars.contains { !PasswordHint.isShown($0) } }) {
                     problems.append("\(section.name): caratteri di controllo")
                 }
             }

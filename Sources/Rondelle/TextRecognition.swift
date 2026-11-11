@@ -127,6 +127,7 @@ enum TextRecognition {
         guard let doc = PDFDocument(url: url) else { throw OpError.unreadable(url) }
         try PDFTextScan.check(url)
         var text = doc.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !text.isEmpty { try PDFTextScan.warnHiddenTextOnce() }
         if text.isEmpty, let cg = CGPDFDocument(url as CFURL), cg.numberOfPages > 0 {
             try PDFOps.confirmPages(cg.numberOfPages, of: url)
             text = try (1...cg.numberOfPages).compactMap { i -> String? in

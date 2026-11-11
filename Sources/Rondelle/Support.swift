@@ -73,7 +73,7 @@ enum FileKind: Hashable {
 
     static let documentExtensions: Set<String> = ["docx", "doc", "rtf", "rtfd", "odt", "html", "htm", "txt", "md", "webarchive", "pages"]
     static let spreadsheetExtensions: Set<String> = ["xlsx", "ods", "csv", "tsv", "numbers"]
-    static let presentationExtensions: Set<String> = ["pptx"]
+    static let presentationExtensions: Set<String> = ["pptx", "key"]
     static let subtitleExtensions: Set<String> = ["srt", "vtt"]
     static let archiveExtensions: Set<String> = ["zip", "tar", "gz", "tgz", "bz2", "xz", "rar", "7z"]
 

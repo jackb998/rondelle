@@ -57,6 +57,11 @@ enum ArchiveOps {
         try run("/usr/bin/zip", ["-X", "-q", archive.path, entry], in: folder)
     }
 
+    /// Takes entries out of a package. Only fixed names are passed (zip -d reads * ? [ ] as patterns).
+    static func remove(_ entries: [String], from archive: URL) throws {
+        try run("/usr/bin/zip", ["-q", "-d", archive.path] + entries)
+    }
+
     /// A package (DOCX) from the parts in `folder`: no owner, dates of files or other extras.
     /// `entries: false` leaves out the entries of the folders themselves (an Office package lists files only).
     static func pack(_ folder: URL, to temp: URL, folderEntries: Bool = true) throws {

@@ -24,6 +24,8 @@ enum FileHints {
         "ODT": "LibreOffice, da modificare",
         "PAGES": "Pages, da modificare",
         "PPTX": "PowerPoint, da modificare",
+        "KEYNOTE": "Keynote, da modificare",
+        "NUMBERS": "Numbers, da modificare",
         "HTML": "Pagina web",
         "WEBARCHIVE": "Pagina web salvata da Safari",
         "TXT": "Solo testo",
@@ -51,7 +53,7 @@ enum FileHints {
 
     /// One name for one format, everywhere: as the wheels write it, whatever the file's extension.
     static func name(ofExtension ext: String) -> String {
-        let special = ["jpeg": "JPG", "jpg": "JPG", "webp": "WebP", "tif": "TIFF", "htm": "HTML", "aif": "AIFF", "webarchive": "WebArchive", "pages": "Pages", "numbers": "Numbers", "markdown": "MD"]
+        let special = ["jpeg": "JPG", "jpg": "JPG", "webp": "WebP", "tif": "TIFF", "htm": "HTML", "aif": "AIFF", "webarchive": "WebArchive", "pages": "Pages", "numbers": "Numbers", "key": "Keynote", "markdown": "MD"]
         return special[ext.lowercased()] ?? ext.uppercased()
     }
 

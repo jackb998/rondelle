@@ -208,7 +208,12 @@ enum ActionCatalog {
         case .archive: samples = ["a.zip"]
         case .folder, .other: samples = ["a.bin"]
         }
-        return WheelGroups.apply(allActions(for: samples.map { URL(fileURLWithPath: "/tmp/\($0)") }, mode: mode), mode: mode)
+        var actions = allActions(for: samples.map { URL(fileURLWithPath: "/tmp/\($0)") }, mode: mode)
+        if kind == .presentation {   // a Keynote file has its own targets (PPTX): the list holds both kinds'
+            let keynote = allActions(for: [URL(fileURLWithPath: "/tmp/a.key")], mode: mode)
+            actions += keynote.filter { extra in !actions.contains { $0.key == extra.key } }
+        }
+        return WheelGroups.apply(actions, mode: mode)
     }
 
     /// Shortcuts: every action for these files, ignoring Settings → Ruota (formats first, then tools).
@@ -226,6 +231,24 @@ enum ActionCatalog {
     /// A Pages file made by Rondelle (it needs the installed Pages for its empty template, see PagesWriter).
     private static var pagesFile: [WheelAction] {
         IWorkOps.App.pages.installed == nil ? [] : [.each("Pages") { try await DocumentOps.convert($0, to: .pages) }]
+    }
+
+    /// A Keynote file made by Rondelle from a PowerPoint one (it needs the installed Keynote for its empty template, see
+    /// KeynoteWriter). Not offered for a Keynote file itself.
+    private static func keynoteFile(_ urls: [URL]) -> [WheelAction] {
+        guard IWorkOps.App.keynote.installed != nil, urls.allSatisfy({ $0.pathExtension.lowercased() == "pptx" }) else { return [] }
+        return [.each("Keynote") { try PptxOps.toKeynote($0) }]
+    }
+
+    /// A PowerPoint file made from a Keynote one (a picture per slide, with the slide's text as alternative text).
+    private static func pptxFromKeynote(_ urls: [URL]) -> [WheelAction] {
+        urls.allSatisfy({ $0.pathExtension.lowercased() == "key" }) ? [.each("PPTX") { try PptxOps.fromKeynote($0) }] : []
+    }
+
+    /// A Numbers file made by Rondelle from a table (it needs the installed Numbers for its empty template, see NumbersWriter).
+    private static func numbersFile(_ urls: [URL]) -> [WheelAction] {
+        guard IWorkOps.App.numbers.installed != nil, urls.allSatisfy({ ["xlsx", "ods", "csv", "tsv"].contains($0.pathExtension.lowercased()) }) else { return [] }
+        return [.each("Numbers") { try await SheetOps.convert($0, to: .numbers) }]
     }
 
     private static func iWork(_ app: IWorkOps.App, _ urls: [URL]) -> [WheelAction] {
@@ -427,9 +450,6 @@ enum ActionCatalog {
                 protectedZip,
             ]
 
-        case (.spreadsheet, .convert) where urls.allSatisfy({ $0.pathExtension.lowercased() == "numbers" }):
-            return iWork(.numbers, urls)
-
         case (.document, .convert):
             return [
                 .each("PDF") { try await DocumentOps.convert($0, to: .pdf) },
@@ -448,7 +468,7 @@ enum ActionCatalog {
                 .each("TSV") { try await SheetOps.convert($0, to: .tsv) },
                 .each("HTML") { try await SheetOps.convert($0, to: .html) },
                 .each("PDF") { try await SheetOps.convert($0, to: .pdf) },
-            ] + iWork(.numbers, urls)
+            ] + numbersFile(urls) + iWork(.numbers, urls)
 
         case (.presentation, .convert):
             return [
@@ -456,7 +476,10 @@ enum ActionCatalog {
                 WheelAction.each("PNG") { try PptxOps.toImages($0, type: .png, dpi: FormatSettings.pdfImagesDPI) },
                 WheelAction.each("JPG") { try PptxOps.toImages($0, type: .jpeg, dpi: FormatSettings.pdfImagesDPI) }.withID("JPEG"),
                 .each("TXT") { try PptxOps.toText($0) },
-            ]
+            ] + keynoteFile(urls) + pptxFromKeynote(urls)
+
+        case (.presentation, .tools) where urls.allSatisfy({ $0.pathExtension.lowercased() == "key" }):
+            return [zip, protectedZip]   // Keynote files: Rondelle reads the slides, not the file's other properties
 
         case (.presentation, .tools):
             return [.metadata(for: urls), zip, protectedZip]

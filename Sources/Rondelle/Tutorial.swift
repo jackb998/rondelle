@@ -24,7 +24,9 @@ final class TutorialWindow {
         window.isOpaque = false
         window.backgroundColor = .clear   // outside the circle
         window.hasShadow = true
-        window.isMovableByWindowBackground = true
+        // Only WindowDragArea (the empty disc) moves the window. Movable by its whole background, a click on the photo
+        // of a practice scene went to the window server as a window drag on some Macs: the window moved or tiled.
+        window.isMovableByWindowBackground = false
         window.isReleasedWhenClosed = false
         let host = NSHostingView(rootView: TutorialView(page: page, frozenStep: frozenStep) { [weak window] in window?.close() })
         host.frame = NSRect(origin: .zero, size: size)
@@ -55,7 +57,7 @@ private final class RoundWindow: NSWindow {
 /// The sizes of the round window, shared by the window, the pages and the fit test (`--test-tutorial`).
 enum TutorialRing {
     static let diameter: CGFloat = 560
-    static let band: CGFloat = 14
+    static let band: CGFloat = 5
     /// Everything on a page stays this close to the centre, inside the ring.
     static let safe: CGFloat = diameter / 2 - band - 4
     /// The scenes: a rectangle in the upper part of the circle.
@@ -73,6 +75,11 @@ private struct TutorialFitKey: PreferenceKey {
 }
 
 private extension View {
+    /// Capsule buttons, as on macOS welcome sheets (glass buttons are capsules already on macOS 26).
+    @ViewBuilder func capsuleButton() -> some View {
+        if #available(macOS 14.0, *) { buttonBorderShape(.capsule) } else { self }
+    }
+
     func fits(_ name: String) -> some View {
         background(GeometryReader { g in
             Color.clear.preference(key: TutorialFitKey.self, value: [name: g.frame(in: .named(TutorialRing.space))])
@@ -80,23 +87,74 @@ private extension View {
     }
 }
 
-/// The background, like the wheel: a disc with a ring in the accent colour, cut in six like the wheel's pieces.
+/// The background, like a Mac window made round: translucent material (Liquid Glass on macOS 26), a thin ring in the
+/// accent colour and a hairline edge, as system windows have.
 private struct WasherBackground: View {
+    @Environment(\.colorScheme) private var scheme
+
     var body: some View {
-        let accent = Color(nsColor: Settings.accentColor), paper = Color(nsColor: .windowBackgroundColor)
-        let r = TutorialRing.diameter / 2, band = TutorialRing.band
+        let accent = Color(nsColor: Settings.accentColor), dark = scheme == .dark
+        let band = TutorialRing.band
         ZStack {
-            Circle().fill(paper)
-            Circle().fill(LinearGradient(colors: [accent.opacity(0.16), accent.opacity(0.05)], startPoint: .top, endPoint: .bottom))
-            Circle().strokeBorder(LinearGradient(colors: [accent.opacity(0.9), accent.opacity(0.6)], startPoint: .top, endPoint: .bottom),
+            DiscMaterial()
+            // Enough paper over the material for the text to read on any desktop.
+            Circle().fill(Color(nsColor: .windowBackgroundColor).opacity(dark ? 0.62 : 0.7))
+            Circle().fill(LinearGradient(colors: [accent.opacity(0.10), accent.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+            Circle().strokeBorder(LinearGradient(colors: [accent.opacity(0.95), accent.opacity(0.7)], startPoint: .top, endPoint: .bottom),
                                   lineWidth: band)
-            ForEach(0..<6, id: \.self) { i in
-                Rectangle().fill(paper.opacity(0.85)).frame(width: 2, height: band + 1)
-                    .offset(y: -(r - band / 2))
-                    .rotationEffect(.degrees(Double(i) * 60 + 30))
-            }
-            Circle().inset(by: band).strokeBorder(accent.opacity(0.3), lineWidth: 1)
+            Circle().inset(by: band).strokeBorder(Color.white.opacity(dark ? 0.08 : 0.45), lineWidth: 1)
+            Circle().strokeBorder(dark ? Color.white.opacity(0.22) : Color.black.opacity(0.18), lineWidth: 0.5)
         }
+    }
+}
+
+/// The disc's material: Liquid Glass on macOS 26, the window material behind the window before.
+private struct DiscMaterial: View {
+    var body: some View {
+        if #available(macOS 26.0, *) {
+            Color.clear.glassEffect(.regular, in: Circle())
+        } else {
+            BehindWindow().clipShape(Circle())
+        }
+    }
+
+    private struct BehindWindow: NSViewRepresentable {
+        func makeNSView(context: Context) -> NSVisualEffectView {
+            let view = NSVisualEffectView()
+            view.material = .underWindowBackground
+            view.blendingMode = .behindWindow
+            view.state = .active
+            return view
+        }
+        func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+    }
+}
+
+/// What a newcomer already tried in the tutorial. Until then «Avanti» stays off on the two pages to try; from the next
+/// opening (or once tried) those pages can be skipped. `store` is swapped by `--test-tutorial`.
+@MainActor
+enum TutorialProgress {
+    static var store = UserDefaults.standard
+    private static let convertKey = "tutorialTriedConvert", wheelsKey = "tutorialTriedWheels"
+
+    static var triedConvert: Bool {
+        get { store.bool(forKey: convertKey) }
+        set { store.set(newValue, forKey: convertKey) }
+    }
+    static var triedWheels: Bool {
+        get { store.bool(forKey: wheelsKey) }
+        set { store.set(newValue, forKey: wheelsKey) }
+    }
+
+    /// Whether «Avanti» leaves this page: the convert page once a conversion worked, the wheels page once all three opened.
+    static func passable(_ page: Int, triedConvert: Bool, triedWheels: Bool) -> Bool {
+        guard tutorialPages.indices.contains(page), case .practice(_, let tour) = tutorialPages[page].scene else { return true }
+        return tour ? triedWheels : triedConvert
+    }
+
+    /// Back always; forward only across pages that can be left (the page dots).
+    static func reachable(_ target: Int, from page: Int, triedConvert: Bool, triedWheels: Bool) -> Bool {
+        target <= page || (page..<target).allSatisfy { passable($0, triedConvert: triedConvert, triedWheels: triedWheels) }
     }
 }
 
@@ -117,17 +175,14 @@ private struct WindowDragArea: NSViewRepresentable {
 }
 
 private enum TutorialScene {
-    /// The first page plays by itself (`tour`: it also switches wheel); the next three are for trying.
+    /// The app's icon, before anything to learn.
+    case welcome
+    /// A scene to try, which plays by itself once left alone for a few seconds (`tour`: the demo also switches wheel).
     case practice(WheelMode, tour: Bool)
-    case features([TutorialFeature])
     case menus
+    /// What Settings lets you change, with a button to open them.
+    case settings
     case privacy
-}
-
-private struct TutorialFeature {
-    let symbol: String
-    let title: String
-    let text: String
 }
 
 private struct TutorialPage {
@@ -136,48 +191,41 @@ private struct TutorialPage {
     let scene: TutorialScene
 }
 
-/// Worked out when read: the texts name the keys chosen in Settings.
+/// Worked out when read: the texts name the keys chosen in Settings. A welcome, then five pages, one sentence or two each: the
+/// scene's hint line teaches the drag step by step. The two practice pages must be tried once (TutorialProgress).
 @MainActor
 private var tutorialPages: [TutorialPage] {
     func keys(_ mode: WheelMode) -> String { Settings.keys(for: mode).label }
     func switchKeys(_ mode: WheelMode) -> String { Settings.switchKey(for: mode).label }
-    var documents = [
-        TutorialFeature(symbol: "lock.doc", title: L("Proteggi"),
-                        text: L("«ZIP protetto» cifra i file con AES-256. Puoi aggiungere un suggerimento per ricordare la password: si legge anche senza password, quindi non scriverci la password.")),
-        TutorialFeature(symbol: "text.viewfinder", title: L("Leggi il testo"),
-                        text: L("Estrai il testo da foto e scansioni, o rendi ricercabile un PDF.")),
-        TutorialFeature(symbol: "doc.on.doc", title: L("Organizza i PDF"),
-                        text: L("Unisci, dividi, riordina e numera le pagine.")),
-    ]
-    if #available(macOS 15.0, *) {
-        documents.insert(TutorialFeature(symbol: "translate", title: L("Traduci"),
-                                         text: L("PDF, documenti e sottotitoli fra italiano, inglese e francese. Rondelle riconosce la lingua da solo e usa la traduzione di Apple, che secondo Apple lavora sul dispositivo. Un PDF torna come testo semplice, senza impaginazione né immagini.")), at: 0)
-    }
     return [
         TutorialPage(title: L("Benvenuto in Rondelle"),
-                     text: L("Trascina un file, scegli cosa farne e trovi il risultato accanto all'originale. Vediamo come in un minuto."),
-                     scene: .practice(.convert, tour: true)),
-        TutorialPage(title: L("Cambia formato"),
-                     text: L("Trascina un file dal Finder e tieni premuto %@: attorno al puntatore compare la ruota dei formati. Rilascia il file sul formato che vuoi; rilasciandolo al centro annulli.", keys(.convert))
-                        + " " + L("Poi puoi lasciare i tasti: la ruota resta aperta finché tieni il file. Per cambiare ruota premi %@ (Converti), %@ (Strumenti) o %@ (Condividi).",
-                                  switchKeys(.convert), switchKeys(.tools), switchKeys(.share)),
+                     text: L("Converti, modifica e condividi file trascinandoli. Il risultato compare accanto all'originale."),
+                     scene: .welcome),
+        TutorialPage(title: L("Prova a convertire"),
+                     text: L("Trascina la foto, premi %@ e rilasciala su un formato. Con i file del Finder è lo stesso.", keys(.convert)),
                      scene: .practice(.convert, tour: false)),
-        TutorialPage(title: L("Usa gli strumenti"),
-                     text: L("Con %@ la ruota mostra gli strumenti per quel tipo di file: comprimi, ridimensiona, unisci, dividi… Le azioni simili sono raccolte in gruppi: passaci sopra per vedere le varianti.", keys(.tools)),
-                     scene: .practice(.tools, tour: false)),
-        TutorialPage(title: L("Condividi"),
-                     text: L("Con %@ la ruota manda i file ad AirDrop, Messaggi, Mail, WhatsApp e altre app.", keys(.share)),
-                     scene: .practice(.share, tour: false)),
-        TutorialPage(title: L("Traduci, proteggi, leggi"),
-                     text: L("Sulla ruota degli strumenti trovi anche questo. Attenzione: il testo nascosto, bianco o coperto di un PDF viene letto e compare nel risultato. Per oscurare davvero, trasforma la pagina in immagine e usa «Copri» in «Modifica»."),
-                     scene: .features(documents)),
+        TutorialPage(title: L("Tre ruote"),
+                     text: L("Prova tutte e tre: con la ruota aperta, un tasto solo cambia ruota (%@ Converti, %@ Strumenti, %@ Condividi).",
+                             switchKeys(.convert), switchKeys(.tools), switchKeys(.share)),
+                     scene: .practice(.convert, tour: true)),
         TutorialPage(title: L("Senza trascinare, e se sbagli"),
-                     text: L("Nel Finder: clic destro sui file → Servizi → «Rondelle: Converti…», «Strumenti…» o «Comprimi». E dal menu di Rondelle «Annulla ultima conversione» sposta nel Cestino i file creati."),
+                     text: L("Nel Finder: clic destro → Servizi → «Rondelle: Converti…».") + "\n"
+                        + L("Dal menu di Rondelle, «Annulla ultima conversione» sposta nel Cestino i file creati."),
                      scene: .menus),
+        TutorialPage(title: L("Fatta a modo tuo"),
+                     text: L("Rondelle si adatta a te: nelle Impostazioni cambi quasi tutto."),
+                     scene: .settings),
         TutorialPage(title: L("La tua privacy"),
-                     text: L("Rondelle non carica file online: la sandbox di macOS blocca la rete alla parte che legge i file, che legge solo quelli che trascini e salva solo nelle cartelle che autorizzi. In rete vanno solo il controllo degli aggiornamenti e i messaggi che scrivi tu. La traduzione usa il servizio di Apple, che secondo Apple lavora sul dispositivo."),
+                     text: L("Per salvare i risultati accanto agli originali, consenti la cartella Inizio. Altrimenti Rondelle chiede cartella per cartella."),
                      scene: .privacy),
     ]
+}
+
+/// A label style chosen at run time.
+private struct AnyLabelStyle: LabelStyle {
+    private let make: (Configuration) -> AnyView
+    init<S: LabelStyle>(_ style: S) { make = { AnyView(style.makeBody(configuration: $0)) } }
+    func makeBody(configuration: Configuration) -> some View { make(configuration) }
 }
 
 private struct TutorialView: View {
@@ -185,11 +233,17 @@ private struct TutorialView: View {
     let frozenStep: Int?
     let close: () -> Void
     @State private var step = 0
+    @State private var homeGranted = FolderAccess.allowedFolders.contains { FolderAccess.covers($0, FolderAccess.realHome) }
+    @State private var triedConvert = TutorialProgress.triedConvert
+    @State private var triedWheels = TutorialProgress.triedWheels
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let timer = Timer.publish(every: 1.1, on: .main, in: .common).autoconnect()
 
     /// Without movement (or in a snapshot) each scene stays on the step that explains it best.
     private var shownStep: Int { frozenStep ?? (reduceMotion ? 3 : step) }
+    private var isLast: Bool { page == tutorialPages.count - 1 }
+    private var canGoOn: Bool { TutorialProgress.passable(page, triedConvert: triedConvert, triedWheels: triedWheels) }
+    private var accent: Color { Color(nsColor: Settings.accentColor) }
 
     var body: some View {
         let current = tutorialPages[page], d = TutorialRing.diameter
@@ -201,20 +255,20 @@ private struct TutorialView: View {
                 .transition(.opacity)
                 .position(TutorialRing.sceneCentre)
             VStack(spacing: 6) {
-                Text(current.title).font(.title3.weight(.semibold)).fits("titolo")
+                Text(current.title).font(.system(size: 22, weight: .bold)).fits("titolo")
                 Text(current.text)
-                    .font(.callout)
+                    .font(.body)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(width: 376)
                     .fits("testo")
             }
-            .frame(width: 400, height: 118, alignment: .top)
-            .position(x: d / 2, y: 346 + 59)
-            controls.fits("navigazione").position(x: d / 2, y: 480)
-            dots.fits("puntini").position(x: d / 2, y: 510)
-            closeButton.fits("chiudi").position(x: d / 2, y: 38)
+            .frame(width: 400, height: 116, alignment: .top)
+            .position(x: d / 2, y: 344 + 58)
+            controls.fits("navigazione").position(x: d / 2, y: 478)
+            dots.fits("puntini").position(x: d / 2, y: 512)
+            closeButton.fits("chiudi").position(x: d / 2, y: 30)
         }
         .frame(width: d, height: d)
         .coordinateSpace(name: TutorialRing.space)
@@ -232,33 +286,52 @@ private struct TutorialView: View {
 
     static func sceneSteps(_ scene: TutorialScene) -> Int {
         switch scene {
+        case .welcome: return 1
         case .practice: return 7
-        case .features(let list): return list.count * 3
         case .menus: return 7
+        case .settings: return 1
         case .privacy: return 4
         }
+    }
+
+    /// The steps a snapshot can stop on: a practice scene's demo, half a second each.
+    static func snapshotSteps(_ scene: TutorialScene) -> Int {
+        if case .practice(let goal, let tour) = scene { return Int(PracticeScript.duration(goal, tour: tour) * 2) + 1 }
+        return sceneSteps(scene)
     }
 
     @ViewBuilder private func scene(_ scene: TutorialScene) -> some View {
         switch scene {
         case .practice(let goal, let tour):
-            // `frozenStep` (snapshots) stops the scene at that half second.
-            PracticeScene(goal: goal, auto: tour && !reduceMotion, frozen: frozenStep.map { Double($0) * 0.5 } ?? (tour && reduceMotion ? 2 : nil), tour: tour)
-        case .features(let list):
-            // One feature at a time, about three seconds each; without movement the first, until one is clicked.
-            FeaturesScene(features: list, shown: frozenStep.map { min($0, list.count - 1) } ?? (reduceMotion ? 0 : step / 3 % list.count))
+            // `frozenStep` (snapshots) stops the demo at that half second; without movement the demo never starts.
+            // The convert page opens only the Convert wheel; the wheels page counts the wheels opened (its checkmarks).
+            PracticeScene(goal: goal, idleDemo: !reduceMotion, frozen: frozenStep.map { Double($0) * 0.5 }, tour: tour,
+                          allowed: tour ? PracticeModel.allModes : [goal]) { opened, converted in
+                if tour, opened.isSuperset(of: PracticeModel.allModes), !triedWheels {
+                    triedWheels = true
+                    TutorialProgress.triedWheels = true
+                } else if !tour, converted, !triedConvert {
+                    triedConvert = true
+                    TutorialProgress.triedConvert = true
+                }
+            }
+        case .welcome: WelcomeScene()
         case .menus: MenusScene(step: shownStep)
-        case .privacy: PrivacyScene()
+        case .settings: SettingsScene()
+        case .privacy: PrivacyScene(granted: homeGranted)
         }
     }
 
+    /// Small and quiet, like the close button of a panel.
     private var closeButton: some View {
         Button(action: close) {
             Image(systemName: "xmark")
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(.secondary)
+                .frame(width: 20, height: 20)
+                .background(Circle().fill(Color.secondary.opacity(0.12)))
+                .overlay(Circle().strokeBorder(Color.secondary.opacity(0.18), lineWidth: 0.5))
                 .frame(width: 26, height: 26)
-                .background(Circle().fill(Color.secondary.opacity(0.16)))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -267,35 +340,72 @@ private struct TutorialView: View {
         .accessibilityLabel(L("Chiudi"))
     }
 
+    /// Page dots: small to look at, 22 points to click.
     private var dots: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 0) {
             ForEach(tutorialPages.indices, id: \.self) { i in
-                Circle().fill(i == page ? Color(nsColor: Settings.accentColor) : Color.secondary.opacity(0.3)).frame(width: 7, height: 7)
-                    .padding(2)
-                    .contentShape(Circle())
-                    .onTapGesture { go(i) }
+                let open = TutorialProgress.reachable(i, from: page, triedConvert: triedConvert, triedWheels: triedWheels)
+                Circle().fill(i == page ? accent : Color.secondary.opacity(open ? 0.35 : 0.18))
+                    .frame(width: i == page ? 8 : 7, height: i == page ? 8 : 7)
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+                    .onTapGesture { if open { go(i) } }
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L("Pagina %@ di %@", page + 1, tutorialPages.count))
     }
 
+    /// One prominent action per page. On the last one it is the Home folder permission until it is granted, then «Inizia».
     private var controls: some View {
         HStack(spacing: 10) {
-            Button(L("Indietro")) { go(page - 1) }
+            if page > 0 {
+                // Next to the permission button only the arrow fits in the circle; the X closes without granting it.
+                let narrow = isLast && !homeGranted
+                Button { go(page - 1) } label: {
+                    Label(L("Indietro"), systemImage: "chevron.left").labelStyle(narrow ? AnyLabelStyle(.iconOnly) : AnyLabelStyle(.titleAndIcon))
+                }
                 .keyboardShortcut(.leftArrow, modifiers: [])
-                .rondelleButton()
-                .disabled(page == 0)
-            if page == tutorialPages.count - 1 {
-                Button(L("Inizia"), action: close)
+                .buttonStyle(.bordered)   // a visible fill: plain glass on this background reads as a label
+                .capsuleButton()
+                .help(L("Indietro"))
+            }
+            if !isLast {
+                // On the two pages to try, off until they were tried (now or at an earlier opening): the → key too.
+                Button { go(page + 1) } label: {
+                    HStack(spacing: 5) { Text(page == 0 ? L("Comincia") : L("Avanti")); Image(systemName: "chevron.right") }
+                        .padding(.horizontal, page == 0 ? 14 : 6)
+                }
+                .keyboardShortcut(.defaultAction)
+                .rondelleProminentButton()
+                .capsuleButton()
+                .disabled(!canGoOn)
+                .help(canGoOn ? "" : lockedHelp)
+                .background(Button("") { go(page + 1) }.keyboardShortcut(.rightArrow, modifiers: []).disabled(!canGoOn)
+                    .opacity(0).accessibilityHidden(true))
+            } else if homeGranted {
+                Button(action: close) { Text(L("Inizia")).padding(.horizontal, 10) }
                     .keyboardShortcut(.defaultAction)
                     .rondelleProminentButton()
+                    .capsuleButton()
             } else {
-                Button(L("Avanti")) { go(page + 1) }
-                    .keyboardShortcut(.defaultAction)
-                    .rondelleProminentButton()
+                Button {
+                    homeGranted = FolderAccess.request(FolderAccess.realHome, explanation: L("Seleziona la cartella Inizio e premi «Consenti»."))
+                } label: {
+                    Label(L("Consenti cartella Inizio…"), systemImage: "folder.badge.plus")
+                }
+                .keyboardShortcut(.defaultAction)
+                .rondelleProminentButton()
+                .capsuleButton()
             }
         }
+        .controlSize(.large)
+        .tint(accent)
+    }
+
+    private var lockedHelp: String {
+        if case .practice(_, true) = tutorialPages[page].scene { return L("Prima apri tutte e tre le ruote.") }
+        return L("Prima converti la foto.")
     }
 
     private func go(_ target: Int) {
@@ -339,12 +449,24 @@ private final class PracticeModel: ObservableObject {
     nonisolated static let radius: CGFloat = 100
     nonisolated static let hole: CGFloat = 28
 
+    nonisolated static let allModes: Set<WheelMode> = [.convert, .tools, .share]
+
     @Published var frame = PracticeFrame()
+    /// The wheels opened so far, and whether a drop (or a variant) gave a result: what unlocks «Avanti».
+    @Published private(set) var opened: Set<WheelMode> = []
+    @Published private(set) var converted = false
     let goal: WheelMode
+    /// The wheels this scene opens: on the convert page only Convert, the other keys do nothing there.
+    let allowed: Set<WheelMode>
+    /// The last drag, drop, key or choice: the demo waits for the scene to be left alone (`isIdle`).
+    var lastActivity = Date()
     private var monitor: Any?
     private var reset: Task<Void, Never>?
 
-    init(goal: WheelMode) { self.goal = goal }
+    init(goal: WheelMode, allowed: Set<WheelMode> = PracticeModel.allModes) {
+        self.goal = goal
+        self.allowed = allowed
+    }
 
     func start() {
         guard monitor == nil else { return }
@@ -364,12 +486,14 @@ private final class PracticeModel: ObservableObject {
     func keys(_ flags: NSEvent.ModifierFlags) {
         let before = frame.held
         frame.held = KeyCombo(flags).flags
+        lastActivity = Date()
         guard frame.dragging else { return }
         if let open = frame.wheel {
-            if let next = Settings.switchMode(from: before, to: flags), next != open {
+            if let next = Settings.switchMode(from: before, to: flags), next != open, allowed.contains(next) {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { frame.wheel = next; frame.highlight = nil }
+                opened.insert(next)
             }
-        } else if let mode = Settings.mode(for: flags) {
+        } else if let mode = Settings.mode(for: flags), allowed.contains(mode) {
             open(mode)
         }
     }
@@ -377,9 +501,10 @@ private final class PracticeModel: ObservableObject {
     func drag(to point: CGPoint) {
         guard frame.panel == nil else { return }
         reset?.cancel()
+        lastActivity = Date()
         if !frame.dragging {
             frame = PracticeFrame(file: point, held: frame.held, dragging: true)
-            if let mode = Settings.mode(for: NSEvent.modifierFlags) { open(mode) }
+            if let mode = Settings.mode(for: NSEvent.modifierFlags), allowed.contains(mode) { open(mode) }
         }
         frame.file = point
         if frame.wheel != nil { frame.highlight = Self.segment(at: point, centre: frame.centre, count: actions.count) }
@@ -388,6 +513,7 @@ private final class PracticeModel: ObservableObject {
     func drop() {
         guard frame.panel == nil else { return }
         frame.dragging = false
+        lastActivity = Date()
         if frame.wheel != nil, let index = frame.highlight {
             // A group opens its options panel, as on the real wheel (unless Settings → Ruota says «Solo anello»).
             if case .group = actions[index].work, Settings.wheelStyle.opensPanel {
@@ -402,6 +528,7 @@ private final class PracticeModel: ObservableObject {
                 frame.result = Self.result(of: actions[index], mode: frame.wheel ?? goal)
                 frame.wheel = nil
             }
+            converted = true
         } else {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
                 frame.cancelled = frame.wheel != nil
@@ -415,10 +542,12 @@ private final class PracticeModel: ObservableObject {
 
     /// A variant picked in the options panel, or nil (closed): the result, or the photo back in its place.
     func choose(_ option: WheelAction?) {
+        lastActivity = Date()
         withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
             frame.panel = nil
             if let option { frame.result = Self.result(of: option, mode: .tools) } else { frame.file = Self.home }
         }
+        if option != nil { converted = true }
         scheduleReset()
     }
 
@@ -433,6 +562,11 @@ private final class PracticeModel: ObservableObject {
 
     var actions: [WheelAction] { Self.actions(frame.wheel ?? goal) }
 
+    /// Nothing touched for `seconds` and the scene at rest (photo in its place, no wheel, no result, no panel).
+    func isIdle(for seconds: TimeInterval, now: Date = Date()) -> Bool {
+        !frame.dragging && frame.wheel == nil && frame.result == nil && frame.panel == nil && now.timeIntervalSince(lastActivity) >= seconds
+    }
+
     private func open(_ mode: WheelMode) {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.78)) {
             frame.centre = Self.wheelCentre(near: frame.file)
@@ -440,6 +574,7 @@ private final class PracticeModel: ObservableObject {
             frame.highlight = nil
             frame.cancelled = false
         }
+        opened.insert(mode)
     }
 
     /// Where the wheel opens: around the file, kept inside the scene.
@@ -584,39 +719,68 @@ private enum PracticeScript {
     }
 }
 
+/// One scene to try. Left alone for `idleDelay` seconds it plays the demo once (PracticeScript), then waits again;
+/// a drag stops the demo at once. `frozen` stops the demo at that second (snapshots, the README).
 private struct PracticeScene: View {
     let goal: WheelMode
-    /// Plays by itself (first page, reduced motion off); `frozen` stops it at that second (snapshots, the README).
-    let auto: Bool
+    let idleDemo: Bool
     let frozen: Double?
     var tour = false
+    /// Told each time a wheel opens or a drop gives a result (the demo doesn't count): wheels opened, a result yet.
+    var progress: (Set<WheelMode>, Bool) -> Void = { _, _ in }
     @StateObject private var model: PracticeModel
-    @State private var started = Date()
+    @State private var demoFrom: Date?
+    private let tick = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
-    init(goal: WheelMode, auto: Bool, frozen: Double?, tour: Bool = false) {
+    nonisolated static let idleDelay: TimeInterval = 5
+
+    init(goal: WheelMode, idleDemo: Bool, frozen: Double?, tour: Bool = false, allowed: Set<WheelMode> = PracticeModel.allModes,
+         progress: @escaping (Set<WheelMode>, Bool) -> Void = { _, _ in }) {
         self.goal = goal
-        self.auto = auto
+        self.idleDemo = idleDemo
         self.frozen = frozen
         self.tour = tour
-        _model = StateObject(wrappedValue: PracticeModel(goal: goal))
+        self.progress = progress
+        _model = StateObject(wrappedValue: PracticeModel(goal: goal, allowed: allowed))
     }
+
+    /// The wheels page shows a checkmark by each wheel opened.
+    private var checks: Set<WheelMode>? { tour ? model.opened : nil }
+
+    private var demoLength: Double { PracticeScript.duration(goal, tour: tour) + 1.6 }
 
     var body: some View {
         Group {
             if let frozen {
-                PracticeCanvas(frame: PracticeScript.frame(at: frozen, goal: goal, tour: tour), goal: goal, interactive: false)
-            } else if auto {
+                PracticeCanvas(frame: PracticeScript.frame(at: frozen, goal: goal, tour: tour), goal: goal, interactive: false,
+                               switching: tour, checks: checks)
+            } else if let demoFrom {
                 TimelineView(.animation) { context in
-                    let t = context.date.timeIntervalSince(started).truncatingRemainder(dividingBy: PracticeScript.duration(goal, tour: tour) + 1.6)
-                    PracticeCanvas(frame: PracticeScript.frame(at: t, goal: goal, tour: tour), goal: goal, interactive: false)
+                    let t = min(context.date.timeIntervalSince(demoFrom), demoLength)
+                    PracticeCanvas(frame: PracticeScript.frame(at: t, goal: goal, tour: tour), goal: goal, interactive: false,
+                                   switching: tour, checks: checks)
                 }
             } else {
-                PracticeCanvas(frame: model.frame, goal: goal, interactive: true, choose: { model.choose($0) })
-                    .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .named("practice"))
-                        .onChanged { model.drag(to: $0.location) }
-                        .onEnded { _ in model.drop() })
-                    .onAppear { model.start() }
-                    .onDisappear { model.stop() }
+                PracticeCanvas(frame: model.frame, goal: goal, interactive: true, switching: tour, checks: checks,
+                               choose: { model.choose($0) })
+            }
+        }
+        .onChange(of: model.opened) { progress($0, model.converted) }
+        .onChange(of: model.converted) { progress(model.opened, $0) }
+        .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .named("practice"))
+            .onChanged {
+                if demoFrom != nil { demoFrom = nil }
+                model.drag(to: $0.location)
+            }
+            .onEnded { _ in model.drop() })
+        .onAppear { if frozen == nil { model.start() } }
+        .onDisappear { model.stop() }
+        .onReceive(tick) { now in
+            guard frozen == nil, idleDemo else { return }
+            if let from = demoFrom {
+                if now.timeIntervalSince(from) > demoLength { demoFrom = nil; model.lastActivity = now }
+            } else if model.isIdle(for: Self.idleDelay, now: now) {
+                demoFrom = now
             }
         }
         .coordinateSpace(name: "practice")
@@ -629,9 +793,18 @@ private struct PracticeCanvas: View {
     let frame: PracticeFrame
     let goal: WheelMode
     let interactive: Bool
+    /// Whether a single key switches wheel here (not on the convert page, where only Convert opens).
+    var switching = true
+    /// The wheels opened so far, each with a checkmark under its keys; nil: no checkmarks.
+    var checks: Set<WheelMode>?
     var choose: (WheelAction?) -> Void = { _ in }
 
     private var accent: Color { Color(nsColor: Settings.accentColor) }
+
+    /// The keys shown at the top: on the convert page only Convert's, so the other wheels don't distract; else all three.
+    static func keyRow(goal: WheelMode, switching: Bool) -> [WheelMode] {
+        switching ? [.convert, .tools, .share] : [goal]
+    }
 
     private var hint: String {
         if let result = frame.result {
@@ -643,11 +816,14 @@ private struct PracticeCanvas: View {
         if frame.panel != nil { return L("Una voce con più varianti: scegline una. Nell'app il pannello si apre accanto al file.") }
         if frame.cancelled { return L("Rilasciata al centro: annullato. Riprova!") }
         if frame.wheel != nil {
-            return frame.held.isEmpty
-                ? L("Rilascia la foto su una voce. Al centro annulli; un tasto solo cambia ruota.")
-                : L("Puoi già lasciare i tasti: la ruota resta aperta.")
+            if !frame.held.isEmpty { return L("Puoi già lasciare i tasti: la ruota resta aperta.") }
+            return switching ? L("Rilascia la foto su una voce. Al centro annulli; un tasto solo cambia ruota.")
+                             : L("Rilascia la foto su un formato. Al centro annulli.")
         }
         if frame.dragging { return L("Ora premi %@ senza lasciare la foto.", Settings.keys(for: goal).label) }
+        if let checks, interactive {
+            return checks.isSuperset(of: PracticeModel.allModes) ? L("Tutte e tre provate!") : L("Prova tu: apri tutte e tre le ruote.")
+        }
         return interactive ? L("Prova tu: trascina la foto.") : ""
     }
 
@@ -656,11 +832,21 @@ private struct PracticeCanvas: View {
             // The three wheels and their keys: the one in use lights up.
             // The name under each key, so the row is narrow enough for the top of the circle.
             HStack(alignment: .top, spacing: 14) {
-                ForEach([WheelMode.convert, .tools, .share], id: \.self) { mode in
+                ForEach(Self.keyRow(goal: goal, switching: switching), id: \.self) { mode in
                     let on = frame.wheel == mode || (frame.wheel == nil && !frame.held.isEmpty && Settings.keys(for: mode).flags == frame.held)
                     VStack(spacing: 2) {
-                        KeyCaps(label: Settings.switchKey(for: mode).label, held: Settings.switchMode(from: [], to: frame.held) == mode)
-                        Text(mode.wheelName).font(.caption.weight(.medium)).foregroundStyle(on ? accent : .secondary).fixedSize()
+                        // Alone (convert page), the keys that open it; in the row of three, the single key that switches to it.
+                        KeyCaps(label: switching ? Settings.switchKey(for: mode).label : Settings.keys(for: mode).label,
+                                held: switching ? Settings.switchMode(from: [], to: frame.held) == mode : frame.held == Settings.keys(for: mode).flags)
+                        HStack(spacing: 3) {
+                            if let checks {
+                                Image(systemName: checks.contains(mode) ? "checkmark.circle.fill" : "circle")
+                                    .font(.caption)
+                                    .foregroundStyle(checks.contains(mode) ? Color.green : Color.secondary.opacity(0.6))
+                                    .accessibilityLabel(checks.contains(mode) ? L("provata") : L("da provare"))
+                            }
+                            Text(mode.wheelName).font(.caption.weight(.medium)).foregroundStyle(on ? accent : .secondary).fixedSize()
+                        }
                     }
                 }
             }
@@ -711,6 +897,19 @@ private struct PracticeCanvas: View {
                     guard interactive else { return }
                     if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
                 }
+            }
+
+            // At rest, an arrow points at the photo: what to pick up first.
+            if frame.wheel == nil && !frame.dragging && frame.result == nil && frame.panel == nil && !frame.cancelled {
+                HStack(alignment: .bottom, spacing: 4) {
+                    Image(systemName: "arrow.turn.left.down").font(.title3.weight(.semibold))
+                    Text(L("Trascinami")).font(.callout.weight(.semibold)).offset(y: -12)
+                }
+                .foregroundStyle(accent)
+                .fits("richiamo")
+                .position(x: PracticeModel.home.x + 86, y: PracticeModel.home.y - 52)
+                .allowsHitTesting(false)
+                .transition(.opacity)
             }
 
             // The real options panel, smaller: the variants of the group the photo was dropped on.
@@ -772,44 +971,23 @@ private struct KeyCaps: View {
     }
 }
 
-/// The features of the tools wheel: a tile each, and the text of the one shown (it changes by itself; a click picks one).
-private struct FeaturesScene: View {
-    let features: [TutorialFeature]
-    let shown: Int
-    @State private var picked: Int?
-
+/// The first page: the app's icon (the one Settings → Aspetto picks for the Dock) on a soft halo in the accent colour.
+private struct WelcomeScene: View {
     var body: some View {
-        let current = picked ?? shown, accent = Color(nsColor: Settings.accentColor)
-        VStack(spacing: 16) {
-            HStack(spacing: 10) {
-                ForEach(features.indices, id: \.self) { i in
-                    Button { picked = i } label: {
-                        VStack(spacing: 6) {
-                            Image(systemName: features[i].symbol).font(.title2).frame(height: 26)
-                            Text(features[i].title).font(.caption.weight(.medium)).multilineTextAlignment(.center).lineLimit(2)
-                        }
-                        .foregroundStyle(i == current ? accent : Color.secondary)
-                        .frame(width: 86, height: 70)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(i == current ? accent.opacity(0.2) : Color.secondary.opacity(0.08)))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .fits("funzioni")
-            Text(features[current].text)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(width: 380)
-                .fits("funzione")
-                .id(current)
-                .transition(.opacity)
+        let accent = Color(nsColor: Settings.accentColor)
+        ZStack {
+            Circle().fill(RadialGradient(colors: [accent.opacity(0.35), accent.opacity(0)], center: .center, startRadius: 40, endRadius: 130))
+                .frame(width: 260, height: 260)
+            Circle().strokeBorder(accent.opacity(0.35), lineWidth: 1.5).frame(width: 196, height: 196)
+            Image(nsImage: DockIcon.shared.image)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 150, height: 150)
+                .shadow(color: .black.opacity(0.25), radius: 12, y: 6)
         }
+        .fits("benvenuto")
         .frame(width: TutorialRing.scene.width, height: TutorialRing.scene.height)
-        .animation(.easeOut(duration: 0.3), value: current)
+        .accessibilityHidden(true)
     }
 }
 
@@ -863,29 +1041,62 @@ private struct MockMenu: View {
     }
 }
 
-/// The Home folder permission, so that results can be saved next to the originals without asking folder by folder.
+/// What Settings lets you change, one line per pane (only what is really there), and a button to open them.
+private struct SettingsScene: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 9) {
+                line("chart.pie.fill", L("Ruota (la ruota)"), L("scegli e riordina le voci per ogni tipo di file, aggiungi app a Condividi."))
+                line("paintpalette.fill", L("Aspetto"), L("colore, forma e dimensione della ruota, effetto vetro."))
+                line("keyboard", L("Comportamento"), L("i tasti di ogni ruota e la lingua."))
+                line("slider.horizontal.3", L("Conversioni"), L("qualità, dimensioni e dove salvare i risultati."))
+            }
+            .frame(width: 340)
+            Button { SettingsWindow.shared.show(pane: .wheel) } label: {
+                Label(L("Apri Impostazioni"), systemImage: "gearshape")
+            }
+            .buttonStyle(.bordered)
+            .capsuleButton()
+            .controlSize(.large)
+        }
+        .fits("impostazioni")
+        .frame(width: TutorialRing.scene.width, height: TutorialRing.scene.height)
+    }
+
+    private func line(_ symbol: String, _ pane: String, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: symbol).frame(width: 20).foregroundStyle(Color(nsColor: Settings.accentColor))
+            (Text(pane).fontWeight(.semibold).foregroundColor(.primary) + Text(": ") + Text(text))
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// What Rondelle does with files, in three lines. The Home folder permission is the page's main button (TutorialView).
 private struct PrivacyScene: View {
-    @State private var granted = false
+    let granted: Bool
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             Image(systemName: granted ? "checkmark.shield.fill" : "lock.shield.fill")
                 .font(.system(size: 50))
-                .foregroundStyle(granted ? Color.green : Color.orange)
-            Text(L("Per salvare i risultati accanto agli originali, consenti l'accesso alla cartella Inizio. Puoi revocarlo quando vuoi da Impostazioni → Privacy; se preferisci, Rondelle chiederà cartella per cartella."))
-                .font(.callout)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(width: 360)
-            Button(granted ? L("Cartella Inizio consentita") : L("Consenti cartella Inizio…")) {
-                granted = FolderAccess.request(FolderAccess.realHome, explanation: L("Seleziona la cartella Inizio e premi «Consenti»."))
+                .foregroundStyle(granted ? Color.green : Color(nsColor: Settings.accentColor))
+            VStack(alignment: .leading, spacing: 8) {
+                line("icloud.slash", L("Nessun file va online: la parte che legge i file non ha accesso alla rete."))
+                line("arrow.triangle.2.circlepath", L("In rete vanno solo il controllo degli aggiornamenti e i messaggi che scrivi tu."))
+                line("translate", L("La traduzione usa il servizio di Apple, che secondo Apple lavora sul dispositivo."))
             }
-            .rondelleButton()
-            .disabled(granted)
+            .frame(width: 360)
         }
         .fits("privacy")
         .frame(width: TutorialRing.scene.width, height: TutorialRing.scene.height)
+    }
+
+    private func line(_ symbol: String, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: symbol).frame(width: 20).foregroundStyle(.secondary)
+            Text(text).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 
@@ -958,6 +1169,25 @@ enum TutorialPracticeTest {
             expect(PracticeModel.members(of: "Comprimi").count >= 2, "Comprimi ha le sue varianti")
         }
         model.stop()
+        // The demo waits until the scene is left alone, at rest; any drag counts as activity.
+        let idle = PracticeModel(goal: .convert)
+        let later = Date().addingTimeInterval(PracticeScene.idleDelay + 0.1)
+        expect(!idle.isIdle(for: PracticeScene.idleDelay), "la demo non parte subito")
+        expect(idle.isIdle(for: PracticeScene.idleDelay, now: later), "la demo parte se la scena resta ferma")
+        idle.drag(to: CGPoint(x: 200, y: 150))
+        expect(!idle.isIdle(for: PracticeScene.idleDelay, now: Date().addingTimeInterval(60)), "mentre trascini la demo non parte")
+        idle.drop()
+        expect(!idle.isIdle(for: PracticeScene.idleDelay), "appena rilasciata la demo non parte")
+        idle.stop()
+        problems += lockProblems()
+        // A welcome and five pages, short: the promise is «in un minuto».
+        let pages = tutorialPages
+        expect(pages.count == 6, "pagine del tutorial: \(pages.count), attese 6")
+        if case .welcome = pages.first?.scene {} else { problems.append("la prima pagina non è il benvenuto") }
+        let words = pages.reduce(0) { $0 + "\($1.title) \($1.text)".split(whereSeparator: \.isWhitespace).count }
+        expect(words <= 140, "testo delle pagine troppo lungo: \(words) parole")
+        if case .privacy = pages.last?.scene {} else { problems.append("l'ultima pagina non è quella del permesso") }
+        if case .settings = pages[pages.count - 2].scene {} else { problems.append("la penultima pagina non è quella delle Impostazioni") }
         let demo = PracticeScript.frame(at: 2.0, goal: .convert, tour: true)
         expect(demo.wheel == .convert && demo.cursor, "la scena da sola apre la ruota")
         let end = PracticeScript.frame(at: PracticeScript.duration(.convert, tour: true) - 0.1, goal: .convert, tour: true)
@@ -974,6 +1204,83 @@ enum TutorialPracticeTest {
         return problems + fitProblems()
     }
 
+    /// The two pages to try can't be skipped the first time: on «Prova a convertire» only the Convert wheel opens and
+    /// «Avanti» waits for a conversion; on «Tre ruote» it waits for all three wheels. Remembered for the next opening.
+    /// Runs on a store of its own, so the real flags don't matter (and aren't touched).
+    static func lockProblems() -> [String] {
+        var problems: [String] = []
+        func expect(_ ok: Bool, _ what: String) { if !ok { problems.append(what) } }
+        let suite = "rondelle.test.tutorial"
+        guard let store = UserDefaults(suiteName: suite) else { return ["nessun archivio di prova per il tutorial"] }
+        store.removePersistentDomain(forName: suite)
+        TutorialProgress.store = store
+        let pages = tutorialPages
+        guard let convertPage = pages.firstIndex(where: { if case .practice(_, false) = $0.scene { return true }; return false }),
+              let wheelsPage = pages.firstIndex(where: { if case .practice(_, true) = $0.scene { return true }; return false }) else {
+            return ["mancano le pagine di prova"]
+        }
+        func passable(_ page: Int) -> Bool {
+            TutorialProgress.passable(page, triedConvert: TutorialProgress.triedConvert, triedWheels: TutorialProgress.triedWheels)
+        }
+        func reachable(_ target: Int, from page: Int) -> Bool {
+            TutorialProgress.reachable(target, from: page, triedConvert: TutorialProgress.triedConvert, triedWheels: TutorialProgress.triedWheels)
+        }
+        expect(passable(0), "dal benvenuto si va avanti")
+        expect(!passable(convertPage), "prima volta: «Avanti» spento prima di convertire")
+        expect(!reachable(pages.count - 1, from: 0), "prima volta: i puntini saltano la prova")
+        expect(reachable(convertPage, from: 0), "i puntini portano fino alla prima prova")
+        expect(reachable(0, from: wheelsPage), "indietro si va sempre")
+
+        // On the convert page only the Convert wheel opens; a drop on a format unlocks.
+        let only = PracticeModel(goal: .convert, allowed: [.convert])
+        only.drag(to: CGPoint(x: 200, y: 150))
+        for mode in [WheelMode.tools, .share] where Settings.keys(for: mode).flags != Settings.keys(for: .convert).flags {
+            only.keys(Settings.keys(for: mode).flags)
+            expect(only.frame.wheel == nil, "pagina di prova: i tasti di \(mode) non aprono la ruota")
+            only.keys([])
+        }
+        only.keys(Settings.keys(for: .convert).flags)
+        expect(only.frame.wheel == .convert, "pagina di prova: i tasti di Converti aprono la ruota")
+        only.keys([])
+        for mode in [WheelMode.tools, .share] {
+            only.keys(Settings.switchKey(for: mode).flags)
+            only.keys([])
+            expect(only.frame.wheel == .convert, "pagina di prova: un tasto solo non passa a \(mode)")
+        }
+        expect(PracticeCanvas.keyRow(goal: .convert, switching: false) == [.convert], "pagina di prova: in alto solo i tasti di Converti")
+        expect(PracticeCanvas.keyRow(goal: .convert, switching: true).count == 3, "tre ruote: in alto i tasti di tutte e tre")
+        expect(!only.converted, "nessun risultato prima del rilascio")
+        only.drag(to: PracticeModel.point(of: 0, count: only.actions.count, centre: only.frame.centre))
+        only.drop()
+        expect(only.converted && only.opened == [.convert], "rilasciata su un formato: conversione riuscita (\(only.opened))")
+        only.stop()
+        TutorialProgress.triedConvert = only.converted
+        expect(passable(convertPage), "dopo la conversione «Avanti» si accende")
+        expect(!passable(wheelsPage), "«Avanti» spento sulle tre ruote finché non le provi")
+
+        // On the wheels page each wheel opened gets its checkmark; all three unlock.
+        let tour = PracticeModel(goal: .convert)
+        tour.drag(to: CGPoint(x: 200, y: 150))
+        tour.keys(Settings.keys(for: .convert).flags)
+        tour.keys([])
+        expect(tour.opened == [.convert], "una ruota aperta, una spunta")
+        for mode in [WheelMode.tools, .share] {
+            tour.keys(Settings.switchKey(for: mode).flags)
+            tour.keys([])
+        }
+        expect(tour.opened == PracticeModel.allModes, "tutte e tre le ruote aperte: \(tour.opened)")
+        tour.stop()
+        TutorialProgress.triedWheels = tour.opened.isSuperset(of: PracticeModel.allModes)
+        expect(passable(wheelsPage), "provate le tre ruote «Avanti» si accende")
+
+        // Next opening: the store remembers, every page can be skipped.
+        expect(store.bool(forKey: "tutorialTriedConvert") && store.bool(forKey: "tutorialTriedWheels"), "prove ricordate per la volta dopo")
+        expect(reachable(pages.count - 1, from: 0), "dalla seconda volta si salta tutto")
+        // The rest of the run (fit test, real window) keeps this store, emptied: the real flags are never written.
+        store.removePersistentDomain(forName: suite)
+        return problems
+    }
+
     /// Every page, at every step of its scene, drawn in the round window: each named piece (`fits`) inside the circle,
     /// the text above the buttons. The wheel counts as round.
     static func fitProblems() -> [String] {
@@ -982,7 +1289,7 @@ enum TutorialPracticeTest {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: d, height: d), styleMask: [.borderless], backing: .buffered, defer: false)
         var worst: (CGFloat, String) = (0, "")
         for (index, page) in tutorialPages.enumerated() {
-            let steps = index == 0 ? Int(PracticeScript.duration(.convert, tour: true) * 2) + 1 : TutorialView.sceneSteps(page.scene)
+            let steps = TutorialView.snapshotSteps(page.scene)
             for step in 0..<steps {
                 TutorialFit.frames = [:]
                 let host = NSHostingView(rootView: TutorialView(page: index, frozenStep: step) {})
@@ -1020,7 +1327,7 @@ enum TutorialPracticeTest {
         print("pezzo più lontano dal centro: \(worst.1), \(Int(worst.0)) punti su \(Int(TutorialRing.safe))")
         // The real window: round, without frame, takes the keys; the empty background moves it.
         _ = NSApplication.shared
-        TutorialWindow.shared.show(page: 4, frozenStep: 0)
+        TutorialWindow.shared.show(page: 3, frozenStep: 0)
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
         if let round = NSApp.windows.first(where: { $0 is RoundWindow && $0.isVisible }) {
             if !(round.styleMask == [.borderless] && !round.isOpaque && round.backgroundColor == .clear && round.canBecomeKey
@@ -1035,7 +1342,63 @@ enum TutorialPracticeTest {
         } else {
             problems.append("la finestra tonda del tutorial non si apre")
         }
+        problems += practiceDragProblems()
         return Array(Set(problems)).sorted()
+    }
+
+    /// Dragging the photo in the practice scene must not move the window or tile it at a screen edge (seen on a
+    /// smaller MacBook): the window, placed against the left edge of the screen, keeps its frame after a drag of the
+    /// photo towards that edge, and only the empty background can move it.
+    static func practiceDragProblems() -> [String] {
+        var problems: [String] = []
+        TutorialWindow.shared.show(page: 1)
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
+        guard let round = NSApp.windows.first(where: { $0 is RoundWindow && $0.isVisible }) else { return ["la scena di prova non si apre"] }
+        defer { round.close() }
+        if round.isMovableByWindowBackground { problems.append("la finestra si sposta da ogni punto dello sfondo, anche dalla scena") }
+        if let screen = round.screen ?? NSScreen.main {
+            round.setFrameOrigin(NSPoint(x: screen.visibleFrame.minX, y: screen.visibleFrame.midY - TutorialRing.diameter / 2))
+        }
+        let before = round.frame
+        // The photo, in window coordinates (bottom left origin).
+        let scene = CGPoint(x: TutorialRing.sceneCentre.x - TutorialRing.scene.width / 2, y: TutorialRing.sceneCentre.y - TutorialRing.scene.height / 2)
+        let photo = NSPoint(x: scene.x + PracticeModel.home.x, y: TutorialRing.diameter - (scene.y + PracticeModel.home.y))
+        if let hit = round.contentView?.hitTest(photo) {
+            var view: NSView? = hit
+            while let v = view, v !== round.contentView?.superview {
+                if v is WindowDragArea.DragView { problems.append("sotto la foto c'è lo sfondo che sposta la finestra") }
+                view = v.superview
+            }
+            // With the whole background movable, AppKit hands a click to the window server as a window drag when the
+            // view under it says it can move the window (a SwiftUI host does): then the photo never moves, the window does.
+            if round.isMovableByWindowBackground && hit.mouseDownCanMoveWindow {
+                problems.append("un clic sulla foto può spostare la finestra (\(type(of: hit)))")
+            }
+        } else {
+            problems.append("la foto non riceve il clic")
+        }
+        func event(_ type: NSEvent.EventType, _ p: NSPoint) -> NSEvent? {
+            NSEvent.mouseEvent(with: type, location: p, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                               windowNumber: round.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseUp ? 0 : 1)
+        }
+        // Towards the left edge of the screen, past it: where macOS would tile the window.
+        for step in 1...12 {
+            if let e = event(.leftMouseDragged, NSPoint(x: photo.x - CGFloat(step) * 20, y: photo.y)) { NSApp.postEvent(e, atStart: false) }
+        }
+        if let up = event(.leftMouseUp, NSPoint(x: photo.x - 240, y: photo.y)) { NSApp.postEvent(up, atStart: false) }
+        if let down = event(.leftMouseDown, photo) { NSApp.sendEvent(down) }
+        while let e = NSApp.nextEvent(matching: .any, until: Date(timeIntervalSinceNow: 0.1), inMode: .default, dequeue: true) { NSApp.sendEvent(e) }
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.2))
+        // RONDELLE_TUTORIAL_HOLD=seconds: the scene stays open for a drag by hand (or by a real pointer) before the check.
+        if let hold = ProcessInfo.processInfo.environment["RONDELLE_TUTORIAL_HOLD"].flatMap(Double.init) {
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+            print("scena aperta per \(Int(hold)) s, finestra \(before)")
+            RunLoop.main.run(until: Date(timeIntervalSinceNow: hold))
+        }
+        if round.frame != before { problems.append("trascinando la foto la finestra si sposta: \(before) → \(round.frame)") }
+        print("finestra prima \(before), dopo \(round.frame)")
+        return problems
     }
 }
 
@@ -1064,7 +1427,7 @@ enum TutorialGIF {
             let host = NSHostingView(rootView: ZStack {
                 Color(nsColor: .windowBackgroundColor)
                 LinearGradient(colors: [accent.opacity(0.16), accent.opacity(0.04)], startPoint: .top, endPoint: .bottom)
-                PracticeScene(goal: .convert, auto: false, frozen: t, tour: true)
+                PracticeScene(goal: .convert, idleDemo: false, frozen: t, tour: true)
             }.frame(width: size.width, height: size.height))
             host.frame = NSRect(origin: .zero, size: size)
             window.contentView = host

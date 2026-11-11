@@ -743,3 +743,17 @@ extension UnsafeRawBufferPointer {
         }
     }
 }
+
+extension PDFTextScan {
+    private static let hiddenTextWarned = "didWarnPDFHiddenText"
+
+    /// The first time a PDF's own text is read («Testo» → TXT, «Traduci»): the hidden text (white, tiny, covered)
+    /// is read too and lands in the result. Asked once; without dialogs (command line, Shortcuts) it goes ahead.
+    static func warnHiddenTextOnce() throws {
+        guard Prompts.allowed, !UserDefaults.standard.bool(forKey: hiddenTextWarned) else { return }
+        UserDefaults.standard.set(true, forKey: hiddenTextWarned)
+        guard Notice.confirm(title: L("Anche il testo nascosto finisce nel risultato"),
+                             text: L("Rondelle legge tutto il testo del PDF, anche quello bianco, minuscolo o coperto. Per oscurare davvero, trasforma la pagina in immagine e usa «Copri» in «Modifica»."),
+                             button: L("Continua")) else { throw CancellationError() }
+    }
+}

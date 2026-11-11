@@ -117,6 +117,12 @@ r() {
     ko=$((ko + 1)); print -r -- "FAIL $* :: $out"
   fi
 }
+# A command that must fail, with a message that contains TEXT.
+refused() {
+  local want=$1; shift; local out; out=$(perl -e 'alarm shift; exec @ARGV' 90 "$M" "$@" 2>&1); local rc=$?
+  if (( rc != 0 )) && [[ $out == *${~want}* ]]; then ok=$((ok + 1)); print -r -- "OK   $* -> rifiutato: ${out%%$'\n'*}"
+  else ko=$((ko + 1)); print -r -- "FAIL $* :: doveva rifiutare («$want»): $out"; fi
+}
 print "== documenti"; for t in PDF RTF ODT HTML TXT; do r --run $t lettera.docx; done; r --run DOCX nota.txt
 # A picture behind the text (letterhead, page background) stays behind it: one page, text on it, the picture under it.
 r --run PDF sfondo.docx; r --test-pdf-page sfondo.pdf "Testo sopra lo sfondo"
@@ -147,6 +153,24 @@ mv prova.pptx originale.pptx; r --run PPTX prova.pdf; r --test-pptx-text prova.p
 [[ $last == 'diapositive=2 testo=no immagini=2 tabelle=0 larghezza=960 libere=0' ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL PDF -> PPTX :: $last" }
 r --run PPTX foto.heic; r --test-pptx-text foto.pptx "x"
 [[ $last == diapositive=1\ testo=no\ immagini=1* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL immagine -> PPTX :: $last" }
+# Keynote: a deck made by Rondelle from the empty template of the installed Keynote (title, body, notes of each slide), read back
+# from the archives and by the reader, and converted to PDF, images, text and PowerPoint (a picture per slide).
+if [[ -d /Applications/Keynote.app || -d "/Applications/Keynote Creator Studio.app" ]]; then
+  print "== Keynote"; r --run Keynote originale.pptx; r --test-keynote-slides originale.key
+  [[ $last == diapositive=2* && $last == *'titolo=Titolo della prova |'* && $last == *'Primo punto dell'*'elenco / Secondo punto'* && $last == *'note=Nota per chi presenta'* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL scrittura Keynote :: $last" }
+  r --test-keynote-read originale.key "Titolo della prova"
+  [[ $last == 'diapositive=2 testo=si caselle=4 immagini=1 note=1 larghezza=1920' ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL lettura Keynote :: $last" }
+  for t in PDF PNG JPG TXT; do r --run $t originale.key; done
+  r --test-pdf-page originale.pdf "Titolo della prova"
+  [[ $last == pagine=2* && $last == *testo=si* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL Keynote -> PDF :: $last" }
+  # The body of a slide (bullets with a tab after the margin) is drawn, not only the title.
+  r --test-pdf-page originale.pdf "Secondo punto"
+  [[ $last == *testo=si* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL Keynote -> PDF, corpo :: $last" }
+  r --run PPTX originale.key; r --test-pptx-text "originale 2.pptx" "x"
+  [[ $last == diapositive=2\ testo=no\ immagini=2* ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL Keynote -> PPTX :: $last" }
+  # A file that is not a Keynote file is refused with a message, not read.
+  cp nota.txt falso.key; refused 'non riesce a leggere' --test-keynote-read falso.key
+fi
 print "== sottotitoli"; r --run VTT sub.srt; r --run SRT sub.vtt; r --run TXT sub.srt
 print "== archivi"; r --run TAR.GZ cartella; r --run Estrai cartella.tar.gz
 print "== immagini"; r --run --tools Ruota foto.heic; r --run --tools Specchio foto.heic; r --run --tools Sfondo foto.heic
@@ -156,6 +180,28 @@ RONDELLE_VALUE="0,5" r --run --tools "Peso…" sonoma.heic
 RONDELLE_VALUE="1" r --run --tools "Peso…" doc.pdf
 print "== video"; r --run GIF clip.mov; r --run --tools "2×" clip.mov; r --run --tools Unisci clip.mov "clip (2x).mp4"
 print "== fogli di calcolo"; r --run XLSX tabella.csv; r --run ODS tabella.xlsx; r --run CSV tabella.ods; r --run PDF tabella.xlsx
+# Numbers: a table made by Rondelle from the empty template of the installed Numbers (the cells and their strings), read back
+# and converted to every spreadsheet format.
+if [[ -d /Applications/Numbers.app || -d "/Applications/Numbers Creator Studio.app" ]]; then
+  print "== Numbers"; r --run Numbers tabella.xlsx; r --test-numbers-read tabella.numbers "riga 199"
+  [[ $last == 'tabelle=1 righe=201 colonne=2 testo=si' ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL scrittura Numbers :: $last" }
+  for t in XLSX ODS CSV TSV HTML PDF; do r --run $t tabella.numbers; done
+  # A table taller than the template's 256 rows (the tile's size goes into the file) is written and read back whole.
+  python3 -I -c "print('nome,valore'); print('\n'.join('riga %d,%d' % (i, i * 3) for i in range(1500)))" > lunga.csv; r --run Numbers lunga.csv
+  r --test-numbers-read lunga.numbers "riga 1499"
+  [[ $last == 'tabelle=1 righe=1501 colonne=2 testo=si' ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL Numbers lunga :: $last" }
+  # Several sheets: one Numbers file with a sheet (and a table) for each, read back whole.
+  python3 -I -c "
+import openpyxl
+wb = openpyxl.Workbook(); a = wb.active; a.title = 'Spese'; a.append(['voce', 'importo']); a.append(['v', 1.5])
+b = wb.create_sheet('Forecast'); b.append(['mese', 'totale']); b.append(['gen', 100])
+c = wb.create_sheet('Terzo'); c.append(['x', 'y']); wb.save('multi.xlsx')"
+  r --run Numbers multi.xlsx; r --test-numbers-read multi.numbers gen
+  [[ $last == 'tabelle=3 righe=5 colonne=2 testo=si' ]] || { ok=$((ok - 1)); ko=$((ko + 1)); print -r -- "FAIL Numbers più fogli :: $last" }
+  r --run XLSX multi.numbers
+  # Beyond 65 536 rows: refused with a message.
+  python3 -I -c "print('\n'.join('a,%d' % i for i in range(70000)))" > altissima.csv; refused 'al massimo 65536 righe' --run Numbers altissima.csv
+fi
 print "== ruota"; r --test-wheel-hit; r --test-wheel-motion foto.heic; r --test-wheel-keys foto.heic; r --test-wheel-switch; r --test-wheel-behind foto.heic; r --test-tutorial; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=en r --test-tutorial; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-tutorial; r --test-sidebar-motion; RONDELLE_RESOURCES=$ROOT/Resources r --test-dock-icon; r --test-wheel-hints; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-wheel-hints; r --test-wheel-labels; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=en r --test-wheel-labels; RONDELLE_RESOURCES=$ROOT/Resources RONDELLE_LANG=fr r --test-wheel-labels; r --test-support-link; r --test-share-picker foto.heic
 print "== metadati"; r --test-metadata foto.heic doc.pdf clip.mov voce.aiff lungo.png
 r --test-metadata lettera.docx tabella.xlsx nota.txt sub.srt cartella cartella.tar.gz autore.docx autore.xlsx

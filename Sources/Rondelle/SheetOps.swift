@@ -29,7 +29,7 @@ enum SheetOps {
     /// HTML and PDF lay every cell out as text: past this they would take minutes and gigabytes.
     static let maxCellsForLayout = 100_000
 
-    enum Target: String { case xlsx, ods, csv, tsv, html, pdf }
+    enum Target: String { case xlsx, ods, csv, tsv, html, pdf, numbers }
 
     // MARK: Convert
 
@@ -39,6 +39,10 @@ enum SheetOps {
         switch target {
         case .xlsx: return [try writePackage(sheets, from: url, ext: "xlsx", build: xlsxFiles)]
         case .ods: return [try writePackage(sheets, from: url, ext: "ods", build: odsFiles)]
+        case .numbers:
+            let out = FileNaming.output(for: url, ext: "numbers")
+            try NumbersWriter.write(sheets, to: out)
+            return [out]
         case .csv, .tsv:
             // One file per sheet: in a folder when there are several.
             if sheets.count == 1 { return [try writeText(sheets[0], to: FileNaming.output(for: url, ext: target.rawValue), target)] }
@@ -73,6 +77,7 @@ enum SheetOps {
         switch url.pathExtension.lowercased() {
         case "xlsx": return try readXLSX(url)
         case "ods": return try readODS(url)
+        case "numbers": return try NumbersReader.read(url)
         case "tsv": return [Sheet(name: url.deletingPathExtension().lastPathComponent, rows: try readDelimited(url, separator: "\t"))]
         default: return [Sheet(name: url.deletingPathExtension().lastPathComponent, rows: try readDelimited(url, separator: nil))]
         }

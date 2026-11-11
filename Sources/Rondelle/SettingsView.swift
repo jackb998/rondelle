@@ -1062,7 +1062,7 @@ private struct FormatOptions: View {
     private var note: String {
         if isImage { return L("Vale per la conversione verso %@ dalla ruota «Converti».", L(format)) }
         switch format {
-        case "PDF → immagini": return L("Ogni pagina del PDF, e ogni diapositiva di una presentazione PPTX, diventa un'immagine PNG o JPG: più dpi, più nitidezza e file più grandi.")
+        case "PDF → immagini": return L("Ogni pagina del PDF, e ogni diapositiva di una presentazione PPTX o Keynote, diventa un'immagine PNG o JPG: più dpi, più nitidezza e file più grandi.")
         case "GIF animata": return L("GIF dai video: al massimo i primi 20 secondi.")
         case "M4A": return L("Vale per audio e video convertiti in M4A e per «Solo audio».")
         case "CSV": return L("Excel in italiano, francese e tedesco apre meglio i CSV con il punto e virgola. In lettura Rondelle riconosce da solo virgola, punto e virgola e tabulazione.")

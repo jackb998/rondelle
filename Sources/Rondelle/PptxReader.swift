@@ -89,11 +89,15 @@ enum PptxReader {
     final class Deck {
         let size: CGSize
         let slides: [Slide]
-        fileprivate let package: Package
-        fileprivate init(size: CGSize, slides: [Slide], package: Package) { self.size = size; self.slides = slides; self.package = package }
+        fileprivate let package: Package?
+        /// Pictures that were read from another kind of file (Keynote) and are kept here by name.
+        private let inline: [String: Data]
+        fileprivate init(size: CGSize, slides: [Slide], package: Package) { self.size = size; self.slides = slides; self.package = package; self.inline = [:] }
+        /// A deck made from another format: its pictures are given by name.
+        init(size: CGSize, slides: [Slide], images: [String: Data]) { self.size = size; self.slides = slides; self.package = nil; self.inline = images }
 
         /// The bytes of a picture of the file, read when the slide is drawn and not kept.
-        func imageData(_ path: String) -> Data? { package.data(path, max: PptxReader.maxImagePart) }
+        func imageData(_ path: String) -> Data? { inline[path] ?? package?.data(path, max: PptxReader.maxImagePart) }
     }
 
     // MARK: Reading
@@ -198,7 +202,10 @@ enum PptxReader {
 
         func data(_ path: String, max: Int64) -> Data? {
             if let archive {
-                if archive.entries[path] == nil { return nil }
+                guard let entry = archive.entries[path] else { return nil }
+                // Past the cap by its own size: left out before anything is read (unzip would read it to the cap
+                // at every slide that uses it). A size that lies is caught below: neither reader passes `max` bytes.
+                if Int64(entry.size) > max { return nil }
                 if let data = archive.read(path, limit: Int(clamping: max)) { return data }
             }
             // unzip reads [ ] * ? as patterns: those characters in a name are escaped.
@@ -704,7 +711,10 @@ enum PptxReader {
                     case "arcTo":
                         let rx = guides.value(cmd.attr("wR") ?? "0") * sx, ry = guides.value(cmd.attr("hR") ?? "0") * sy
                         let start = guides.value(cmd.attr("stAng") ?? "0") / 60000 * .pi / 180
-                        let sweep = guides.value(cmd.attr("swAng") ?? "0") / 60000 * .pi / 180
+                        // At most a full turn: an angle from the file could be NaN, infinite or billions of turns.
+                        let swept = guides.value(cmd.attr("swAng") ?? "0") / 60000 * .pi / 180
+                        guard start.isFinite, swept.isFinite else { continue }
+                        let sweep = min(max(swept, -2 * .pi), 2 * .pi)
                         let centre = CGPoint(x: current.x - rx * cos(start), y: current.y - ry * sin(start))
                         let steps = max(Int((abs(sweep) / (.pi / 36)).rounded(.up)), 1)
                         for k in 1...steps {

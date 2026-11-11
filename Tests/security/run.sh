@@ -20,6 +20,10 @@
 #     Q jobs at the same time: limit, names, «Annulla tutti»; the line under the wheel
 #     S PDF rotation, icons (ICNS, ICO), SHA-256
 #     R PDF redaction (markers in every place text hides), video to a size, text to the clipboard, subtitles
+#     T updates, the form, encrypted PDFs
+#     U Keynote, Numbers and Pages built to expand or cut, every cap and one past it, «Annulla», files cut in half,
+#       hostile metadata, names with control characters for «Terminale»
+#     V pictures of a PPTX read once (Keynote), the cap of the Numbers writer, the package after «Rimuovi metadati»
 # The 26 functional tests are in Tests/functional/run.sh.
 zmodload zsh/datetime
 setopt extendedglob
@@ -535,7 +539,7 @@ if wants K; then
   act $W/tra finto.pdf -- --run --tools "In inglese" finto.pdf
   check K "PDF finto: errore, nessun file" $(( RC != 0 && ! ${#OUTS} )) "${${LOG##*: }[1,50]}"
   lst=$($M --list --tools a.pages 2>/dev/null | tr '\n' ' ')
-  check K "Pages: niente «Traduci» sulla ruota" $(( ! ${#${(M)lst:#*Traduci*}} )) "$lst"
+  check K "Pages: «Traduci» sulla ruota (dalla 1.0.8 Pages si legge)" $(( ${#${(M)lst:#*Traduci*}} )) "$lst"
 fi
 
 # MARK: K2 — the language is read from the whole text, not from its first lines
@@ -1254,10 +1258,190 @@ if wants T; then
   big flate 268435472; check T "flusso cifrato compresso, 256 MB + 16 byte: rifiuto con messaggio" $(( $(print -r -- $r | grep -c 'flusso cifrato troppo grande') && ${r%% *} < 400 )) "${r[1,60]}"
 fi
 
+if wants U; then
+  print "\n== U · Audit 1.0.11: Keynote, Numbers e Pages ostili, file troncati, metadati e Terminale"
+  mkdir -p $W/u && cd $W/u
+  um() {   # um SECONDS ARGS: sets PEAK (MB), SECS, MRC and LAST, under the 6 GB watchdog
+    local t=$1; shift
+    local r=$(python3 -I $LIB/ram.py --limit-mb 6000 --timeout $t -- $M "$@" 2>&1)
+    PEAK=${r%% *}; r=${r#* }; SECS=${r%% *}; r=${r#* }; MRC=${r%% *}; r=${r#* }; LAST=${r#* }
+  }
+  ulow() { python3 -I -c "import sys; sys.exit(0 if float('$1') < $2 else 1)" }
+  unew() { local o=(*.(pdf|txt|csv)(N)); print ${#o}; rm -f -- $o }
+  uact() { case $1 in *.pages) print TXT;; *.key) print PDF;; *) print CSV;; esac }
+  # A base Keynote file for the caps of a whole file: written by Rondelle from a PPTX (needs Keynote installed).
+  base=()
+  python3 -I -c "
+import zipfile
+z = zipfile.ZipFile('base.pptx', 'w')
+z.writestr('[Content_Types].xml', '<?xml version=\"1.0\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>')
+z.writestr('ppt/presentation.xml', '<p:presentation xmlns:p=\"p\" xmlns:r=\"r\"><p:sldIdLst><p:sldId id=\"256\" r:id=\"rId1\"/></p:sldIdLst><p:sldSz cx=\"9144000\" cy=\"6858000\"/></p:presentation>')
+z.writestr('ppt/_rels/presentation.xml.rels', '<Relationships><Relationship Id=\"rId1\" Type=\"x/slide\" Target=\"slides/slide1.xml\"/></Relationships>')
+z.writestr('ppt/slides/slide1.xml', '<p:sld xmlns:p=\"p\" xmlns:a=\"a\"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:rPr sz=\"4400\"/><a:t>Titolo di prova U</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>')
+z.close()"
+  $M --run Keynote base.pptx >/dev/null 2>&1 && [[ -f base.key ]] && base=(base.key)
+  python3 -I $LIB/mkiwork.py $W/u/f $base >/dev/null || print "U    FAIL generatore"
+  cd $W/u/f
+
+  # U1 (A1–A3): bombs, a lying header, tiny blocks, cut blocks, fields and archives without end: refused in < 2 s, < 500 MB, no file
+  for f in bomb.key bomb.numbers bomb16.key bomb86.pages liar.key liar.pages tiny.key tiny.pages trunc.key trunc.pages campi.key campi.pages archivi.pages; do
+    um 60 --run $(uact $f) $f; left=$(unew)
+    check U "$f: rifiuto in < 2 s, < 500 MB, nessun file" $(( MRC == 1 && PEAK < 500 && left == 0 && $(ulow $SECS 2 && echo 1 || echo 0) )) "$PEAK MB, $SECS s, ${LAST[1,60]}"
+  done
+  # Length and count fields at their extremes (2^31, 2^32, 2^63, 2^64 − 1) and PPTX arcs with a huge or NaN angle: no crash
+  python3 -I $LIB/mkvarint.py $W/u/v >/dev/null
+  for f in $W/u/v/*(N); do
+    a=$(uact ${f:t}); [[ $f == *.pptx ]] && a=PDF
+    um 60 --run $a $f; rm -f $W/u/v/*.(pdf|txt|csv)(N)
+    check U "${f:t}: nessun arresto, < 500 MB, < 2 s" $(( (MRC == 0 || MRC == 1) && PEAK < 500 && $(ulow $SECS 2 && echo 1 || echo 0) )) "$PEAK MB, $SECS s, rc $MRC, ${LAST[1,40]}"
+  done
+  um 60 --run TXT deep.pages; left=$(unew)
+  check U "deep.pages (15 000 stili in catena): letto, < 500 MB, < 2 s" $(( MRC == 0 && left == 1 && PEAK < 500 && $(ulow $SECS 2 && echo 1 || echo 0) )) "$PEAK MB, $SECS s"
+  # U2: exactly at each cap passes, one past it is refused with a message and no file
+  for c in iwa chunk campi archivi info; do
+    um 60 --run TXT cap-$c.pages; left=$(unew)
+    check U "cap-$c.pages al tetto: letto" $(( MRC == 0 && left == 1 && PEAK < 500 )) "$PEAK MB, $SECS s, ${LAST[1,50]}"
+    um 60 --run TXT cap-$c+1.pages; left=$(unew)
+    check U "cap-$c+1.pages, uno oltre: rifiuto, nessun file" $(( MRC == 1 && left == 0 && PEAK < 500 )) "$PEAK MB, ${LAST[1,60]}"
+  done
+  um 60 --run PDF cap-tot.key; unew >/dev/null
+  check U "cap-tot.key, 64 MB decompressi: non rifiutato per la dimensione" $(( PEAK < 500 && ! $(print -r -- $LAST | grep -c 'supera') )) "$PEAK MB, ${LAST[1,60]}"
+  um 60 --run PDF cap-tot+1.key; left=$(unew)
+  check U "cap-tot+1.key, 64 MB + 1: «supera 64 MB», nessun file" $(( MRC == 1 && left == 0 && $(print -r -- $LAST | grep -c 'supera 64 MB') )) "$PEAK MB, ${LAST[1,60]}"
+  if (( $#base )); then
+    for c in tot chunktot archivi; do
+      um 60 --run PDF cap-$c-k1.key; left=$(unew)
+      check U "Keynote vero + riempimento, cap-$c al tetto: PDF scritto" $(( MRC == 0 && left == 1 && PEAK < 500 )) "$PEAK MB, $SECS s"
+      um 60 --run PDF cap-$c-k1+1.key; left=$(unew)
+      check U "Keynote vero + riempimento, cap-$c uno oltre: rifiuto" $(( MRC == 1 && left == 0 && PEAK < 500 )) "$PEAK MB, ${LAST[1,60]}"
+    done
+  else
+    print "U    --   Keynote non installato: tetti del file intero su un Keynote vero non provati"
+  fi
+  # U3: «Annulla» heard while reading: style tables of 99 000 entries over 1 000 000 paragraphs, and a whole file at its cap
+  um 60 --test-cancel 1 TXT quad.pages; unew >/dev/null
+  check U "quad.pages: «Annulla» a 1 s ferma il lavoro in < 1 s" $(( $([[ $LAST == annullata* ]] && ulow $SECS 2 && echo 1 || echo 0) )) "$SECS s, ${LAST[1,50]}"
+  # U4: the line under the wheel and the wheel itself don't read the archives
+  for f in bomb16.key bomb.numbers bomb86.pages; do
+    um 30 --file-card $f; check U "$f: riga sotto la ruota < 100 MB" $(( PEAK < 100 && MRC == 0 )) "$PEAK MB"
+    um 30 --list $f; check U "$f: voci della ruota < 100 MB" $(( PEAK < 100 && MRC == 0 )) "$PEAK MB"
+  done
+
+  # U5: a file cut in half, for each format: refused with a message (not «aggiorna Rondelle»), no crash, no file
+  cd $W/u
+  python3 -I -c "
+import zipfile
+def z(name, files):
+    a = zipfile.ZipFile(name, 'w', zipfile.ZIP_DEFLATED)
+    for n, d in files.items(): a.writestr(n, d)
+    a.close()
+import os
+z('t.pptx', {'[Content_Types].xml': '<Types/>', 'ppt/presentation.xml': '<p:presentation xmlns:p=\"p\" xmlns:r=\"r\"><p:sldIdLst><p:sldId id=\"256\" r:id=\"rId1\"/></p:sldIdLst><p:sldSz cx=\"9144000\" cy=\"6858000\"/></p:presentation>', 'ppt/_rels/presentation.xml.rels': '<Relationships><Relationship Id=\"rId1\" Type=\"x/slide\" Target=\"slides/slide1.xml\"/></Relationships>', 'ppt/slides/slide1.xml': '<p:sld xmlns:p=\"p\" xmlns:a=\"a\"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>' + 'x' * 200000 + '</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>', 'ppt/media/r.bin': os.urandom(200000)})"
+  for f in f/cap-campi.pages; do (cd $f && zip -q -r ../../t.pages .); done
+  [[ -f base.key ]] && cp base.key t.key || cp f/cap-chunktot.key t.key
+  mkdir -p src; print 'a,b\n1,2' > src/t.csv; $M --run Numbers src/t.csv >/dev/null 2>&1
+  [[ -f src/t.numbers ]] && cp src/t.numbers t.numbers || cp f/tiny.key t.numbers
+  for f in t.key t.numbers t.pages t.pptx; do
+    python3 -I -c "import sys; d = open(sys.argv[1], 'rb').read(); open(sys.argv[2], 'wb').write(d[:len(d) // 2])" $f half-$f
+    a=$(uact $f); [[ $f == *.pptx ]] && a=PDF
+    um 60 --run $a half-$f; left=$(unew)
+    check U "half-$f (troncato a metà): rifiuto con messaggio, nessun file" $(( MRC == 1 && left == 0 && PEAK < 500 && ! $(print -r -- $LAST | grep -c 'aggiorna Rondelle') )) "$PEAK MB, ${LAST[1,60]}"
+  done
+
+  # U6: «Metadati → Leggi» shows what others wrote cleaned as a password hint: no right-to-left override, line break,
+  # private or unassigned character; a long value is cut, a part of 10 MB is not read
+  python3 -I -c "
+import zipfile
+core = '<cp:coreProperties xmlns:cp=\"cp\" xmlns:dc=\"dc\"><dc:creator>Mario‮oiraM\nRiga2 Riga3 \U000e0041\u0085​fine</dc:creator><dc:description>' + 'd' * 900_000 + '</dc:description></cp:coreProperties>'
+app = '<Properties><Company>' + 'c' * 10_000_000 + '</Company></Properties>'
+z = zipfile.ZipFile('meta.docx', 'w', zipfile.ZIP_DEFLATED)
+z.writestr('[Content_Types].xml', '<Types/>'); z.writestr('docProps/core.xml', core); z.writestr('docProps/app.xml', app)
+z.writestr('word/document.xml', '<w:document xmlns:w=\"w\"/>'); z.close()"
+  um 60 --test-metadata-rows meta.docx; peak=$PEAK
+  out=$($M --test-metadata-rows meta.docx 2>&1)
+  ok=$(print -r -- $out | python3 -I -c "
+import sys, json, unicodedata
+rows = []
+for line in sys.stdin:
+    try: rows.append(json.loads(line))
+    except Exception: pass
+bad = [c for k, v in rows for c in k + v if unicodedata.category(c) in ('Cc', 'Cf', 'Zl', 'Zp', 'Cs', 'Co', 'Cn')]
+long = max((len(v) for k, v in rows), default=0)
+author = [v for k, v in rows if k.endswith('creator')]
+print(1 if rows and not bad and long <= 301 and author and author[0].startswith('Mario') else 0)")
+  check U "Leggi metadati: autore con RLO e a capo pulito come un suggerimento, valori tagliati" $(( ok )) "${(f)out[(r)*creator*][1,80]}"
+  check U "Leggi metadati: parte di 10 MB non letta, < 500 MB" $(( peak < 500 && ! $(print -r -- $out | grep -c 'ccccc') )) "$peak MB"
+
+  # U7: «Condividi → Terminale» refuses a name with control or invisible characters (an escape sequence pasted into the
+  # Terminal can end the paste and type a command); a name with spaces and apostrophes is quoted
+  mkdir -p term; for tn in $'a\e[201~b' $'a\nb' $'a\rb' $'a‮b' $'a b'; do : > "term/$tn"; done
+  for tn in $'a\e[201~b' $'a\nb' $'a\rb' $'a‮b' $'a b'; do
+    out=$($M --test-terminal-text "term/$tn" 2>&1)
+    check U "Terminale, nome con ${(q+)tn}: rifiutato" $(( $([[ $out == rifiutato ]] && echo 1 || echo 0) )) "${(q+)out[1,40]}"
+  done
+  : > "term/l'altro file.txt"; out=$($M --test-terminal-text "term/l'altro file.txt" 2>&1)
+  check U "Terminale, nome con spazio e apostrofo: tra apici" $(( $([[ $out == *"/l'\\''altro file.txt'" ]] && echo 1 || echo 0) )) "${out[-30,-1]}"
+fi
+
+# MARK: V — after the audit 1.0.11.1: writers
+if wants V; then
+  print "\n== V · Audit 1.0.11.2: immagini dei PPTX, tetto dello scrittore Numbers, integrità dopo «Rimuovi metadati»"
+  mkdir -p $W/v && cd $W/v
+  vm() {   # vm SECONDS ARGS: sets PEAK (MB), SECS, MRC and LAST, under the 6 GB watchdog
+    local t=$1; shift
+    local r=$(python3 -I $LIB/ram.py --limit-mb 6000 --timeout $t -- $M "$@" 2>&1)
+    PEAK=${r%% *}; r=${r#* }; SECS=${r%% *}; r=${r#* }; MRC=${r%% *}; r=${r#* }; LAST=${r#* }
+  }
+  vlow() { python3 -I -c "import sys; sys.exit(0 if float('$1') < $2 else 1)" && echo 1 || echo 0 }
+  cap=$(python3 -I $LIB/mkwriters.py $W/v)
+  # V1 (W1): the same picture of 38 MB on 300 slides is read once and shared: < 500 MB, the picture once in the file
+  if [[ -d /Applications/Keynote.app || -d "/Applications/Keynote Creator Studio.app" ]]; then
+    vm 120 --run Keynote w1-38.pptx; sz=$(( $(stat -f %z w1-38.key 2>/dev/null || echo 0) / 1000000 ))
+    check V "PPTX 300 diap., stessa foto 38 MB → Keynote: < 500 MB, foto una volta" $(( MRC == 0 && PEAK < 500 && sz > 30 && sz < 80 )) "$PEAK MB, $SECS s, uscita $sz MB"
+    # V2 (W2): a picture past 40 MB is left out before it is read: < 5 s, «Annulla» < 1 s
+    vm 120 --run Keynote w2-47.pptx
+    check V "PPTX 300 diap., foto 47 MB → Keynote: foto scartata, < 5 s" $(( MRC == 0 && $(vlow $SECS 5) )) "$PEAK MB, $SECS s"
+    rm -f w2-47.key; out=$($M --test-cancel 1 Keynote $W/v/w2-47.pptx 2>&1); t=${${out#* dopo }%% s*}; t=${t/,/.}
+    check V "PPTX 300 diap., foto 47 MB: «Annulla» < 1 s" $(vlow $t 2) "${out[1,60]}"
+    rm -f w1-38.key w2-47.key
+  fi
+  # V3 (W3): NumbersWriter refuses what NumbersReader would refuse; at the cap it writes, reads back the same, < 600 MB
+  if [[ -d /Applications/Numbers.app || -d "/Applications/Numbers Creator Studio.app" ]]; then
+    vm 120 --run Numbers n-cap.csv; mkdir -p back && mv n-cap.numbers back/ 2>/dev/null
+    $M --run CSV $W/v/back/n-cap.numbers >/dev/null 2>&1
+    same=$(python3 -I -c "
+import csv, sys
+a = [r for r in csv.reader(open('n-cap.csv', encoding='utf-8-sig'))]; b = [r for r in csv.reader(open('back/n-cap.csv', encoding='utf-8-sig'))]
+print(1 if a == b else 0)" 2>/dev/null)
+    check V "CSV al tetto ($cap righe) → Numbers: scritto, < 600 MB, riletto uguale" $(( MRC == 0 && PEAK < 600 && same == 1 )) "$PEAK MB, $SECS s, uguale=$same"
+    for f in n-over.csv n-65536.csv n-50.xlsx; do
+      vm 120 --run Numbers $f; left=(*.numbers(N))
+      check V "$f → Numbers: rifiutato con messaggio, < 600 MB, nessun file" $(( MRC == 1 && PEAK < 600 && ${#left} == 0 && ${#LAST} > 0 )) "$PEAK MB, $SECS s, ${LAST[1,60]}"
+      rm -f -- $left
+    done
+  fi
+  # V4 (B1): after «Rimuovi metadati» the package is whole (relationships to parts that exist, a type for every part,
+  # no Override left alone), customXml is gone, the bound field keeps its text, and Rondelle reads it back
+  python3 -I $LIB/mkoffice.py $W/v/off
+  for f in off.docx off.xlsx off.pptx; do
+    act $W/v/off $f -- --run --tools Metadati $f
+    o=${OUTS[(r)*senza metadati*]}
+    chk=$([[ -f $o ]] && python3 -I $LIB/opcchk.py $o 2>&1 | head -3 | tr '\n' ' ')
+    canary=$([[ -f $o ]] && unzip -p $o 2>/dev/null | grep -ac 'OFF-CREATOR\|OFF-CUSTOMXML\|OFF-AUTHOR\|OFF-COMPANY\|OFF-CUSTOM')
+    check V "$f · Metadati: pacchetto integro, customXml tolto, nessun canarino" $(( RC == 0 && $([[ $chk == ok* ]] && echo 1 || echo 0) && canary == 0 )) "${chk[1,80]} canarini=$canary"
+    case $f in *.docx) a=PDF;; *.xlsx) a=CSV;; *) a=PDF;; esac
+    mkdir -p $W/v/re && rm -rf $W/v/re/*(N) && cp $o $W/v/re/x.${f:e}
+    $M --run $a $W/v/re/x.${f:e} >/dev/null 2>&1; got=$(ls $W/v/re | wc -l | tr -d ' ')
+    extra=1; [[ $f == *.docx ]] && extra=$(unzip -p $o word/document.xml | grep -c 'Campo collegato OFF')
+    [[ $f == *.xlsx ]] && { $M --run PDF $W/v/re/x.xlsx >/dev/null 2>&1; got=$(( got + $(ls $W/v/re/*.pdf(N) | wc -l) - 1 )); }
+    check V "$f · Metadati: riletto da Rondelle ($a), testo del campo collegato" $(( got == 2 && extra >= 1 )) "file $got, campo $extra"
+  done
+fi
+
 # MARK: summary
 
 print "\n== Riepilogo"
-for s in A B C D E F G H I J K L M N O P Q R S T; do
+for s in A B C D E F G H I J K L M N O P Q R S T U V; do
   local p=$(awk -F'\t' -v s=$s '$1==s && $2=="PASS"' $RES | wc -l | tr -d ' ') f=$(awk -F'\t' -v s=$s '$1==s && $2=="FAIL"' $RES | wc -l | tr -d ' ')
   (( p + f )) && printf "%s  %4d PASS  %3d FAIL\n" $s $p $f
 done

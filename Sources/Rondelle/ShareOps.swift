@@ -174,10 +174,22 @@ enum ShareOps {
         return found
     }
 
+    /// The paths quoted for the shell, one after the other, or nil if a path holds a control or invisible character: an
+    /// escape sequence or a line break in a name, pasted into the Terminal, could end the paste and type a command.
+    nonisolated static func terminalText(_ urls: [URL]) -> String? {
+        guard !urls.contains(where: { $0.path.unicodeScalars.contains { !PasswordHint.isShown($0) && $0 != " " } }) else { return nil }
+        return urls.map { "'" + $0.path.replacingOccurrences(of: "'", with: "'\\''") + "'" }.joined(separator: " ")
+    }
+
     /// A Terminal window in the files' folder, with their paths (quoted for the shell) on the clipboard.
     private static func openTerminal(_ urls: [URL]) {
         guard let first = urls.first,
               let terminal = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else { return }
+        guard let text = terminalText(urls) else {
+            Notice.show(title: L("Terminale non aperto"),
+                        text: L("Il nome di un file contiene caratteri di controllo o invisibili: incollato nel Terminale potrebbe eseguire un comando. Rinominalo e riprova."))
+            return
+        }
         let folder = FileKind(first) == .folder ? first : first.deletingLastPathComponent()
         let findings = autoRunFindings(in: folder)
         if !findings.isEmpty {
@@ -187,8 +199,7 @@ enum ShareOps {
         }
         let board = NSPasteboard.general
         board.clearContents()
-        board.setString(urls.map { "'" + $0.path.replacingOccurrences(of: "'", with: "'\\''") + "'" }.joined(separator: " "),
-                        forType: .string)
+        board.setString(text, forType: .string)
         NSWorkspace.shared.open([folder], withApplicationAt: terminal, configuration: NSWorkspace.OpenConfiguration())
     }
 

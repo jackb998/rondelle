@@ -54,9 +54,10 @@ enum MetadataReader {
         return Section(name: url.lastPathComponent, symbol: symbol, rows: rows.map { (clean($0.0, limit: 80), clean($0.1, limit: maxValue)) })
     }
 
-    /// One line, no control characters, at most `limit` characters.
+    /// One line, at most `limit` characters, cleaned as a password hint is (`PasswordHint.isShown`): a character that
+    /// can't be shown becomes a space, so that words stay apart.
     static func clean(_ text: String, limit: Int) -> String {
-        let line = String(text.unicodeScalars.map { CharacterSet.controlCharacters.contains($0) ? " " : Character($0) })
+        let line = String(text.unicodeScalars.map { PasswordHint.isShown($0) ? Character($0) : " " })
             .trimmingCharacters(in: .whitespaces)
         return line.count > limit ? String(line.prefix(limit)) + "…" : line
     }
