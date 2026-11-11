@@ -188,3 +188,29 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:17px}ul.rules li{margin-bo
 .rail figure.wide{flex-basis:min(860px,90vw);padding:12px}.rail figure.wide img{border-radius:10px;border:1px solid var(--line)}
 .note{font-size:14px;max-width:760px;margin:24px auto 0}
 @media (max-width:760px){.cust3{grid-template-columns:1fr}}
+/* contact form (Help page) */
+.contact{max-width:620px}.contact form{display:flex;flex-direction:column;gap:12px}
+.contact textarea,.contact input[type=email]{font:inherit;width:100%;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.contact textarea{resize:vertical;min-height:120px}.contact textarea:focus,.contact input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.kinds{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.kinds label{cursor:pointer}.kinds input{position:absolute;opacity:0;pointer-events:none}
+.kinds span{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:7px 16px;font-size:14px}
+.kinds input:checked+span{background:var(--fg);border-color:var(--fg);color:var(--bg)}.kinds input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.contact .btn{align-self:center;border:0;font:inherit;font-weight:600;cursor:pointer;margin-top:6px}.contact .btn:disabled{opacity:.6;cursor:default}
+.contact .note{color:var(--mut);font-size:13px;text-align:center}
+.status{text-align:center;font-size:14px;min-height:20px;color:var(--fg)}.status[data-s=err]{color:#c0392b}
+:root.dark .status[data-s=err]{color:#ff8a7a}
+@media (prefers-color-scheme:dark){:root:not(.light) .status[data-s=err]{color:#ff8a7a}}
+.contact h2{text-align:center}.contact>.lead{text-align:center;margin-left:auto;margin-right:auto}
+/* interactive wheel: centred, closer to the app (glass disc, soft pieces, accent dot) */
+.play{grid-template-columns:1fr;gap:22px;justify-items:center;text-align:center}
+.pick{flex-direction:row;flex-wrap:wrap;justify-content:center}.pick h4{width:100%;text-align:center}
+.pick button{padding:8px 16px;border-radius:99px;font-size:14px}.pick button:hover:not(.on){transform:translateY(-1px)}
+.arena{width:100%}
+.stage2{width:min(620px,100%);border:0;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--acc) 16%,transparent),transparent 62%),var(--card)}
+.wheel .disc{fill:color-mix(in srgb,var(--bg) 94%,transparent);stroke:var(--line);stroke-width:1.2;filter:drop-shadow(0 14px 28px rgba(0,0,0,.28))}
+.wheel path{fill:color-mix(in srgb,var(--fg) 6%,transparent);stroke:var(--line);stroke-width:.8}
+.wheel .s:not(.on) text{fill:var(--fg)}
+.wheel .s.on path{fill:var(--acc);stroke:color-mix(in srgb,var(--acc) 70%,#fff)}
+.wheel .hub{fill:color-mix(in srgb,var(--fg) 5%,var(--bg));stroke:var(--line);stroke-width:1}
+.wheel .hubt{font-size:13px}

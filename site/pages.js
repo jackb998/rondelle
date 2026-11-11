@@ -73,7 +73,7 @@ en:{
  st_np:[
   "In Italian, <i>rondelle</i> is the plural of <i>rondella</i>: the small component used in manual work. A washer is a small disc with a hole that sits between the head of a screw (or a nut) and the surface being tightened.",
   "The idea fits the app. Rondelle sits between the person and the final result, and it is the part that lets you finish the job and be sure it holds. The word also echoes French, where <i>rondelle</i> means exactly the same thing, in the singular."],
- st_c:"Closing", st_cp:"If you like the project, you can chip in with <a href=\"https://buymeacoffee.com/jackb998\" target=\"_blank\" rel=\"noopener noreferrer\">a coffee</a>. The Buy Me a Coffee button in the bottom right corner works too.", st_cb:"Buy me a coffee"
+ st_c:"Closing", st_cp:"If you like the project, you can chip in with <a href=\"support-us.html\">a coffee</a>. The Support us page says how.", st_cb:"Buy me a coffee"
 },
 it:{
  ga_h:"L’app da vicino", ga_l:"Scorri di lato per vedere le ruote. La ruota cambia con il file che trascini. Le schermate delle Impostazioni sono in inglese.", gs:["Impostazioni · Aspetto", "Impostazioni · Comportamento", "Impostazioni · Ruota", "Impostazioni · Conversioni"], gsa:["Le Impostazioni di Rondelle, sezione Aspetto", "Le Impostazioni di Rondelle, sezione Comportamento", "Le Impostazioni di Rondelle, sezione Ruota", "Le Impostazioni di Rondelle, sezione Conversioni"], gc:["Converti · una foto", "Strumenti · la stessa foto", "Condividi · la stessa foto"], gal:["La ruota Converti di Rondelle per una foto", "La ruota Strumenti di Rondelle per la stessa foto", "La ruota Condividi di Rondelle per la stessa foto"], disc:"Scopri l’app", disc_l:"Le ruote, le Impostazioni e come rendere l’app tua.",
@@ -148,7 +148,7 @@ it:{
  st_np:[
   "In italiano <i>rondelle</i> è il plurale di <i>rondella</i>: il piccolo componente che si usa nei lavori manuali. Una rondella è un piccolo disco forato che si inserisce tra la testa di una vite (o un dado) e la superficie da serrare.",
   "L’idea si adatta all’app. Rondelle sta in mezzo tra la persona e il risultato finale, ed è la parte che permette di concludere il lavoro e di essere sicuri che regga. La parola richiama anche il francese, dove <i>rondelle</i> significa esattamente la stessa cosa, al singolare."],
- st_c:"Per chiudere", st_cp:"Se il progetto ti piace, puoi contribuire con <a href=\"https://buymeacoffee.com/jackb998\" target=\"_blank\" rel=\"noopener noreferrer\">un caffè</a>. Va bene anche il pulsante Buy Me a Coffee in basso a destra.", st_cb:"Offrimi un caffè"
+ st_c:"Per chiudere", st_cp:"Se il progetto ti piace, puoi contribuire con <a href=\"support-us.html\">un caffè</a>. La pagina Sostienici spiega come.", st_cb:"Offrimi un caffè"
 },
 fr:{
  ga_h:"L’app de près", ga_l:"Faites défiler sur le côté pour voir les roues. La roue change selon le fichier que vous faites glisser. Les captures des Réglages sont en anglais.", gs:["Réglages · Apparence", "Réglages · Comportement", "Réglages · Roue", "Réglages · Conversions"], gsa:["Les Réglages de Rondelle, section Apparence", "Les Réglages de Rondelle, section Comportement", "Les Réglages de Rondelle, section Roue", "Les Réglages de Rondelle, section Conversions"], gc:["Convertir · une photo", "Outils · la même photo", "Partager · la même photo"], gal:["La roue Convertir de Rondelle pour une photo", "La roue Outils de Rondelle pour la même photo", "La roue Partager de Rondelle pour la même photo"], disc:"Découvrir l’app", disc_l:"Les roues, les Réglages et comment faire l’app vôtre.",
@@ -223,7 +223,7 @@ fr:{
  st_np:[
   "En italien, <i>rondelle</i> est le pluriel de <i>rondella</i> : le petit composant utilisé dans les travaux manuels. Une rondelle est un petit disque percé qui se glisse entre la tête d’une vis (ou un écrou) et la surface à serrer.",
   "L’idée convient à l’app. Rondelle se place entre la personne et le résultat final, et c’est la pièce qui permet de terminer le travail et d’être sûr qu’il tienne. Le mot rappelle aussi le français, où <i>rondelle</i> signifie exactement la même chose, au singulier."],
- st_c:"Pour finir", st_cp:"Si le projet vous plaît, vous pouvez contribuer avec <a href=\"https://buymeacoffee.com/jackb998\" target=\"_blank\" rel=\"noopener noreferrer\">un café</a>. Le bouton Buy Me a Coffee en bas à droite convient aussi.", st_cb:"Offrez-moi un café"
+ st_c:"Pour finir", st_cp:"Si le projet vous plaît, vous pouvez contribuer avec <a href=\"support-us.html\">un café</a>. La page Nous soutenir explique comment.", st_cb:"Offrez-moi un café"
 }};
 function guideHTML() {
   const g = G[lang], e = G.en, x = k => g[k] ?? e[k];
