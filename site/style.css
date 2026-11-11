@@ -214,3 +214,6 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:17px}ul.rules li{margin-bo
 .wheel .s.on path{fill:var(--acc);stroke:color-mix(in srgb,var(--acc) 70%,#fff)}
 .wheel .hub{fill:color-mix(in srgb,var(--fg) 5%,var(--bg));stroke:var(--line);stroke-width:1}
 .wheel .hubt{font-size:13px}
+/* wheel demo: no box behind the wheel */
+.stage2{background:none;border:0;border-radius:0;overflow:visible}
+.wheel .disc{filter:none}
