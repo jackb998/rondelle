@@ -26,24 +26,22 @@ en: {
  t_vid:"Trim · 1080p · 720p · target file size · HEVC · 2× / 0.5× speed · join · snapshot · mute · audio only · strip metadata · subtitles from speech (macOS 26+)",
  t_aud:"Trim · normalize · mono · compress · strip metadata · subtitles from speech (macOS 26+) · ZIP",
  t_doc:"Translate into Italian, English and French (macOS 15+) · ZIP",
- t_xls:"ZIP",
- t_pres:"Read or strip metadata · ZIP",
+ t_xls:"ZIP", t_pres:"Read or strip metadata · ZIP",
  t_sub:"Translate into Italian, English and French (macOS 15+) · ZIP",
  t_arc:"Extract · unlock and extract password-protected ZIPs · protected ZIP",
  x_ext:"Extract",
  also:"Translation uses Apple's service, which according to Apple works on the device.",
-  in_h:"Install it in a minute", in_l:"Rondelle is free and isn't notarized by Apple, so macOS 15 and later block the first opening. The disk image has a quick fix: no trip to System Settings.",
-  s1h:"1 · Download", s1:"Open the .dmg and drag Rondelle onto Applications.",
-  s2h:"2 · Open Terminal", s2:"Double-click Open Terminal in the same window. It is only a shortcut to the Terminal app that comes with your Mac.",
-  s3h:"3 · Allow Opening", s3:"Drag Allow Opening from the window into Terminal and press Return. Rondelle opens.",
- s4h:"4 · Use", s4:"The ring appears in the menu bar and the tutorial starts.",
-  in_n:"What Allow Opening does: it removes the download mark macOS puts on Rondelle, only on Rondelle, then opens it. It needs no password and sends nothing anywhere. It is a plain text file: you can read it first. Prefer not to use Terminal? System Settings → Privacy & Security → Open Anyway (on macOS 13 and 14: right-click the app → Open). Updating? Quit Rondelle and drag the new one onto Applications.",
+ in_h:"Install it in a minute", in_l:"Rondelle is free and isn't notarized by Apple, so macOS 15 and later block the first opening. The disk image has a quick fix: no trip to System Settings.",
+ s1h:"1 · Download", s1:"Open the .dmg and drag Rondelle onto Applications.",
+ s2h:"2 · Open Terminal", s2:"Double-click Open Terminal in the same window. It is only a shortcut to the Terminal app that comes with your Mac.",
+ s3h:"3 · Allow Opening", s3:"Drag Allow Opening from the window into Terminal and press Return. Rondelle opens.",
+ s4h:"4 · Use", s4:"The ring appears in the menu bar and the tutorial starts.", in_n:"What Allow Opening does: it removes the download mark macOS puts on Rondelle, only on Rondelle, then opens it. It needs no password and sends nothing anywhere. It is a plain text file: you can read it first. Prefer not to use Terminal? System Settings → Privacy & Security → Open Anyway (on macOS 13 and 14: right-click the app → Open). Updating? Quit Rondelle and drag the new one onto Applications.",
  cta_h:"Every file has a way out.", cta_small:"Version and date from the latest release",
- cta_links:"<a href='https://github.com/jackb998/rondelle/releases/latest' target='_blank' rel='noopener noreferrer'>Release notes</a> · <a href='https://github.com/jackb998/rondelle/releases/latest' target='_blank' rel='noopener noreferrer'>SHA-256</a> · <a href='https://github.com/jackb998/rondelle/releases' target='_blank' rel='noopener noreferrer'>Previous versions</a> · <a href='https://github.com/jackb998/rondelle' target='_blank' rel='noopener noreferrer'>Code on GitHub</a>",
+ cta_links:"<a href=\"https://github.com/jackb998/rondelle/releases/latest\" rel=\"noopener\">Release notes</a> · <a href=\"https://github.com/jackb998/rondelle/releases/latest\" rel=\"noopener\">SHA-256</a> · <a href=\"https://github.com/jackb998/rondelle/releases\" rel=\"noopener\">Previous versions</a> · <a href=\"https://github.com/jackb998/rondelle\" rel=\"noopener\">Code on GitHub</a>",
  f1h:"Rondelle", f1:"A free menu bar app for macOS. Open source under the MIT licence.",
  f2h:"Privacy", f2:"Conversions stay on your Mac: no file is uploaded. The app uses the network only to check for updates (once a day, can be turned off) and for the contact form, when you press Send. Translation uses Apple's service, which according to Apple works on the device.",
- f2l:"<a href='https://github.com/jackb998/rondelle#privacy-and-security' target='_blank' rel='noopener noreferrer'>Full policy</a> · <a href='https://github.com/jackb998/rondelle/blob/main/SECURITY.md' target='_blank' rel='noopener noreferrer'>Security</a>",
- f3h:"Contact", f3:"Use the <a href='#contact'>form</a> or <a href='https://github.com/jackb998/rondelle/issues' target='_blank' rel='noopener noreferrer'>open an issue on GitHub</a>.", f3l:"<a href='https://buymeacoffee.com/jackb998' target='_blank' rel='noopener noreferrer'>Support Rondelle · Buy me a coffee</a>",
+ f2l:"<a href=\"https://github.com/jackb998/rondelle#privacy-and-security\" rel=\"noopener\">Full policy</a> · <a href=\"https://github.com/jackb998/rondelle/security/policy\" rel=\"noopener\">Security</a>",
+ f3h:"Contact", f3:"Write from the form in Settings or open an issue on GitHub.", f3l:"Support Rondelle · Buy me a coffee",
  foot:"Rondelle · MIT licence",
  /* press */
  p_h:"Press kit", p_l:"Text, symbol and colours to talk about Rondelle.",
@@ -68,7 +66,10 @@ en: {
  p_u1:"Don't rotate it: the opening and the dot always stay top right.",
  p_u2:"The dot is green, or the same colour as the ring in the monochrome version.",
  p_u3:"No slices, shadows, outlines or circles around it. Free space around it at least the size of the dot.",
- p_f2:"Conversions stay on your Mac: no file is uploaded.", p_f3:"Use the <a href='index.html#contact'>contact form</a> or <a href='https://github.com/jackb998/rondelle/issues' target='_blank' rel='noopener noreferrer'>open an issue on GitHub</a>."
+ p_f2:"Conversions stay on your Mac: no file is uploaded.", p_f3:"Form in Settings or an issue on GitHub.",
+n_guide:"App guide",
+title_guide:"Rondelle · App guide",
+
 },
 it: {
  title_press:"Rondelle · Press kit",
@@ -96,24 +97,22 @@ it: {
  t_vid:"Taglia · 1080p · 720p · peso target · HEVC · velocità 2× / 0,5× · unisci · fotogramma · muto · solo audio · togli metadati · sottotitoli dalla voce (macOS 26+)",
  t_aud:"Taglia · normalizza · mono · comprimi · togli metadati · sottotitoli dalla voce (macOS 26+) · ZIP",
  t_doc:"Traduci in italiano, inglese e francese (macOS 15+) · ZIP",
- t_xls:"ZIP",
- t_pres:"Leggi o rimuovi i metadati · ZIP",
+ t_xls:"ZIP", t_pres:"Leggi o rimuovi i metadati · ZIP",
  t_sub:"Traduci in italiano, inglese e francese (macOS 15+) · ZIP",
  t_arc:"Estrai · sblocca ed estrai gli ZIP con password · ZIP protetto",
  x_ext:"Estrai",
  also:"La traduzione usa il servizio di Apple, che secondo Apple lavora sul dispositivo.",
-  in_h:"Installala in un minuto", in_l:"Rondelle è gratis e non è autenticata da Apple, quindi macOS 15 e successivi bloccano la prima apertura. L’immagine disco ha una soluzione rapida: niente Impostazioni di Sistema.",
-  s1h:"1 · Scarica", s1:"Apri il .dmg e trascina Rondelle su Applicazioni.",
-  s2h:"2 · Apri Terminale", s2:"Fai doppio clic su Open Terminal nella stessa finestra. È solo una scorciatoia al Terminale che c’è già nel tuo Mac.",
-  s3h:"3 · Consenti l’apertura", s3:"Trascina Allow Opening dalla finestra dentro il Terminale e premi Invio. Rondelle si apre.",
- s4h:"4 · Usa", s4:"L’anello compare nella barra dei menu e parte il tutorial.",
-  in_n:"Cosa fa Allow Opening: toglie a Rondelle, e solo a Rondelle, il segno di download che macOS applica ai file scaricati, poi la apre. Non chiede password e non invia nulla. È un semplice file di testo: puoi leggerlo prima. Non vuoi usare il Terminale? Impostazioni di Sistema → Privacy e sicurezza → Apri comunque (su macOS 13 e 14: clic destro sull’app → Apri). Aggiorni? Chiudi Rondelle e trascina la nuova su Applicazioni.",
+ in_h:"Installala in un minuto", in_l:"Rondelle è gratis e non è autenticata da Apple, quindi macOS 15 e successivi bloccano la prima apertura. L’immagine disco ha una soluzione rapida: niente Impostazioni di Sistema.",
+ s1h:"1 · Scarica", s1:"Apri il .dmg e trascina Rondelle su Applicazioni.",
+ s2h:"2 · Apri Terminale", s2:"Fai doppio clic su Open Terminal nella stessa finestra. È solo una scorciatoia al Terminale che c’è già nel tuo Mac.",
+ s3h:"3 · Consenti l’apertura", s3:"Trascina Allow Opening dalla finestra dentro il Terminale e premi Invio. Rondelle si apre.",
+ s4h:"4 · Usa", s4:"L’anello compare nella barra dei menu e parte il tutorial.", in_n:"Cosa fa Allow Opening: toglie a Rondelle, e solo a Rondelle, il segno di download che macOS applica ai file scaricati, poi la apre. Non chiede password e non invia nulla. È un semplice file di testo: puoi leggerlo prima. Non vuoi usare il Terminale? Impostazioni di Sistema → Privacy e sicurezza → Apri comunque (su macOS 13 e 14: clic destro sull’app → Apri). Aggiorni? Chiudi Rondelle e trascina la nuova su Applicazioni.",
  cta_h:"Ogni file ha la sua uscita.", cta_small:"Versione e data dall’ultima release",
- cta_links:"<a href='https://github.com/jackb998/rondelle/releases/latest' target='_blank' rel='noopener noreferrer'>Note di rilascio</a> · <a href='https://github.com/jackb998/rondelle/releases/latest' target='_blank' rel='noopener noreferrer'>SHA-256</a> · <a href='https://github.com/jackb998/rondelle/releases' target='_blank' rel='noopener noreferrer'>Versioni precedenti</a> · <a href='https://github.com/jackb998/rondelle' target='_blank' rel='noopener noreferrer'>Codice su GitHub</a>",
+ cta_links:"<a href=\"https://github.com/jackb998/rondelle/releases/latest\" rel=\"noopener\">Note di rilascio</a> · <a href=\"https://github.com/jackb998/rondelle/releases/latest\" rel=\"noopener\">SHA-256</a> · <a href=\"https://github.com/jackb998/rondelle/releases\" rel=\"noopener\">Versioni precedenti</a> · <a href=\"https://github.com/jackb998/rondelle\" rel=\"noopener\">Codice su GitHub</a>",
  f1:"Un’app gratuita per la barra dei menu di macOS. Codice aperto con licenza MIT.",
  f2:"Le conversioni restano sul tuo Mac: nessun file viene caricato. L’app usa la rete solo per controllare gli aggiornamenti (una volta al giorno, disattivabile) e per il modulo di contatto, quando premi Invia. La traduzione usa il servizio di Apple, che secondo Apple lavora sul dispositivo.",
- f2l:"<a href='https://github.com/jackb998/rondelle#privacy-and-security' target='_blank' rel='noopener noreferrer'>Informativa completa</a> · <a href='https://github.com/jackb998/rondelle/blob/main/SECURITY.md' target='_blank' rel='noopener noreferrer'>Sicurezza</a>",
- f3h:"Contatti", f3:"Usa il <a href='#contact'>modulo</a> o <a href='https://github.com/jackb998/rondelle/issues' target='_blank' rel='noopener noreferrer'>apri una segnalazione su GitHub</a>.", f3l:"<a href='https://buymeacoffee.com/jackb998' target='_blank' rel='noopener noreferrer'>Sostieni Rondelle · Buy me a coffee</a>",
+ f2l:"<a href=\"https://github.com/jackb998/rondelle#privacy-and-security\" rel=\"noopener\">Informativa completa</a> · <a href=\"https://github.com/jackb998/rondelle/security/policy\" rel=\"noopener\">Sicurezza</a>",
+ f3h:"Contatti", f3:"Scrivi dal modulo in Impostazioni o apri una segnalazione su GitHub.", f3l:"Sostieni Rondelle · Buy me a coffee",
  foot:"Rondelle · Licenza MIT",
  p_l:"Testi, simbolo e colori per parlare di Rondelle.",
  p_b1:"In una frase", p_b1t:"Rondelle è un convertitore e toolkit di file per macOS: trascini un file e scegli dove farlo uscire, da una ruota che disponi tu.",
@@ -137,7 +136,10 @@ it: {
  p_u1:"Non ruotarlo: l’apertura e il pallino stanno sempre in alto a destra.",
  p_u2:"Il pallino è verde, oppure dello stesso colore dell’anello nella versione monocroma.",
  p_u3:"Niente spicchi, ombre, contorni o cerchi intorno. Spazio libero tutt’intorno pari almeno al pallino.",
- p_f2:"Le conversioni restano sul tuo Mac: nessun file viene caricato.", p_f3:"Usa il <a href='index.html#contact'>modulo</a> o <a href='https://github.com/jackb998/rondelle/issues' target='_blank' rel='noopener noreferrer'>apri una segnalazione su GitHub</a>."
+ p_f2:"Le conversioni restano sul tuo Mac: nessun file viene caricato.", p_f3:"Modulo in Impostazioni o segnalazione su GitHub.",
+n_guide:"Guida all’app",
+title_guide:"Rondelle · Guida all’app",
+
 },
 fr: { /* TODO: to be reviewed by a native speaker; the site addresses the reader with «vous» */
  title_press:"Rondelle · Dossier de presse",
@@ -165,24 +167,22 @@ fr: { /* TODO: to be reviewed by a native speaker; the site addresses the reader
  t_vid:"Couper · 1080p · 720p · poids cible · HEVC · vitesse 2× / 0,5× · assembler · image fixe · muet · audio seul · retirer les métadonnées · sous-titres depuis la voix (macOS 26+)",
  t_aud:"Couper · normaliser · mono · compresser · retirer les métadonnées · sous-titres depuis la voix (macOS 26+) · ZIP",
  t_doc:"Traduire en italien, anglais et français (macOS 15+) · ZIP",
- t_xls:"ZIP",
- t_pres:"Lire ou supprimer les métadonnées · ZIP",
+ t_xls:"ZIP", t_pres:"Lire ou supprimer les métadonnées · ZIP",
  t_sub:"Traduire en italien, anglais et français (macOS 15+) · ZIP",
  t_arc:"Extraire · déverrouiller et extraire les ZIP protégés · ZIP protégé",
  x_ext:"Extraire",
  also:"La traduction utilise le service d’Apple, qui, selon Apple, fonctionne sur l’appareil.",
-  in_h:"Installez-la en une minute", in_l:"Rondelle est gratuite et n’est pas notariée par Apple : macOS 15 et suivants bloquent la première ouverture. L’image disque a une solution rapide, sans passer par les Réglages Système.",
-  s1h:"1 · Télécharger", s1:"Ouvrez le .dmg et faites glisser Rondelle sur Applications.",
-  s2h:"2 · Ouvrir Terminal", s2:"Double-cliquez sur Open Terminal dans la même fenêtre. C’est seulement un raccourci vers l’app Terminal déjà présente sur votre Mac.",
-  s3h:"3 · Autoriser l’ouverture", s3:"Faites glisser Allow Opening de la fenêtre dans Terminal et appuyez sur Retour. Rondelle s’ouvre.",
- s4h:"4 · Utiliser", s4:"L’anneau apparaît dans la barre des menus et le tutoriel démarre.",
-  in_n:"Ce que fait Allow Opening : il retire de Rondelle, et seulement d’elle, la marque de téléchargement que macOS pose sur les fichiers téléchargés, puis l’ouvre. Aucun mot de passe, rien n’est envoyé. C’est un simple fichier texte : vous pouvez le lire avant. Vous préférez éviter Terminal ? Réglages Système → Confidentialité et sécurité → Ouvrir quand même (sous macOS 13 et 14 : clic droit sur l’app → Ouvrir). Mise à jour ? Quittez Rondelle et faites glisser la nouvelle sur Applications.",
+ in_h:"Installez-la en une minute", in_l:"Rondelle est gratuite et n’est pas notariée par Apple : macOS 15 et suivants bloquent la première ouverture. L’image disque a une solution rapide, sans passer par les Réglages Système.",
+ s1h:"1 · Télécharger", s1:"Ouvrez le .dmg et faites glisser Rondelle sur Applications.",
+ s2h:"2 · Ouvrir Terminal", s2:"Double-cliquez sur Open Terminal dans la même fenêtre. C’est seulement un raccourci vers l’app Terminal déjà présente sur votre Mac.",
+ s3h:"3 · Autoriser l’ouverture", s3:"Faites glisser Allow Opening de la fenêtre dans Terminal et appuyez sur Retour. Rondelle s’ouvre.",
+ s4h:"4 · Utiliser", s4:"L’anneau apparaît dans la barre des menus et le tutoriel démarre.", in_n:"Ce que fait Allow Opening : il retire de Rondelle, et seulement d’elle, la marque de téléchargement que macOS pose sur les fichiers téléchargés, puis l’ouvre. Aucun mot de passe, rien n’est envoyé. C’est un simple fichier texte : vous pouvez le lire avant. Vous préférez éviter Terminal ? Réglages Système → Confidentialité et sécurité → Ouvrir quand même (sous macOS 13 et 14 : clic droit sur l’app → Ouvrir). Mise à jour ? Quittez Rondelle et faites glisser la nouvelle sur Applications.",
  cta_h:"Chaque fichier a sa sortie.", cta_small:"Version et date de la dernière version publiée",
- cta_links:"<a href='https://github.com/jackb998/rondelle/releases/latest' target='_blank' rel='noopener noreferrer'>Notes de version</a> · <a href='https://github.com/jackb998/rondelle/releases/latest' target='_blank' rel='noopener noreferrer'>SHA-256</a> · <a href='https://github.com/jackb998/rondelle/releases' target='_blank' rel='noopener noreferrer'>Versions précédentes</a> · <a href='https://github.com/jackb998/rondelle' target='_blank' rel='noopener noreferrer'>Code sur GitHub</a>",
+ cta_links:"<a href=\"https://github.com/jackb998/rondelle/releases/latest\" rel=\"noopener\">Notes de version</a> · <a href=\"https://github.com/jackb998/rondelle/releases/latest\" rel=\"noopener\">SHA-256</a> · <a href=\"https://github.com/jackb998/rondelle/releases\" rel=\"noopener\">Versions précédentes</a> · <a href=\"https://github.com/jackb998/rondelle\" rel=\"noopener\">Code sur GitHub</a>",
  f1:"Une app gratuite pour la barre des menus de macOS. Open source sous licence MIT.",
  f2:"Les conversions restent sur votre Mac : aucun fichier n’est envoyé. L’app n’utilise le réseau que pour rechercher les mises à jour (une fois par jour, désactivable) et pour le formulaire de contact, quand vous appuyez sur Envoyer. La traduction utilise le service d’Apple, qui, selon Apple, fonctionne sur l’appareil.",
- f2l:"<a href='https://github.com/jackb998/rondelle#privacy-and-security' target='_blank' rel='noopener noreferrer'>Politique complète</a> · <a href='https://github.com/jackb998/rondelle/blob/main/SECURITY.md' target='_blank' rel='noopener noreferrer'>Sécurité</a>", f2h:"Confidentialité",
- f3h:"Contact", f3:"Utilisez le <a href='#contact'>formulaire</a> ou <a href='https://github.com/jackb998/rondelle/issues' target='_blank' rel='noopener noreferrer'>ouvrez un ticket sur GitHub</a>.", f3l:"<a href='https://buymeacoffee.com/jackb998' target='_blank' rel='noopener noreferrer'>Soutenir Rondelle · Buy me a coffee</a>",
+ f2l:"<a href=\"https://github.com/jackb998/rondelle#privacy-and-security\" rel=\"noopener\">Politique complète</a> · <a href=\"https://github.com/jackb998/rondelle/security/policy\" rel=\"noopener\">Sécurité</a>", f2h:"Confidentialité",
+ f3h:"Contact", f3:"Écrivez depuis le formulaire des Réglages ou ouvrez un ticket sur GitHub.", f3l:"Soutenir Rondelle · Buy me a coffee",
  foot:"Rondelle · Licence MIT",
  p_h:"Dossier de presse", p_l:"Textes, symbole et couleurs pour parler de Rondelle.",
  p_b1:"En une phrase", p_b1t:"Rondelle est un convertisseur et une boîte à outils de fichiers pour macOS : vous faites glisser un fichier et choisissez où le faire sortir, depuis une roue que vous disposez vous-même.",
@@ -206,31 +206,25 @@ fr: { /* TODO: to be reviewed by a native speaker; the site addresses the reader
  p_u1:"Ne le faites pas pivoter : l’ouverture et le point restent toujours en haut à droite.",
  p_u2:"Le point est vert, ou de la même couleur que l’anneau dans la version monochrome.",
  p_u3:"Pas de parts, d’ombres, de contours ni de cercles autour. Espace libre d’au moins la taille du point.",
- p_f2:"Les conversions restent sur votre Mac : aucun fichier n’est envoyé.", p_f3:"Utilisez le <a href='index.html#contact'>formulaire</a> ou <a href='https://github.com/jackb998/rondelle/issues' target='_blank' rel='noopener noreferrer'>ouvrez un ticket sur GitHub</a>."
+ p_f2:"Les conversions restent sur votre Mac : aucun fichier n’est envoyé.", p_f3:"Formulaire des Réglages ou ticket sur GitHub.",
+n_guide:"Guide de l’app",
+title_guide:"Rondelle · Guide de l’app",
+
 }};
 
 const P = {
 en:{m_conv:"Convert (⇧)", m_tools:"Tools (⌥⇧)", m_share:"Share (⌃⇧)", wn_conv:"Convert", wn_tools:"Tools", wn_share:"Share",
- play_h:"Try it right here", sel_h:"Select your file type", empty:"Pick a file type on the left to get a file to play with.",
+ play_h:"Try it right here", sel_h:"Select your file type", empty:"Pick a file type to get a file to play with.",
  play_l:"Pick a file type, then drag the file onto the wheel. Pick a wheel with the buttons, or hold ⇧, ⌥⇧ or ⌃⇧ while you drag, like in the app.",
- play_hint:"This is a simulation: it shows the wheel, no file is converted or uploaded. Drop on a slice to try it, in the centre to cancel.", kb_hint:"With the keyboard: Tab to the file, Enter to open the wheel, arrow keys to choose, Enter to apply, Esc to cancel.", kb_open:"Press Enter to open the wheel", done:"In the app this creates, next to the original:", sent:"In the app this shares via", mac:"Your files",
- sc_h:"The real wheel", sc_l:"Screenshots of the app. The wheel changes with the file you drag.", sc1:"Convert · a photo", sc2:"Tools · the same photo", sc3:"Convert · a PDF",
- sa1:"Rondelle’s Convert wheel for a photo", sa2:"Rondelle’s Tools wheel for the same photo", sa3:"Rondelle’s Convert wheel for a PDF",
- cl_all:"All releases on GitHub", lang_l:"Language", sc_tag:"The app", cl_note:"Release notes are written in English."},
+ play_hint:"Drop on a slice to use it, in the centre to cancel. Nothing is uploaded: this is only a demo.", done:"Created next to the original:", sent:"Shared via", n_app:"App", n_support:"Support", n_story:"Story", n_coffee:"Buy me a coffee", sp_h:"Support", sp_l:"Install it, check what it needs, and find where to ask.", rq_h:"Requirements", rq:"macOS 13 or later, Apple silicon and Intel. A few tools need a newer macOS: Remove background 14+, Translate 15+, subtitles from speech 26+, Liquid Glass look 26+.", st_h:"Story", st_l:"Where the name comes from, and how to write and draw it.", cf_h:"Support Rondelle", cf:"Rondelle is free. If it is useful, you can say thanks with a coffee.", ft_pages:"Pages", fm_l:"Pick a kind of file to see what goes in and what comes out.", p_open:"For press", p_open1:"Logo, colours and short texts to write about Rondelle are in the press kit.", pk_l:"Open the press kit →", title_support:"Rondelle · Support", title_story:"Rondelle · Story", mac:"Your files", skip:"Skip to content", kb_hint:"No mouse? Tab to the file, press Enter, choose with ← →, Enter to confirm, Esc to cancel."},
 it:{m_conv:"Converti (⇧)", m_tools:"Strumenti (⌥⇧)", m_share:"Condividi (⌃⇧)", wn_conv:"Converti", wn_tools:"Strumenti", wn_share:"Condividi",
- play_h:"Provala qui", sel_h:"Scegli il tipo di file", empty:"Scegli un tipo di file a sinistra per avere un file con cui giocare.",
+ play_h:"Provala qui", sel_h:"Scegli il tipo di file", empty:"Scegli un tipo di file per avere un file con cui giocare.",
  play_l:"Scegli un tipo di file, poi trascinalo sulla ruota. Scegli la ruota con i pulsanti, oppure tieni premuto ⇧, ⌥⇧ o ⌃⇧ mentre trascini, come nell’app.",
- play_hint:"È una simulazione: mostra la ruota, nessun file viene convertito o caricato. Rilascia su uno spicchio per provarlo, al centro per annullare.", kb_hint:"Con la tastiera: Tab per arrivare al file, Invio per aprire la ruota, frecce per scegliere, Invio per applicare, Esc per annullare.", kb_open:"Premi Invio per aprire la ruota", done:"Nell’app crea, accanto all’originale:", sent:"Nell’app condivide con", mac:"I tuoi file",
- sc_h:"La ruota vera", sc_l:"Schermate dell’app. La ruota cambia con il file che trascini.", sc1:"Converti · una foto", sc2:"Strumenti · la stessa foto", sc3:"Converti · un PDF",
- sa1:"La ruota Converti di Rondelle per una foto", sa2:"La ruota Strumenti di Rondelle per la stessa foto", sa3:"La ruota Converti di Rondelle per un PDF",
- cl_all:"Tutte le versioni su GitHub", lang_l:"Lingua", sc_tag:"L’app", cl_note:"Le note di rilascio sono scritte in inglese."},
+ play_hint:"Rilascia su uno spicchio per usarlo, al centro per annullare. Non viene caricato nulla: è solo una demo.", done:"Creato accanto all’originale:", sent:"Condiviso con", n_app:"App", n_support:"Supporto", n_story:"Storia", n_coffee:"Offrimi un caffè", sp_h:"Supporto", sp_l:"Installala, controlla cosa richiede e scopri dove chiedere aiuto.", rq_h:"Requisiti", rq:"macOS 13 o successivo, Apple silicon e Intel. Alcuni strumenti richiedono un macOS più recente: Rimuovi sfondo 14+, Traduci 15+, sottotitoli dalla voce 26+, aspetto Liquid Glass 26+.", st_h:"Storia", st_l:"Da dove viene il nome e come scriverlo e disegnarlo.", cf_h:"Sostieni Rondelle", cf:"Rondelle è gratuita. Se ti è utile, puoi ringraziare con un caffè.", ft_pages:"Pagine", fm_l:"Scegli un tipo di file per vedere cosa entra e cosa esce.", p_open:"Per la stampa", p_open1:"Logo, colori e testi brevi per scrivere di Rondelle sono nel press kit.", pk_l:"Apri il press kit →", title_support:"Rondelle · Supporto", title_story:"Rondelle · Storia", mac:"I tuoi file", skip:"Vai al contenuto", kb_hint:"Senza mouse? Vai al file con Tab, premi Invio, scegli con ← →, Invio per confermare, Esc per annullare."},
 fr:{m_conv:"Convertir (⇧)", m_tools:"Outils (⌥⇧)", m_share:"Partager (⌃⇧)", wn_conv:"Convertir", wn_tools:"Outils", wn_share:"Partager",
- play_h:"Essayez ici", sel_h:"Choisissez le type de fichier", empty:"Choisissez un type de fichier à gauche pour avoir un fichier à essayer.",
+ play_h:"Essayez ici", sel_h:"Choisissez le type de fichier", empty:"Choisissez un type de fichier pour avoir un fichier à essayer.",
  play_l:"Choisissez un type de fichier, puis faites-le glisser sur la roue. Choisissez la roue avec les boutons, ou maintenez ⇧, ⌥⇧ ou ⌃⇧ pendant le glissement, comme dans l’app.",
- play_hint:"C’est une simulation : elle montre la roue, aucun fichier n’est converti ni envoyé. Relâchez sur une part pour essayer, au centre pour annuler.", kb_hint:"Au clavier : Tab jusqu’au fichier, Entrée pour ouvrir la roue, flèches pour choisir, Entrée pour appliquer, Échap pour annuler.", kb_open:"Appuyez sur Entrée pour ouvrir la roue", done:"Dans l’app, crée à côté de l’original :", sent:"Dans l’app, partage via", mac:"Vos fichiers",
- sc_h:"La vraie roue", sc_l:"Captures de l’app. La roue change selon le fichier que vous faites glisser.", sc1:"Convertir · une photo", sc2:"Outils · la même photo", sc3:"Convertir · un PDF",
- sa1:"La roue Convertir de Rondelle pour une photo", sa2:"La roue Outils de Rondelle pour la même photo", sa3:"La roue Convertir de Rondelle pour un PDF",
- cl_all:"Toutes les versions sur GitHub", lang_l:"Langue", sc_tag:"L’app", cl_note:"Les notes de version sont rédigées en anglais."}};
+ play_hint:"Relâchez sur une part pour l’utiliser, au centre pour annuler. Rien n’est envoyé : ce n’est qu’une démo.", done:"Créé à côté de l’original :", sent:"Partagé via", n_app:"App", n_support:"Assistance", n_story:"Histoire", n_coffee:"Offrez-moi un café", sp_h:"Assistance", sp_l:"Installez-la, vérifiez ce qu’il lui faut et trouvez où demander de l’aide.", rq_h:"Prérequis", rq:"macOS 13 ou plus récent, Apple silicon et Intel. Quelques outils demandent un macOS plus récent : Supprimer l’arrière-plan 14+, Traduire 15+, sous-titres à partir de la voix 26+, aspect Liquid Glass 26+.", st_h:"Histoire", st_l:"D’où vient le nom, et comment l’écrire et le dessiner.", cf_h:"Soutenir Rondelle", cf:"Rondelle est gratuite. Si elle vous est utile, vous pouvez dire merci avec un café.", ft_pages:"Pages", fm_l:"Choisissez un type de fichier pour voir ce qui entre et ce qui sort.", p_open:"Pour la presse", p_open1:"Le logo, les couleurs et de courts textes pour parler de Rondelle sont dans le dossier de presse.", pk_l:"Ouvrir le dossier de presse →", title_support:"Rondelle · Assistance", title_story:"Rondelle · Histoire", mac:"Vos fichiers", skip:"Aller au contenu", kb_hint:"Sans souris ? Allez au fichier avec Tab, appuyez sur Entrée, choisissez avec ← →, Entrée pour confirmer, Échap pour annuler."}};
 const LAB = {compress:["Compress","Comprimi","Compresser"],half:["50%","50%","50 %"],rotate:["Rotate","Ruota","Pivoter"],mirror:["Mirror","Specchia","Miroir"],ocr:["OCR","OCR","OCR"],edit:["Edit","Modifica","Modifier"],
  merge:["Merge","Unisci","Fusionner"],split:["Split","Dividi","Diviser"],password:["Password","Password","Mot de passe"],watermark:["Watermark","Filigrana","Filigrane"],
  trim:["Trim","Taglia","Couper"],p1080:["1080p","1080p","1080p"],p720:["720p","720p","720p"],speed2:["2× speed","Velocità 2×","Vitesse 2×"],mute:["Mute","Muto","Muet"],audioonly:["Audio only","Solo audio","Audio seul"],
@@ -242,19 +236,6 @@ const TOOLS = {img:["compress","half","rotate","mirror","ocr","edit"],pdf:["comp
 const SHARE = ["airdrop","messages","mail","telegram","whatsapp","copy"];
 const KIND = {heic:"img",jpg:"img",png:"img",webp:"img",tiff:"img",gif:"img",bmp:"img",ico:"img",icns:"img",pdf:"pdf",mp4:"vid",mov:"vid",m4v:"vid",m4a:"aud",wav:"aud",aiff:"aud",flac:"aud",mp3:"aud",
  docx:"doc",rtf:"doc",odt:"doc",html:"doc",txt:"doc",pages:"doc",pptx:"pres",xlsx:"xls",ods:"xls",csv:"xls",tsv:"xls",srt:"sub",vtt:"sub",zip:"arc"};
-const C = {
-en:{ct_h:"Say hi, or tell us what broke", ct_l:"Found a problem, or have an idea? Write it here. It is read by a person.",
- k_problema:"Problem", k_idea:"Idea", k_altro:"Other", ct_msg:"Your message", ct_mail:"Email (optional, only if you want a reply)", ct_send:"Send",
- ct_note:"Sent only when you press Send. Nothing is kept in your browser.", ct_ok:"Sent. Thank you!", ct_wait:"Sending…",
- ct_bad:"Check the message (it can't be empty) and the email address.", ct_busy:"Too many messages right now. Try again later.", ct_err:"It didn't go through. Try again, or open an issue on GitHub."},
-it:{ct_h:"Dicci ciao, o cosa non va", ct_l:"Hai trovato un problema o hai un’idea? Scrivila qui. La legge una persona.",
- k_problema:"Problema", k_idea:"Idea", k_altro:"Altro", ct_msg:"Il tuo messaggio", ct_mail:"Email (facoltativa, solo se vuoi una risposta)", ct_send:"Invia",
- ct_note:"Inviato solo quando premi Invia. Nel browser non resta nulla.", ct_ok:"Inviato. Grazie!", ct_wait:"Invio in corso…",
- ct_bad:"Controlla il messaggio (non può essere vuoto) e l’indirizzo email.", ct_busy:"Troppi messaggi in questo momento. Riprova più tardi.", ct_err:"Non è partito. Riprova, oppure apri una segnalazione su GitHub."},
-fr:{ct_h:"Dites bonjour, ou ce qui ne va pas", ct_l:"Un problème, une idée ? Écrivez-le ici. C’est une personne qui vous lit.",
- k_problema:"Problème", k_idea:"Idée", k_altro:"Autre", ct_msg:"Votre message", ct_mail:"E-mail (facultatif, seulement si vous voulez une réponse)", ct_send:"Envoyer",
- ct_note:"Envoyé uniquement quand vous appuyez sur Envoyer. Rien n’est conservé dans votre navigateur.", ct_ok:"Envoyé. Merci !", ct_wait:"Envoi en cours…",
- ct_bad:"Vérifiez le message (il ne peut pas être vide) et l’adresse e-mail.", ct_busy:"Trop de messages en ce moment. Réessayez plus tard.", ct_err:"Ça n’est pas parti. Réessayez, ou ouvrez un ticket sur GitHub."}};
 /* missing keys fall back to English */
 const TABS = {
  img:{s:"JPG PNG HEIC TIFF GIF BMP WebP AVIF SVG",c:"JPG PNG HEIC WebP TIFF GIF BMP PDF PPTX ICNS ICO"},
@@ -271,36 +252,34 @@ const q = new URLSearchParams(location.search);
 let lang = ["it","fr"].includes(q.get("lang")) ? q.get("lang") : "en";
 let tab = "img";
 const LI = {en:0,it:1,fr:2};
-const t = k => (D[lang][k] ?? P[lang][k] ?? C[lang][k] ?? G[lang]?.[k] ?? D.en[k] ?? P.en[k] ?? C.en[k] ?? G.en[k] ?? "");
+const GG = typeof G !== "undefined" ? G : {};
+const t = k => (D[lang][k] ?? P[lang][k] ?? GG[lang]?.[k] ?? D.en[k] ?? P.en[k] ?? GG.en?.[k] ?? "");
 const chips = s => s.split(" ").map(x => `<span class="chip">${x}</span>`).join("");
 function render() {
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-i]").forEach(e => e.innerHTML = t(e.dataset.i));
-  const home = !!document.getElementById("tabs");
-  document.title = t("title_" + (document.body.dataset.page || (home ? "home" : "press")));
-  const m = document.querySelector('meta[name=description]'); if (m) m.content = t("meta");
-  document.querySelectorAll("[data-ph]").forEach(e => { e.placeholder = t(e.dataset.ph); e.setAttribute("aria-label", t(e.dataset.ph)); });
-  const cs = document.getElementById("cs"); if (cs && cs.dataset.k) cs.textContent = t(cs.dataset.k);
-  document.querySelectorAll("[data-lang]").forEach(a => a.classList.toggle("cur", a.dataset.lang === lang));
-  document.querySelectorAll("a[data-keep]").forEach(a => a.href = a.dataset.keep + (lang === "en" ? "" : "?lang=" + lang) + (a.dataset.hash || ""));
-  if (!home) document.querySelectorAll('a[href="#contact"]').forEach(a => a.href = "index.html" + (lang === "en" ? "" : "?lang=" + lang) + "#contact");
   const gb = document.getElementById("gbody"); if (gb) gb.innerHTML = guideHTML();
-  const sb = document.getElementById("sbody"); if (sb) sb.innerHTML = storyHTML();
+  document.querySelectorAll("img[data-shot]").forEach(i => { const u = "shots/" + i.dataset.shot + "." + lang + ".png?v=2"; if (i.getAttribute("src") !== u) { i.closest("figure").hidden = false; i.src = u; } });
+  const home = !!document.getElementById("tabs");
+  document.title = t("title_" + (document.body.dataset.page || "home"));
+  const m = document.querySelector('meta[name=description]'); if (m) m.content = t("meta");
+  document.querySelectorAll("[data-lang]").forEach(a => a.classList.toggle("cur", a.dataset.lang === lang));
+  document.querySelectorAll("a[data-keep]").forEach(a => a.href = a.dataset.keep + (lang === "en" ? "" : "?lang=" + lang));
+  const here = location.pathname.split("/").pop() || "index.html";
+  document.querySelectorAll(".links a[data-keep]").forEach(a => { if (a.dataset.keep === here) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
   if (home) {
-    document.querySelectorAll("#tabs span").forEach(s => s.classList.toggle("on", s.dataset.tab === tab));
+    document.querySelectorAll("#tabs button").forEach(s => {const on=s.dataset.tab===tab; s.classList.toggle("on",on); s.setAttribute("aria-pressed",on);});
     const d = TABS[tab];
     document.getElementById("f-s").innerHTML = chips(d.s);
     document.getElementById("f-c").innerHTML = d.c ? chips(d.c) : `<span class="chip">${t("x_ext")}</span>`;
     document.getElementById("f-t").textContent = t("t_" + tab);
   }
-  document.querySelectorAll("img[data-shot]").forEach(i => { const u = "shots/" + i.dataset.shot + "." + lang + ".png?v=2"; if (i.getAttribute("src") !== u) { i.closest("figure").hidden = false; i.src = u; } if (i.dataset.alt) i.alt = t(i.dataset.alt); });
-  const ls = document.getElementById("lang"); if (ls) ls.value = lang;
   if (typeof playRefresh === "function") playRefresh();
 }
 document.addEventListener("click", e => {
   const l = e.target.closest("[data-lang]");
   if (l) { e.preventDefault(); lang = l.dataset.lang; history.replaceState(null, "", lang === "en" ? location.pathname + location.hash : "?lang=" + lang + location.hash); render(); }
-  const s = e.target.closest("#tabs span"); if (s) { tab = s.dataset.tab; render(); }
+  const s = e.target.closest("#tabs button"); if (s) { tab = s.dataset.tab; render(); }
 });
 /* playground: drag a file onto the wheel (Convert / Tools / Share) */
 const SAMPLE={img:"photo.heic",pdf:"report.pdf",vid:"clip.mov",aud:"song.mp3",doc:"notes.docx",xls:"budget.xlsx",pres:"slides.pptx",sub:"subtitles.srt",arc:"archive.zip"};
@@ -308,8 +287,8 @@ const $=id=>document.getElementById(id);
 const stage=$("stage"); let mode="conv", cur=null, items=[], sel=-1, pos={x:0,y:0}, wpx=300;
 const kindOf=n=>KIND[n.split(".").pop().toLowerCase()]||"doc";
 const lab=k=>LAB[k]?LAB[k][LI[lang]]:k;
-function fileEl(n){const e=document.createElement("div");e.className="fi";e.dataset.name=n;e.innerHTML=`<div class="ic"><b>${n.split(".").pop().toUpperCase()}</b></div><span>${n}</span>`;e.addEventListener("pointerdown",down);e.tabIndex=0;e.setAttribute("role","button");e.addEventListener("keydown",kbOpen);return e;}
-function playRefresh(){ if(!stage) return; document.querySelectorAll("#files .fi").forEach(f=>f.setAttribute("aria-label",f.dataset.name+". "+t("kb_open"))); const r=$("hubrest"); if(r&&sel<0) $("hub").textContent=t("wn_"+mode); document.querySelectorAll("#modes button").forEach(b=>b.classList.toggle("on",b.dataset.mode===mode)); }
+function fileEl(n){const e=document.createElement("div");e.className="fi";e.dataset.name=n;e.tabIndex=0;e.setAttribute("role","button");e.setAttribute("aria-label",n);e.innerHTML=`<div class="ic"><b>${n.split(".").pop().toUpperCase()}</b></div><span>${n}</span>`;e.addEventListener("pointerdown",down);e.addEventListener("keydown",kdown);e.addEventListener("blur",()=>kclose());return e;}
+function playRefresh(){ if(!stage) return; const r=$("hubrest"); if(r&&sel<0) $("hub").textContent=t("wn_"+mode); document.querySelectorAll("#modes button").forEach(b=>{const on=b.dataset.mode===mode;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);}); }
 function itemsFor(name){
   const ext=name.split(".").pop().toLowerCase(), k=kindOf(name);
   if(mode==="share") return SHARE.map(x=>({k:x,l:lab(x)}));
@@ -334,7 +313,6 @@ function setSel(i){
   sel=i; document.querySelectorAll("#sl .s").forEach((e,j)=>e.classList.toggle("on",j===i));
   const N=items.length, c=i<0?-90:-90+i*360/N, [dx,dy]=arc(63,c), d=$("dot"); d.setAttribute("cx",dx); d.setAttribute("cy",dy);
   $("hub").textContent=i<0?t("wn_"+mode):items[i].l;
-  const lv=$("live"); if(lv&&kb) lv.textContent=i<0?"":items[i].l;
 }
 function place(){
   const R=stage.getBoundingClientRect(); wpx=Math.min(300,R.width-16);
@@ -360,86 +338,54 @@ function move(e){
   const N=items.length, a=(((Math.atan2(dy,dx)*180/Math.PI+90)%360)+360)%360, i=Math.round(a/(360/N))%N;
   if(i!==sel) setSel(i);
 }
-function finish(name,it){
+function up(){
+  const el=cur, it=sel>=0?items[sel]:null; cur=null; el.onpointermove=el.onpointerup=el.onpointercancel=null;
+  finish(el,it);
+}
+let kb=null;
+function kclose(){ if(!kb) return; const el=kb; kb=null; finish(el,null); }
+function kdown(e){
+  const el=e.currentTarget;
+  if(!kb){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); kb=el; const R=stage.getBoundingClientRect(); pos={x:R.width/2,y:R.height/2}; mode=$("modes").dataset.base; items=itemsFor(el.dataset.name); el.classList.add("drag"); place(); build(); $("wh").style.display="block"; $("toast").style.opacity=0; playRefresh(); setSel(0); say2(items[0].l);} return; }
+  const N=items.length;
+  if(e.key==="ArrowRight"||e.key==="ArrowDown"){e.preventDefault(); setSel((sel+1)%N); say2(items[sel].l);}
+  else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){e.preventDefault(); setSel((sel-1+N)%N); say2(items[sel].l);}
+  else if(e.key==="Enter"||e.key===" "){e.preventDefault(); const it=items[sel]; kb=null; finish(el,it);}
+  else if(e.key==="Escape"||e.key==="Tab"){ if(e.key==="Escape") e.preventDefault(); kclose(); }
+}
+function say2(s){ $("sr").textContent=s; }
+function finish(el,it){
+  const name=el.dataset.name;
+  $("wh").style.display="none"; $("ghost").style.display="none"; el.classList.remove("drag"); setSel(-1);
+  if(!it){ $("toast").style.opacity=0; return; }
   const base=name.replace(/\.[^.]+$/,""), ext=name.split(".").pop();
   if(mode==="share") return say(t("sent")+" "+it.l);
   let nn; if(mode==="conv"&&it.k!=="extract") nn=base+"."+it.k; else if(it.k==="extract") nn=base+" (folder)"; else nn=base+" ("+it.l+")."+ext;
+  if(!nn.includes("(folder)")&&!KIND[nn.split(".").pop().toLowerCase()]&&mode==="conv") nn=nn; 
   say(t("done")+" "+nn);
 }
-function up(){
-  const el=cur, it=sel>=0?items[sel]:null, name=el.dataset.name; cur=null; el.onpointermove=el.onpointerup=el.onpointercancel=null;
-  $("wh").style.display="none"; $("ghost").style.display="none"; el.classList.remove("drag"); setSel(-1);
-  if(it) finish(name,it);
-}
-/* keyboard: Enter opens the wheel on the focused file, arrows choose, Enter applies, Esc cancels */
-let kb=null;
-function kbOpen(e){
-  if(e.key!=="Enter"&&e.key!==" ") return; e.preventDefault(); e.stopPropagation(); if(kb||cur) return;
-  const R=stage.getBoundingClientRect(); kb=e.currentTarget; pos={x:R.width/2,y:R.height/2};
-  mode=$("modes").dataset.base; items=itemsFor(kb.dataset.name);
-  place(); build(); $("wh").style.display="block"; $("toast").style.opacity=0; playRefresh();
-}
-function kbClose(){ kb=null; $("wh").style.display="none"; setSel(-1); }
-document.addEventListener("keydown",e=>{
-  if(!kb) return; const N=items.length;
-  if(e.key==="ArrowRight"||e.key==="ArrowDown"){ e.preventDefault(); setSel(sel<0?0:(sel+1)%N); }
-  else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){ e.preventDefault(); setSel(sel<=0?N-1:sel-1); }
-  else if(e.key==="Enter"||e.key===" "){ e.preventDefault(); const it=sel>=0?items[sel]:null, name=kb.dataset.name; kbClose(); if(it) finish(name,it); }
-  else if(e.key==="Escape"||e.key==="Tab") kbClose();
-});
-let tt; function say(s){const e=$("toast"); e.textContent="✓ "+s; e.style.opacity=1; clearTimeout(tt); tt=setTimeout(()=>e.style.opacity=0,3000);}
+var tt; function say(s){const e=$("toast"); e.textContent="✓ "+s; e.style.opacity=1; clearTimeout(tt); tt=setTimeout(()=>e.style.opacity=0,3000);}
 if(stage){
-  $("pick").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; document.querySelectorAll("#pick button").forEach(x=>x.classList.toggle("on",x===b)); $("files").innerHTML=""; const f=fileEl(SAMPLE[b.dataset.k]); f.classList.add("pop"); $("files").appendChild(f); $("empty").style.display="none";});
+  $("pick").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; document.querySelectorAll("#pick button").forEach(x=>{x.classList.toggle("on",x===b);x.setAttribute("aria-pressed",x===b);}); $("files").innerHTML=""; const f=fileEl(SAMPLE[b.dataset.k]); f.classList.add("pop"); $("files").appendChild(f); $("empty").style.display="none";});
   $("modes").dataset.base="conv";
   $("modes").addEventListener("click",e=>{const b=e.target.closest("button"); if(!b) return; mode=b.dataset.mode; $("modes").dataset.base=mode; playRefresh();});
   playRefresh();
 }
-/* contact form: same address and checks as the app's «Report a problem» */
-const cf=$("cf");
-if(cf){
- const URL_="https://api.formdall.de/api/v1/f/oilh96W60cv9iwq3g5wuMoFxNc7o8rUzoQQ7HCgG"; let busy=false; const st=$("cs");
- const say2=(k,err)=>{st.textContent=t(k); st.dataset.k=k; st.dataset.s=err?"err":"ok";};
- cf.addEventListener("submit",async e=>{
-  e.preventDefault(); if(busy) return;
-  const f=new FormData(cf); if(f.get("website")){ say2("ct_ok"); cf.reset(); return; }
-  const kind=f.get("kind"), msg=(f.get("message")||"").trim(), mail=(f.get("email")||"").trim();
-  const okMail=!mail||(mail.length<=254&&/^[^\s@<>"]{1,64}@[^\s@<>"]{1,185}\.[^\s@<>".]{2,}$/.test(mail));
-  if(!msg||msg.length>5000||new TextEncoder().encode(msg).length>20000||!okMail||!["problema","idea","altro"].includes(kind)) return say2("ct_bad",1);
-  busy=true; $("cb").disabled=true; say2("ct_wait");
-  try{
-   const r=await fetch(URL_,{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({tipo:kind,messaggio:"[Sito web] "+msg,...(mail?{email:mail}:{})})});
-   let j={}; try{ j=await r.json(); }catch{}
-   if(r.status===200&&j.success===true){ say2("ct_ok"); cf.reset(); } else if(r.status===429) say2("ct_busy",1); else say2("ct_err",1);
-  }catch{ say2("ct_err",1); }
-  busy=false; $("cb").disabled=false;
- });
-}
 render();
-/* top bar: menu button on phones, language list on every screen, collapsible app section */
-const navEl=document.querySelector("nav"), burger=document.getElementById("burger"), langSel=document.getElementById("lang");
-if(langSel) langSel.addEventListener("change",()=>{ lang=langSel.value; history.replaceState(null,"",lang==="en"?location.pathname+location.hash:"?lang="+lang+location.hash); render(); });
-if(burger){
-  const setOpen=o=>{ navEl.classList.toggle("open",o); burger.setAttribute("aria-expanded",String(o)); };
-  burger.addEventListener("click",e=>{ e.stopPropagation(); setOpen(!navEl.classList.contains("open")); });
-  document.addEventListener("click",e=>{ if(!navEl.contains(e.target)||e.target.closest(".menu a")) setOpen(false); });
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&navEl.classList.contains("open")){ setOpen(false); burger.focus(); } });
-}
-if(location.hash&&document.getElementById("gbody")){ const g=document.getElementById(location.hash.slice(1)); if(g) g.scrollIntoView(); }
 if(q.get("demo")) document.querySelector('#pick button[data-k="'+q.get("demo")+'"]')?.click();
-/* versions: the list on the press page comes from GitHub Releases (bullet lines only), never typed by hand */
-const cl = document.getElementById("cl");
-if (cl) fetch("https://api.github.com/repos/jackb998/rondelle/releases?per_page=30").then(r => r.ok ? r.json() : Promise.reject()).then(rs => {
-  const esc = x => x.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  const md = x => esc(x).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/\*(.+?)\*/g,"<i>$1</i>").replace(/`(.+?)`/g,"<code>$1</code>");
-  const rows = rs.filter(r => !r.draft && !r.prerelease).map(r => {
-    const bullets = (r.body||"").split("\n").filter(l => l.startsWith("- ")).map(l => "<p>" + md(l.slice(2)) + "</p>").join("");
-    const d = new Date(r.published_at).toLocaleDateString(lang, {year:"numeric", month:"long", day:"numeric"});
-    return "<div><b>" + esc(r.tag_name.replace(/^v/,"")) + "</b><i>" + d + "</i>" + bullets + "</div>";
-  });
-  if (rows.length) cl.innerHTML = rows.join("");
-  const m = document.getElementById("clnote"); if (m) m.innerHTML = t("cl_note") + " · <a href='https://github.com/jackb998/rondelle/releases' target='_blank' rel='noopener noreferrer'>" + t("cl_all") + "</a>";
-}).catch(() => {});
 /* version and date come from the latest GitHub release, never typed by hand */
 const v = document.getElementById("ver");
 if (v) fetch("https://api.github.com/repos/jackb998/rondelle/releases/latest").then(r => r.ok ? r.json() : Promise.reject())
   .then(j => { v.textContent = " · " + j.tag_name + " · " + new Date(j.published_at).toLocaleDateString(lang); }).catch(() => {});
+
+/* motion: reveal on scroll, quiet hero fade, nav border. All skipped under reduced motion. */
+(function(){
+  const nav=document.querySelector(".nav"), still=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const onScroll=()=>{ if(nav) nav.classList.toggle("scrolled",scrollY>8); const h=document.querySelector(".hero"); if(h&&!still){const p=Math.min(1,scrollY/Math.max(1,h.offsetHeight)); h.style.setProperty("--p",p); h.style.opacity=1-p*.7; h.style.transform="translateY("+(p*40)+"px) scale("+(1-p*.04)+")";} };
+  addEventListener("scroll",onScroll,{passive:true}); onScroll();
+  if(still||!("IntersectionObserver" in window)) return;
+  const sel=".band h2,.band .lead,.band .sub,.grid3>div,.steps>div,.tabs,.fmt,.also,.play,.doc>*,.page-head>*,.box,.kit,.sw,.cta .btn,.cta .small";
+  const els=[...document.querySelectorAll(sel)].filter(e=>!e.closest(".hero"));
+  const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }),{threshold:.12,rootMargin:"0px 0px -6% 0px"});
+  els.forEach(e=>{ const sib=[...e.parentElement.children].indexOf(e); e.style.setProperty("--d",Math.min(sib,4)); e.classList.add("rv"); io.observe(e); });
+})();
