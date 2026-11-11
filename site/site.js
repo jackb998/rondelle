@@ -446,7 +446,7 @@ if(cf){
    const r=await fetch(URL_,{method:"POST",headers:{Accept:"application/json"},body:b});
    let j={}; try{ j=await r.json(); }catch{}
    const w=cf.querySelector("altcha-widget");
-   if(r.status===200&&j.success===true){ say2("ct_ok"); cf.reset(); w?.reset?.(); } else if(r.status===429) say2("ct_busy",1); else if(r.status===403){ say2("ct_cap",1); w?.reset?.(); } else say2("ct_err",1);
+   if(r.status===200&&j.success===true){ say2("ct_ok"); cf.reset(); w?.reset?.(); } else if(r.status===429) say2("ct_busy",1); else if(r.status===403&&j.error==="captcha_failed"){ say2("ct_cap",1); w?.reset?.(); } else say2("ct_err",1);
   }catch{ say2("ct_err",1); }
   busy=false; $("cb").disabled=false;
  });
