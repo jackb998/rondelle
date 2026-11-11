@@ -219,3 +219,5 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:17px}ul.rules li{margin-bo
 .wheel .disc{filter:none}
 /* wheel demo: only the soft green glow, fading out, no card and no edge */
 .stage2{background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--acc) 22%,transparent) 0,color-mix(in srgb,var(--acc) 8%,transparent) 42%,transparent 68%);border-radius:50%;overflow:visible}
+/* wheel demo: the round drop zone is back (fill, thin edge, soft green glow); the wheel's own shadow stays off */
+.stage2{background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--acc) 18%,transparent),transparent 62%),var(--card);border:1px solid var(--line);border-radius:50%;overflow:hidden}
