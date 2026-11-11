@@ -223,3 +223,6 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:17px}ul.rules li{margin-bo
 .stage2{background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--acc) 18%,transparent),transparent 62%),var(--card);border:1px solid var(--line);border-radius:50%;overflow:hidden}
 .rail img{max-height:440px;object-fit:contain}
 .rail{align-items:flex-start}
+/* wheel demo: the round zone is drawn by a layer behind, so the dragged file is never clipped when it leaves the circle */
+.stage2{background:none;border:0;border-radius:0;overflow:visible}
+.stage2::before{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;border:1px solid var(--line);background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--acc) 18%,transparent),transparent 62%),var(--card)}
