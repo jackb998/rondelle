@@ -6,7 +6,7 @@
 #
 # Without an Apple Developer ID the app isn't notarized: macOS 15+ blocks the first opening. The image shows the
 # steps on its background and carries «Allow Opening», a script that clears the block for Rondelle only when it
-# is dragged into Terminal (the image also has an «Open Terminal» shortcut); System Settings → Privacy & Security → «Open Anyway» stays the alternative.
+# is run in Terminal as «sh», a space and the dragged file (the image also has an «Open Terminal» shortcut); System Settings → Privacy & Security → «Open Anyway» stays the alternative.
 set -euo pipefail
 cd "$(dirname "$0")"
 

@@ -1,19 +1,43 @@
 #!/bin/sh
 # Rondelle — first opening of a downloaded copy.
-# Rondelle is not notarized by Apple, so macOS 15 and later block it the first time. Dragging this file into a
-# Terminal window and pressing Return removes the download mark (quarantine) from Rondelle only, then opens it.
-# It changes nothing else, needs no password and sends nothing anywhere.
+# Rondelle is not notarized by Apple, so macOS 15 and later block it the first time. In a Terminal window, type
+# «sh» and a space, drag this file in and press Return: it removes the download mark (quarantine) from Rondelle
+# only, then opens it. It changes nothing else, needs no password and sends nothing anywhere.
+# «sh» matters: this file comes from the same download, so macOS would block it too if it were run directly.
 APP="/Applications/Rondelle.app"
+SETTINGS="x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+
+say() { printf '  %s\n' "$@"; }
+echo ""
 if [ ! -d "$APP" ]; then
-    echo ""
-    echo "  Rondelle is not in Applications yet: drag it onto «Applications» first, then try again."
-    echo "  Rondelle non è ancora in Applicazioni: trascinala prima su «Applicazioni», poi riprova."
+    say "Rondelle is not in Applications yet: drag it onto «Applications» in the disk image window, then try again." \
+        "Rondelle non è ancora in Applicazioni: trascinala su «Applicazioni» nella finestra dell'immagine disco, poi riprova."
     echo ""
     exit 1
 fi
-/usr/bin/xattr -dr com.apple.quarantine "$APP" 2>/dev/null
-/usr/bin/open "$APP" || exit 1
+
+if ERR=$(/usr/bin/xattr -dr com.apple.quarantine "$APP" 2>&1) && ! /usr/bin/xattr -p com.apple.quarantine "$APP" >/dev/null 2>&1; then
+    if /usr/bin/open "$APP"; then
+        say "Done: Rondelle is open (ring icon in the menu bar). You can close this window." \
+            "Fatto: Rondelle è aperta (icona ad anello nella barra dei menu). Puoi chiudere questa finestra."
+        echo ""
+        exit 0
+    fi
+fi
+
+# Something stopped it, usually macOS not letting Terminal change apps («App Management»).
+[ -n "$ERR" ] && say "macOS said: $ERR" ""
+say "macOS did not let Terminal unblock Rondelle. Two ways out, pick one:" \
+    "  A. System Settings ▸ Privacy & Security ▸ App Management: turn on Terminal, then repeat this step." \
+    "  B. Open Rondelle from Applications, click «Done», then System Settings ▸ Privacy & Security:" \
+    "     scroll down to «Rondelle was blocked» and click «Open Anyway»." \
+    "" \
+    "macOS non ha permesso al Terminale di sbloccare Rondelle. Due strade, scegline una:" \
+    "  A. Impostazioni di Sistema ▸ Privacy e sicurezza ▸ Gestione app: attiva Terminale, poi ripeti questo passo." \
+    "  B. Apri Rondelle da Applicazioni, clicca «Fine», poi Impostazioni di Sistema ▸ Privacy e sicurezza:" \
+    "     scorri fino a «Rondelle è stata bloccata» e clicca «Apri comunque»." \
+    "" \
+    "Opening Privacy & Security now.  ·  Apro ora Privacy e sicurezza."
+/usr/bin/open "$SETTINGS" 2>/dev/null || /usr/bin/open -b com.apple.systempreferences 2>/dev/null
 echo ""
-echo "  Done: Rondelle is open (ring icon in the menu bar). You can close this window."
-echo "  Fatto: Rondelle è aperta (icona ad anello nella barra dei menu). Puoi chiudere questa finestra."
-echo ""
+exit 1

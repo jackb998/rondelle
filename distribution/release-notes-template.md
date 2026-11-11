@@ -8,7 +8,8 @@ and are not used to install.
 ### Install (once)
 1. Open the disk image and drag **Rondelle** onto **Applications**.
 2. Double-click **Open Terminal** in the disk image window (or ⌘ Space, type *Terminal*).
-3. Drag **Allow Opening** from the disk image window into Terminal and press **Return**. Rondelle opens.
+3. In Terminal type `sh` and a space, drag **Allow Opening** from the disk image window into it, press **Return**.
+   Rondelle opens. Without `sh`, macOS blocks *Allow Opening* itself, as it comes from the same download.
 
 Rondelle is free and not notarized by Apple, so macOS 15+ blocks the first opening; *Allow Opening* clears it
 for Rondelle only. Without Terminal: System Settings → Privacy & Security → **Open Anyway**.

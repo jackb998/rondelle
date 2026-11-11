@@ -36,13 +36,17 @@ The disk image window shows the same three steps:
 
 1. **Drag Rondelle onto Applications** (both are in the window that opens with the disk image).
 2. **Open Terminal:** double-click **Open Terminal** in the disk image window, or press **⌘ Space** and type *Terminal*.
-3. **Drag *Allow Opening* from the disk image window into the Terminal window and press Return.** Rondelle opens
-   and its ring icon appears in the menu bar. This is needed only once; afterwards Rondelle opens like any app.
+3. **In Terminal type `sh` and a space, drag *Allow Opening* from the disk image window into it, press Return.**
+   Rondelle opens and its ring icon appears in the menu bar. This is needed only once; afterwards Rondelle opens
+   like any app. Typing `sh` first matters: *Allow Opening* comes from the same download, so macOS (seen on
+   macOS 26) blocks it with *"Allow Opening" Not Opened* when it runs on its own; through `sh` it is only read.
 
 Why step 3: Rondelle is free and not notarized by Apple (that needs a paid developer account), so macOS 15 and later
 block its first opening. *Allow Opening* is a short script, readable in the repository at
 [`distribution/dmg/Allow Opening`](distribution/dmg/Allow%20Opening): it removes the download mark (quarantine) from
-`/Applications/Rondelle.app` only and opens it. No password, no other change, nothing sent anywhere.
+`/Applications/Rondelle.app` only and opens it. No password, no other change, nothing sent anywhere. If macOS
+refuses (Terminal without *App Management* permission, Rondelle not yet in Applications), it says so and opens
+Privacy & Security. The same in one line: `xattr -dr com.apple.quarantine /Applications/Rondelle.app`.
 
 **Without Terminal:** open Rondelle from Applications, click **Done** (not *Move to Trash*), then open **System
 Settings → Privacy & Security**, scroll to *"Rondelle" was blocked…* and click **Open Anyway**. On macOS 13 and 14

@@ -41,8 +41,17 @@ def make(scale, out):
     t(72, 256, "Double-click «Open Terminal»  (or ⌘ Space, type “Terminal”)", 15)
     t(72, 277, "Doppio clic su «Open Terminal»  (oppure ⌘ Spazio, scrivi “Terminale”)", 13, SUB)
     badge(48, 314, 3)
-    t(72, 302, "Drag «Allow Opening» into the Terminal window, press Return", 15)
-    t(72, 323, "Trascina «Allow Opening» nella finestra del Terminale, premi Invio", 13, SUB)
+    # «sh» first: the script comes from the same download, so macOS blocks it if it runs on its own (seen on Tahoe)
+    def keyed(x, y, before, after, size, col):
+        # text with «sh» drawn as a small dark key, so it reads as something to type
+        t(x, y, before, size, col)
+        kx = x + f(size).getlength(before) / scale + 3
+        kw = f(size, True).getlength("sh") / scale + 10
+        d.rounded_rectangle((kx*scale, (y-2)*scale, (kx+kw)*scale, (y+size+3)*scale), radius=4*scale, fill=(30, 30, 34))
+        t(kx + kw/2, y + size/2 + 1, "sh", size, (120, 230, 120), True, "mm")
+        t(kx + kw + 3, y, after, size, col)
+    keyed(72, 302, "In Terminal type", "and a space, drag «Allow Opening» in, press Return", 15, INK)
+    keyed(72, 324, "Nel Terminale scrivi", "e uno spazio, trascina dentro «Allow Opening», premi Invio", 13, SUB)
     # Mini Terminal window between the two icons, with the script going into it
     x0, y0, x1, y1 = 262, 362, 372, 428
     d.rounded_rectangle((x0*scale, y0*scale, x1*scale, y1*scale), radius=9*scale, fill=(30, 30, 34))
@@ -51,7 +60,9 @@ def make(scale, out):
     for i, c in enumerate([(255, 95, 87), (254, 188, 46), (40, 200, 64)]):
         cx = x0 + 12 + i*14
         d.ellipse(((cx-4)*scale, (y0+5)*scale, (cx+4)*scale, (y0+13)*scale), fill=c)
-    t(x0+12, y0+28, ">_  ⏎", 18, (220, 220, 220))
+    t(x0+12, y0+28, "sh", 18, (120, 230, 120))
+    d.rectangle(((x0+40)*scale, (y0+31)*scale, (x0+42)*scale, (y0+49)*scale), fill=(120, 230, 120))
+    t(x1-12, y0+28, "⏎", 18, (220, 220, 220), False, "ra")
     arrow(380, 425, 395, back=True)
     t(317, 438, "Terminal window", 11, SUB, False, "ma")
     t(320, 470, "Only the first time, then open Rondelle as usual.  ·  Solo la prima volta, poi apri Rondelle come sempre.", 11, SUB, False, "ma")

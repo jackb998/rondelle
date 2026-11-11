@@ -6,11 +6,14 @@ Runs on macOS 13 or later, on Apple silicon (M1, M2, M3…) and Intel Macs.
 INSTALL (once)
 1. Drag «Rondelle» onto «Applications» (next to it in this window).
 2. Open Terminal: double-click «Open Terminal» in this window (or press ⌘ Space and type Terminal).
-3. Drag «Allow Opening» from this window into the Terminal window and press Return. Rondelle opens.
+3. In the Terminal window type  sh  and a space, drag «Allow Opening» from this window into it, press Return.
+   Rondelle opens. Type «sh» first: without it macOS blocks «Allow Opening» itself, since it comes from the same
+   download. If macOS refuses, «Allow Opening» says why and what to do next.
    Why: Rondelle isn't sold through the App Store and isn't notarized by Apple, so macOS 15 and later block it
    the first time. «Allow Opening» removes the download mark from Rondelle only: nothing else changes, no
    password, nothing sent anywhere. Afterwards Rondelle opens normally, like any other app.
    Without Terminal: open Rondelle, click «Done», then System Settings → Privacy & Security → «Open Anyway».
+   Or paste this in Terminal and press Return:  xattr -dr com.apple.quarantine /Applications/Rondelle.app
 4. Rondelle lives in the menu bar (ring icon). Drag a file in the Finder while holding ⇧ Shift: the wheel of
    formats appears around the pointer.
 
