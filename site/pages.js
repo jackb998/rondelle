@@ -19,7 +19,7 @@ en:{
  gd_panes:[
   {h:"Appearance",w:"Settings → Appearance",i:[
    ["Size","Scales the whole wheel. “Actual size” shows a preview at real size on screen."],
-   ["Glass effect (Liquid Glass)","The wheel background lets you see what is behind it. macOS 26 or later. With it on, a slider sets the glass tint; otherwise the same slider sets the background opacity."],
+   ["Glass effect (Liquid Glass)","The wheel background shows what is behind it. It needs macOS 26 or later. With it on, the slider sets the glass tint. With it off, the same slider sets the background opacity."],
    ["Segment shape","Sharp, Rounded, Extra soft, Chamfered or Pizza slice."],
    ["Wheel theme","Automatic, Dark or Light."],
    ["Highlight","The accent colour of the wheel: nine presets, or any colour you pick."],
@@ -64,9 +64,9 @@ en:{
   "What exactly “draggable” means for the result card: what can be dragged out of it."],
  st_h:"Our story",
  st_p:[
-  "Rondelle began with a very simple idea. Until now, changing the format of a file meant picking one of three habits. You look for a dedicated app that does almost everything, but feels dated and whose name you never remember when you need it. Or you head to a random website and convert the file there. Or you ask an AI. Each of them costs time, and each can mean handing personal or private information to services you would rather not share it with.",
+  "Rondelle began with a very simple idea. Changing a file’s format usually meant one of three things. You look for a dedicated app that does almost everything, feels dated and has a name you forget. Or you convert the file on a random website. Or you ask an AI. Each takes time, and each can mean handing personal or private information to a service you would rather not give it to.",
   "After many attempts with Mac automation, Rondelle was born from the wish to put everything in one app, always within reach, and to open it with two very simple actions: a click and a drag.",
-  "Converters already exist, and nobody should pretend otherwise. Rondelle makes its own choices. It is easy to use. It keeps everything on your Mac. It is fully customizable, and it is designed to be quick to reach and pleasant to look at. (The App guide shows where and how to make it yours.)",
+  "Converters already exist, and nobody should pretend otherwise. Rondelle makes its own choices. It is easy to use. It keeps everything on your Mac. You arrange it yourself: actions, order, keys and look. It is designed to be quick to reach and pleasant to look at. (The App guide shows where and how to make it yours.)",
   "It was made for people who need only a few tools in one place, shaped to their taste both in looks and in feel, down to the gesture that opens the wheel. And just as much for people who use many tools through the day and want them all together.",
   "Privacy stays essential. Not only because everything remains on the computer and nothing is shared, but because some tools, such as removing metadata, exist precisely so that you can share a file easily and safely. In a world that moves fast, where our information is precious to us and to others, the fewer files we share, the less others know about us."],
  st_n:"A word on the name",
@@ -94,7 +94,7 @@ it:{
  gd_panes:[
   {h:"Aspetto",w:"Impostazioni → Aspetto",i:[
    ["Dimensione","Ingrandisce o riduce tutta la ruota. «Grandezza reale» mostra un’anteprima a dimensione reale sullo schermo."],
-   ["Effetto vetro (Liquid Glass)","Lo sfondo della ruota lascia vedere ciò che c’è dietro. Da macOS 26. Se è attivo, un cursore regola la tinta del vetro; altrimenti lo stesso cursore regola l’opacità dello sfondo."],
+   ["Effetto vetro (Liquid Glass)","Lo sfondo della ruota mostra ciò che c’è dietro. Richiede macOS 26 o successivo. Se è attivo, il cursore regola la tinta del vetro. Se è spento, lo stesso cursore regola l’opacità dello sfondo."],
    ["Forma degli spicchi","Netta, Tonda, Molto morbida, Smussata o Fetta di pizza."],
    ["Tema della ruota","Automatico, Scuro o Chiaro."],
    ["Evidenziazione","Il colore d’accento della ruota: nove colori già pronti, o un colore a scelta."],
@@ -139,9 +139,9 @@ it:{
   "Cosa significa esattamente «trascinabile» per la scheda del risultato: cosa si può trascinare fuori."],
  st_h:"La nostra storia",
  st_p:[
-  "Rondelle nasce da un’idea molto semplice. Finora, cambiare il formato di un file voleva dire scegliere una di tre abitudini. Cercare un’app dedicata che fa quasi tutto, ma ha un’aria datata e di cui non ricordiamo mai il nome quando serve. Oppure finire su un sito a caso e convertire il file lì. Oppure chiedere a un’AI. In tutti e tre i casi si perde tempo, e si rischia di consegnare informazioni personali o private a servizi con cui non vorremmo condividerle.",
+  "Rondelle nasce da un’idea molto semplice. Cambiare il formato di un file di solito voleva dire una di tre cose. Cercare un’app dedicata che fa quasi tutto, ha un’aria datata e un nome che si dimentica. Oppure convertire il file su un sito a caso. Oppure chiedere a un’AI. In tutti e tre i casi si perde tempo, e si rischia di consegnare informazioni personali o private a un servizio a cui non vorremmo darle.",
   "Dopo molti tentativi con l’automazione del Mac, Rondelle nasce dal desiderio di mettere tutto in un’unica app, sempre a portata di mano, e di aprirla con due azioni semplicissime: un clic e un trascinamento.",
-  "I convertitori esistono già, e non c’è motivo di negarlo. Rondelle fa le sue scelte. È facile da usare. Tiene tutto sul tuo Mac. È completamente personalizzabile, ed è pensata per essere rapida da raggiungere e piacevole da guardare. (La Guida all’app mostra dove e come renderla tua.)",
+  "I convertitori esistono già, e non c’è motivo di negarlo. Rondelle fa le sue scelte. È facile da usare. Tiene tutto sul tuo Mac. La disponi tu: azioni, ordine, tasti e aspetto. È pensata per essere rapida da raggiungere e piacevole da guardare. (La Guida all’app mostra dove e come renderla tua.)",
   "È pensata per chi ha bisogno di pochi strumenti in un unico posto, su misura per i propri gusti sia nell’aspetto sia nel modo di usarla, fino al gesto che apre la ruota. E altrettanto per chi usa molti strumenti nel corso della giornata e li vuole tutti insieme.",
   "La privacy resta essenziale. Non solo perché tutto rimane sul computer e nulla viene condiviso, ma perché alcuni strumenti, come la rimozione dei metadati, esistono proprio per condividere un file in modo semplice e sicuro. In un mondo che corre, in cui le nostre informazioni sono preziose per noi e per gli altri, meno file condividiamo, meno gli altri sapranno di noi."],
  st_n:"Due parole sul nome",
@@ -169,7 +169,7 @@ fr:{
  gd_panes:[
   {h:"Apparence",w:"Réglages → Apparence",i:[
    ["Taille","Agrandit ou réduit toute la roue. « Taille réelle » affiche un aperçu à la taille réelle à l’écran."],
-   ["Effet verre (Liquid Glass)","Le fond de la roue laisse voir ce qui se trouve derrière. À partir de macOS 26. Activé, un curseur règle la teinte du verre ; sinon le même curseur règle l’opacité du fond."],
+   ["Effet verre (Liquid Glass)","Le fond de la roue montre ce qui se trouve derrière. Il faut macOS 26 ou plus récent. Activé, le curseur règle la teinte du verre. Désactivé, le même curseur règle l’opacité du fond."],
    ["Forme des parts","Nette, Arrondie, Très douce, Biseautée ou Part de pizza."],
    ["Thème de la roue","Automatique, Sombre ou Clair."],
    ["Surbrillance","La couleur d’accent de la roue : neuf couleurs prêtes, ou la couleur de votre choix."],
@@ -214,9 +214,9 @@ fr:{
   "Ce que signifie exactement « déplaçable » pour la fiche du résultat : ce que l’on peut en faire glisser."],
  st_h:"Notre histoire",
  st_p:[
-  "Rondelle est née d’une idée très simple. Jusqu’ici, changer le format d’un fichier revenait à choisir parmi trois habitudes. Chercher une app dédiée qui fait presque tout, mais d’allure datée et dont on ne retrouve jamais le nom au moment voulu. Ou aller sur un site au hasard et y convertir le fichier. Ou demander à une IA. Dans les trois cas, on perd du temps, et on risque de confier des informations personnelles ou privées à des services avec lesquels on ne voudrait pas les partager.",
+  "Rondelle est née d’une idée très simple. Changer le format d’un fichier revenait en général à l’une de trois choses. Chercher une app dédiée qui fait presque tout, d’allure datée et dont on oublie le nom. Ou convertir le fichier sur un site au hasard. Ou demander à une IA. Dans les trois cas, on perd du temps, et on risque de confier des informations personnelles ou privées à un service à qui on ne voudrait pas les donner.",
   "Après de nombreux essais avec l’automatisation du Mac, Rondelle est née du désir de tout réunir dans une seule app, toujours à portée de main, et de l’ouvrir en deux gestes très simples : un clic et un glissement.",
-  "Les convertisseurs existent déjà, et il n’y a aucune raison de le nier. Rondelle fait ses propres choix. Elle est facile à utiliser. Elle garde tout sur votre Mac. Elle est entièrement personnalisable, et conçue pour être rapide d’accès et agréable à regarder. (Le Guide de l’app montre où et comment la faire vôtre.)",
+  "Les convertisseurs existent déjà, et il n’y a aucune raison de le nier. Rondelle fait ses propres choix. Elle est facile à utiliser. Elle garde tout sur votre Mac. Vous la disposez vous-même : actions, ordre, touches et apparence. Elle est conçue pour être rapide d’accès et agréable à regarder. (Le Guide de l’app montre où et comment la faire vôtre.)",
   "Elle est pensée pour ceux qui n’ont besoin que de quelques outils au même endroit, à leur goût autant par l’apparence que par la façon de s’en servir, jusqu’au geste qui ouvre la roue. Et tout autant pour ceux qui utilisent beaucoup d’outils au fil de la journée et les veulent tous ensemble.",
   "La confidentialité reste essentielle. Pas seulement parce que tout reste sur l’ordinateur et que rien n’est partagé, mais parce que certains outils, comme la suppression des métadonnées, existent justement pour partager un fichier simplement et en sécurité. Dans un monde qui va vite, où nos informations sont précieuses pour nous comme pour les autres, moins nous partageons de fichiers, moins les autres en sauront sur nous."],
  st_n:"Un mot sur le nom",
