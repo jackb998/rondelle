@@ -294,7 +294,7 @@ const KIND = {heic:"img",jpg:"img",png:"img",webp:"img",tiff:"img",gif:"img",bmp
 /* missing keys fall back to English */
 const TABS = {
  img:{s:"JPG PNG HEIC TIFF GIF BMP WebP AVIF SVG",c:"JPG PNG HEIC WebP TIFF GIF BMP PDF PPTX ICNS ICO"},
- pdf:{s:"PDF",c:"PNG JPG TXT DOCX RTF PPTX"},
+ pdf:{s:"PDF",c:"PNG JPG TXT DOCX RTF PAGES PPTX"},
  vid:{s:"MP4 MOV M4V",c:"MP4 MOV M4V GIF M4A"},
  aud:{s:"M4A WAV AIFF FLAC MP3",c:"M4A WAV AIFF FLAC MP3"},
  doc:{s:"DOCX DOC RTF ODT HTML TXT MD PAGES",c:"PDF DOCX RTF ODT HTML TXT PAGES"},
