@@ -30,7 +30,7 @@ en: {
  t_sub:"Translate into Italian, English and French (macOS 15+) · ZIP",
  t_arc:"Extract · unlock and extract password-protected ZIPs · protected ZIP",
  x_ext:"Extract",
- also:"Translation uses Apple's service, which according to Apple works on the device.",
+ also:"Translation uses Apple's service, which according to Apple works on the device. Pages, Numbers and Keynote files are offered only when those apps are installed.",
  in_h:"Install it in a minute", in_l:"Apple has not notarized Rondelle, so macOS 15 and later block the first opening. The disk image includes a small script that fixes this.",
  s1h:"1 · Download", s1:"Open the .dmg and drag Rondelle onto Applications.",
  s2h:"2 · Open Terminal", s2:"Double-click Open Terminal in the same window. It only opens the Terminal app that comes with your Mac.",
@@ -114,7 +114,7 @@ it: {
  t_sub:"Traduci in italiano, inglese e francese (macOS 15+) · ZIP",
  t_arc:"Estrai · sblocca ed estrai gli ZIP con password · ZIP protetto",
  x_ext:"Estrai",
- also:"La traduzione usa il servizio di Apple, che secondo Apple lavora sul dispositivo.",
+ also:"La traduzione usa il servizio di Apple, che secondo Apple lavora sul dispositivo. I file Pages, Numbers e Keynote compaiono solo se quelle app sono installate.",
  in_h:"Installala in un minuto", in_l:"Apple non ha autenticato Rondelle, quindi macOS 15 e successivi bloccano la prima apertura. L’immagine disco include un piccolo script che risolve il problema.",
  s1h:"1 · Scarica", s1:"Apri il .dmg e trascina Rondelle su Applicazioni.",
  s2h:"2 · Apri Terminale", s2:"Fai doppio clic su Open Terminal nella stessa finestra. Apre solo il Terminale che c’è già nel tuo Mac.",
@@ -197,7 +197,7 @@ fr: { /* TODO: to be reviewed by a native speaker; the site addresses the reader
  t_sub:"Traduire en italien, anglais et français (macOS 15+) · ZIP",
  t_arc:"Extraire · déverrouiller et extraire les ZIP protégés · ZIP protégé",
  x_ext:"Extraire",
- also:"La traduction utilise le service d’Apple, qui, selon Apple, fonctionne sur l’appareil.",
+ also:"La traduction utilise le service d’Apple, qui, selon Apple, fonctionne sur l’appareil. Les fichiers Pages, Numbers et Keynote ne sont proposés que si ces apps sont installées.",
  in_h:"Installez-la en une minute", in_l:"Apple n’a pas notarié Rondelle : macOS 15 et suivants bloquent la première ouverture. L’image disque contient un petit script qui règle le problème.",
  s1h:"1 · Télécharger", s1:"Ouvrez le .dmg et faites glisser Rondelle sur Applications.",
  s2h:"2 · Ouvrir Terminal", s2:"Double-cliquez sur Open Terminal dans la même fenêtre. Il ouvre seulement l’app Terminal déjà présente sur votre Mac.",
@@ -255,15 +255,15 @@ const P = {
 en:{m_conv:"Convert (⇧)", m_tools:"Tools (⌥⇧)", m_share:"Share (⌃⇧)", wn_conv:"Convert", wn_tools:"Tools", wn_share:"Share",
  play_h:"Try it right here", sel_h:"Select your file type", empty:"Pick a file type to get a file to play with.",
  play_l:"Pick a file type, then drag the file onto the wheel. Pick a wheel with the buttons, or hold ⇧, ⌥⇧ or ⌃⇧ while you drag, like in the app.",
- play_hint:"Drop on a slice to use it, in the centre to cancel. Nothing is uploaded: this is only a demo.", done:"Created next to the original:", sent:"Shared via", n_app:"App", n_support:"Support", n_story:"Story", n_coffee:"Buy me a coffee", sp_h:"Support", sp_l:"Install it, check what it needs, and find where to ask.", rq_h:"Requirements", rq:"macOS 13 or later, Apple silicon and Intel. A few tools need a newer macOS: Remove background 14+, Translate 15+, subtitles from speech 26+, Liquid Glass look 26+.", st_h:"Story", st_l:"How Rondelle began, what it is for, and where the name comes from.", cf_h:"Support Rondelle", cf:"Rondelle is free. If it is useful, you can say thanks with a coffee.", ft_pages:"Pages", fm_l:"Pick a kind of file to see what goes in and what comes out.", p_open:"For press", p_open1:"Logo, colours and short texts to write about Rondelle are in the press kit.", pk_l:"Open the press kit →", title_support:"Rondelle · Support", title_story:"Rondelle · Story", mac:"Your files", skip:"Skip to content", kb_hint:"No mouse? Tab to the file, press Enter, choose with ← →, Enter to confirm, Esc to cancel."},
+ play_hint:"Drop on a slice to use it, in the centre to cancel. Nothing is uploaded: this is only a demo.", done:"Created next to the original:", sent:"Shared via", n_app:"App", n_support:"Support", n_story:"Story", n_coffee:"Buy me a coffee", sp_h:"Support", sp_l:"Install it, check what it needs, and find where to ask.", rq_h:"Requirements", rq:"macOS 13 or later, Apple silicon and Intel. A few tools need a newer macOS: Remove background 14+, Translate 15+, subtitles from speech 26+, Liquid Glass look 26+.", st_h:"Story", st_l:"How Rondelle began, what it is for, and where the name comes from.", cf_h:"Support Rondelle", cf:"Rondelle is free. If it is useful, you can say thanks with a coffee.", ft_pages:"Pages", fm_l:"Pick a kind of file to see what goes in and what comes out.", fm_n:"{n} conversions between file types, counted from the app’s own Settings → Formats table, with Pages, Numbers and Keynote installed.", p_open:"For press", p_open1:"Logo, colours and short texts to write about Rondelle are in the press kit.", pk_l:"Open the press kit →", title_support:"Rondelle · Support", title_story:"Rondelle · Story", mac:"Your files", skip:"Skip to content", kb_hint:"No mouse? Tab to the file, press Enter, choose with ← →, Enter to confirm, Esc to cancel."},
 it:{m_conv:"Converti (⇧)", m_tools:"Strumenti (⌥⇧)", m_share:"Condividi (⌃⇧)", wn_conv:"Converti", wn_tools:"Strumenti", wn_share:"Condividi",
  play_h:"Provala qui", sel_h:"Scegli il tipo di file", empty:"Scegli un tipo di file per avere un file con cui giocare.",
  play_l:"Scegli un tipo di file, poi trascinalo sulla ruota. Scegli la ruota con i pulsanti, oppure tieni premuto ⇧, ⌥⇧ o ⌃⇧ mentre trascini, come nell’app.",
- play_hint:"Rilascia su uno spicchio per usarlo, al centro per annullare. Non viene caricato nulla: è solo una demo.", done:"Creato accanto all’originale:", sent:"Condiviso con", n_app:"App", n_support:"Supporto", n_story:"Storia", n_coffee:"Offrimi un caffè", sp_h:"Supporto", sp_l:"Installala, controlla cosa richiede e scopri dove chiedere aiuto.", rq_h:"Requisiti", rq:"macOS 13 o successivo, Apple silicon e Intel. Alcuni strumenti richiedono un macOS più recente: Rimuovi sfondo 14+, Traduci 15+, sottotitoli dalla voce 26+, aspetto Liquid Glass 26+.", st_h:"Storia", st_l:"Come è nata Rondelle, a cosa serve e da dove viene il nome.", cf_h:"Sostieni Rondelle", cf:"Rondelle è gratuita. Se ti è utile, puoi ringraziare con un caffè.", ft_pages:"Pagine", fm_l:"Scegli un tipo di file per vedere cosa entra e cosa esce.", p_open:"Per la stampa", p_open1:"Logo, colori e testi brevi per scrivere di Rondelle sono nel press kit.", pk_l:"Apri il press kit →", title_support:"Rondelle · Supporto", title_story:"Rondelle · Storia", mac:"I tuoi file", skip:"Vai al contenuto", kb_hint:"Senza mouse? Vai al file con Tab, premi Invio, scegli con ← →, Invio per confermare, Esc per annullare."},
+ play_hint:"Rilascia su uno spicchio per usarlo, al centro per annullare. Non viene caricato nulla: è solo una demo.", done:"Creato accanto all’originale:", sent:"Condiviso con", n_app:"App", n_support:"Supporto", n_story:"Storia", n_coffee:"Offrimi un caffè", sp_h:"Supporto", sp_l:"Installala, controlla cosa richiede e scopri dove chiedere aiuto.", rq_h:"Requisiti", rq:"macOS 13 o successivo, Apple silicon e Intel. Alcuni strumenti richiedono un macOS più recente: Rimuovi sfondo 14+, Traduci 15+, sottotitoli dalla voce 26+, aspetto Liquid Glass 26+.", st_h:"Storia", st_l:"Come è nata Rondelle, a cosa serve e da dove viene il nome.", cf_h:"Sostieni Rondelle", cf:"Rondelle è gratuita. Se ti è utile, puoi ringraziare con un caffè.", ft_pages:"Pagine", fm_l:"Scegli un tipo di file per vedere cosa entra e cosa esce.", fm_n:"{n} conversioni tra tipi di file, contate dalla tabella Formati delle Impostazioni dell’app, con Pages, Numbers e Keynote installati.", p_open:"Per la stampa", p_open1:"Logo, colori e testi brevi per scrivere di Rondelle sono nel press kit.", pk_l:"Apri il press kit →", title_support:"Rondelle · Supporto", title_story:"Rondelle · Storia", mac:"I tuoi file", skip:"Vai al contenuto", kb_hint:"Senza mouse? Vai al file con Tab, premi Invio, scegli con ← →, Invio per confermare, Esc per annullare."},
 fr:{m_conv:"Convertir (⇧)", m_tools:"Outils (⌥⇧)", m_share:"Partager (⌃⇧)", wn_conv:"Convertir", wn_tools:"Outils", wn_share:"Partager",
  play_h:"Essayez ici", sel_h:"Choisissez le type de fichier", empty:"Choisissez un type de fichier pour avoir un fichier à essayer.",
  play_l:"Choisissez un type de fichier, puis faites-le glisser sur la roue. Choisissez la roue avec les boutons, ou maintenez ⇧, ⌥⇧ ou ⌃⇧ pendant le glissement, comme dans l’app.",
- play_hint:"Relâchez sur une part pour l’utiliser, au centre pour annuler. Rien n’est envoyé : ce n’est qu’une démo.", done:"Créé à côté de l’original :", sent:"Partagé via", n_app:"App", n_support:"Assistance", n_story:"Histoire", n_coffee:"Offrez-moi un café", sp_h:"Assistance", sp_l:"Installez-la, vérifiez ce qu’il lui faut et trouvez où demander de l’aide.", rq_h:"Prérequis", rq:"macOS 13 ou plus récent, Apple silicon et Intel. Quelques outils demandent un macOS plus récent : Supprimer l’arrière-plan 14+, Traduire 15+, sous-titres à partir de la voix 26+, aspect Liquid Glass 26+.", st_h:"Histoire", st_l:"Comment Rondelle est née, à quoi elle sert et d’où vient son nom.", cf_h:"Soutenir Rondelle", cf:"Rondelle est gratuite. Si elle vous est utile, vous pouvez dire merci avec un café.", ft_pages:"Pages", fm_l:"Choisissez un type de fichier pour voir ce qui entre et ce qui sort.", p_open:"Pour la presse", p_open1:"Le logo, les couleurs et de courts textes pour parler de Rondelle sont dans le dossier de presse.", pk_l:"Ouvrir le dossier de presse →", title_support:"Rondelle · Assistance", title_story:"Rondelle · Histoire", mac:"Vos fichiers", skip:"Aller au contenu", kb_hint:"Sans souris ? Allez au fichier avec Tab, appuyez sur Entrée, choisissez avec ← →, Entrée pour confirmer, Échap pour annuler."}};
+ play_hint:"Relâchez sur une part pour l’utiliser, au centre pour annuler. Rien n’est envoyé : ce n’est qu’une démo.", done:"Créé à côté de l’original :", sent:"Partagé via", n_app:"App", n_support:"Assistance", n_story:"Histoire", n_coffee:"Offrez-moi un café", sp_h:"Assistance", sp_l:"Installez-la, vérifiez ce qu’il lui faut et trouvez où demander de l’aide.", rq_h:"Prérequis", rq:"macOS 13 ou plus récent, Apple silicon et Intel. Quelques outils demandent un macOS plus récent : Supprimer l’arrière-plan 14+, Traduire 15+, sous-titres à partir de la voix 26+, aspect Liquid Glass 26+.", st_h:"Histoire", st_l:"Comment Rondelle est née, à quoi elle sert et d’où vient son nom.", cf_h:"Soutenir Rondelle", cf:"Rondelle est gratuite. Si elle vous est utile, vous pouvez dire merci avec un café.", ft_pages:"Pages", fm_l:"Choisissez un type de fichier pour voir ce qui entre et ce qui sort.", fm_n:"{n} conversions entre types de fichier, comptées dans le tableau Formats des Réglages de l’app, avec Pages, Numbers et Keynote installés.", p_open:"Pour la presse", p_open1:"Le logo, les couleurs et de courts textes pour parler de Rondelle sont dans le dossier de presse.", pk_l:"Ouvrir le dossier de presse →", title_support:"Rondelle · Assistance", title_story:"Rondelle · Histoire", mac:"Vos fichiers", skip:"Aller au contenu", kb_hint:"Sans souris ? Allez au fichier avec Tab, appuyez sur Entrée, choisissez avec ← →, Entrée pour confirmer, Échap pour annuler."}};
 const LAB = {compress:["Compress","Comprimi","Compresser"],half:["50%","50%","50 %"],rotate:["Rotate","Ruota","Pivoter"],mirror:["Mirror","Specchia","Miroir"],ocr:["OCR","OCR","OCR"],edit:["Edit","Modifica","Modifier"],
  merge:["Merge","Unisci","Fusionner"],split:["Split","Dividi","Diviser"],password:["Password","Password","Mot de passe"],watermark:["Watermark","Filigrana","Filigrane"],
  trim:["Trim","Taglia","Couper"],p1080:["1080p","1080p","1080p"],p720:["720p","720p","720p"],speed2:["2× speed","Velocità 2×","Vitesse 2×"],mute:["Mute","Muto","Muet"],audioonly:["Audio only","Solo audio","Audio seul"],
@@ -293,16 +293,18 @@ const KIND = {heic:"img",jpg:"img",png:"img",webp:"img",tiff:"img",gif:"img",bmp
  docx:"doc",rtf:"doc",odt:"doc",html:"doc",txt:"doc",pages:"doc",pptx:"pres",xlsx:"xls",ods:"xls",csv:"xls",tsv:"xls",srt:"sub",vtt:"sub",zip:"arc"};
 /* missing keys fall back to English */
 const TABS = {
- img:{s:"JPG PNG HEIC TIFF GIF BMP WebP AVIF SVG",c:"JPG PNG HEIC WebP TIFF GIF BMP PDF PPTX ICNS ICO"},
+ img:{s:"JPG PNG HEIC TIFF GIF BMP WebP AVIF SVG RAW ICO ICNS",c:"JPG PNG HEIC WebP TIFF GIF BMP PDF PPTX ICNS ICO"},
  pdf:{s:"PDF",c:"PNG JPG TXT DOCX RTF PAGES PPTX"},
  vid:{s:"MP4 MOV M4V",c:"MP4 MOV M4V GIF M4A"},
- aud:{s:"M4A WAV AIFF FLAC MP3",c:"M4A WAV AIFF FLAC MP3"},
- doc:{s:"DOCX DOC RTF ODT HTML TXT MD PAGES",c:"PDF DOCX RTF ODT HTML TXT PAGES"},
- xls:{s:"XLSX ODS CSV TSV",c:"XLSX ODS CSV TSV HTML PDF"},
- pres:{s:"PPTX",c:"PDF PNG JPG TXT"},
+ aud:{s:"M4A WAV AIFF FLAC MP3 CAF",c:"M4A WAV AIFF FLAC MP3"},
+ doc:{s:"DOCX DOC RTF RTFD ODT HTML TXT MD WEBARCHIVE PAGES",c:"PDF DOCX RTF ODT HTML TXT PAGES"},
+ xls:{s:"XLSX ODS CSV TSV NUMBERS",c:"XLSX ODS CSV TSV HTML PDF NUMBERS"},
+ pres:{s:"PPTX KEY",c:"PDF PNG JPG TXT KEYNOTE PPTX"},
  sub:{s:"SRT VTT",c:"SRT VTT TXT"},
  arc:{s:"ZIP TAR GZ TGZ BZ2 XZ RAR 7Z",c:null}
 };
+/* Number of conversions: pairs (source, target) in the app's Settings → Formats table, with Pages, Numbers and Keynote installed. Update it whenever a conversion is added (docs/ADDING-A-FORMAT.md). */
+const CONV = 277;
 const q = new URLSearchParams(location.search);
 let lang = ["it","fr"].includes(q.get("lang")) ? q.get("lang") : "en";
 let tab = "img";
@@ -312,7 +314,7 @@ const t = k => (D[lang][k] ?? P[lang][k] ?? GG[lang]?.[k] ?? C[lang]?.[k] ?? D.e
 const chips = s => s.split(" ").map(x => `<span class="chip">${x}</span>`).join("");
 function render() {
   document.documentElement.lang = lang;
-  document.querySelectorAll("[data-i]").forEach(e => e.innerHTML = t(e.dataset.i));
+  document.querySelectorAll("[data-i]").forEach(e => e.innerHTML = t(e.dataset.i).replace("{n}", CONV));
   document.querySelectorAll("[data-ph]").forEach(e => { e.placeholder = t(e.dataset.ph); e.setAttribute("aria-label", t(e.dataset.ph)); });
   const sb = document.getElementById("sbody"); if (sb) sb.innerHTML = storyHTML();
   const gb = document.getElementById("gbody"); if (gb) gb.innerHTML = guideHTML();

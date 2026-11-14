@@ -237,3 +237,4 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:1.0625rem}ul.rules li{marg
 /* type: light text on dark surfaces gets a little more leading and tracking */
 .band.ink,:root.dark body{line-height:1.55;letter-spacing:.005em}
 @media (prefers-color-scheme:dark){:root:not(.light) body{line-height:1.55;letter-spacing:.005em}}
+.count{text-align:center;color:var(--acc);font-weight:600;font-size:.9375rem;margin:-6px auto 22px;max-width:640px;padding:0 24px}
