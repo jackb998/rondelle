@@ -214,11 +214,11 @@ ul.rules{color:var(--mut);padding-left:22px;font-size:1.0625rem}ul.rules li{marg
 .pick button{padding:8px 16px;border-radius:99px;font-size:.9375rem}.pick button:hover:not(.on){transform:translateY(-1px)}
 .arena{width:100%}
 .stage2{width:min(620px,100%);border:0;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--acc) 16%,transparent),transparent 62%),var(--card)}
-.wheel .disc{fill:color-mix(in srgb,var(--bg) 94%,transparent);stroke:var(--line);stroke-width:1.2;filter:drop-shadow(0 14px 28px rgba(0,0,0,.28))}
-.wheel path{fill:color-mix(in srgb,var(--fg) 6%,transparent);stroke:var(--line);stroke-width:.8}
+.wheel .disc{fill:var(--bg);fill-opacity:.94;stroke:var(--line);stroke-width:1.2;filter:drop-shadow(0 14px 28px rgba(0,0,0,.28))}
+.wheel path{fill:var(--fg);fill-opacity:.06;stroke:var(--line);stroke-width:.8}
 .wheel .s:not(.on) text{fill:var(--fg)}
-.wheel .s.on path{fill:var(--acc);stroke:color-mix(in srgb,var(--acc) 70%,#fff)}
-.wheel .hub{fill:color-mix(in srgb,var(--fg) 5%,var(--bg));stroke:var(--line);stroke-width:1}
+.wheel .s.on path{fill:var(--acc);fill-opacity:1;stroke:var(--acc)}
+.wheel .hub{fill:var(--card);stroke:var(--line);stroke-width:1}
 .wheel .hubt{font-size:13px}
 /* wheel demo: no box behind the wheel */
 .stage2{background:none;border:0;border-radius:0;overflow:visible}
